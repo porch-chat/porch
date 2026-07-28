@@ -31,7 +31,7 @@ use tempfile::TempDir;
 use walkdir::WalkDir;
 use zip::write::SimpleFileOptions;
 
-const PUBLIC_DL_BASE: &str = "https://api.fluxer.app/dl";
+const PUBLIC_DL_BASE: &str = "https://releases.porch.chat";
 const PNPM_VERSION: &str = "10.29.3";
 const RUST_TOOLCHAIN: &str = "1.93.0";
 const DEFAULT_DESKTOP_VARIANT: &str = "default";
@@ -1595,12 +1595,12 @@ struct WindowsPackageConfig {
 
 fn windows_package_config(build_channel: &str, arch: &str) -> WindowsPackageConfig {
     let canary = build_channel == "canary";
-    let pack_title = if canary { "Fluxer Canary" } else { "Fluxer" };
+    let pack_title = if canary { "Porch Canary" } else { "Porch" };
     WindowsPackageConfig {
         pack_id: if canary {
-            "fluxer_desktop_canary"
+            "porch_desktop_canary"
         } else {
-            "fluxer_desktop"
+            "porch_desktop"
         },
         pack_title,
         icon_dir: if canary {
@@ -1647,7 +1647,7 @@ fn package_app_windows_velopack_step() -> Result<()> {
         "--packTitle",
         config.pack_title,
         "--packAuthors",
-        "Fluxer Platform AB",
+        "Porch",
         "--shortcuts",
         "Desktop,StartMenu",
         "--runtime",
@@ -3763,7 +3763,7 @@ export const CHANNEL_DISPLAY_NAME = BUILD_CHANNEL;\n"
 
         assert_eq!(
             releases["releases"][0]["updateTo"]["url"],
-            "https://api.fluxer.app/dl/desktop-test/canary/darwin/arm64/Fluxer-2026.520.1-arm64.zip"
+            "https://releases.porch.chat/desktop-test/canary/darwin/arm64/Fluxer-2026.520.1-arm64.zip"
         );
         assert!(temp.path().join("releases.json").exists());
     }
@@ -3795,14 +3795,14 @@ export const CHANNEL_DISPLAY_NAME = BUILD_CHANNEL;\n"
     #[test]
     fn windows_package_config_tracks_channel_and_arch() {
         let stable = windows_package_config("stable", "x64");
-        assert_eq!(stable.pack_id, "fluxer_desktop");
+        assert_eq!(stable.pack_id, "porch_desktop");
         assert_eq!(stable.runtime, "win-x64");
-        assert_eq!(stable.main_exe, "Fluxer.exe");
+        assert_eq!(stable.main_exe, "Porch.exe");
 
         let canary = windows_package_config("canary", "arm64");
-        assert_eq!(canary.pack_id, "fluxer_desktop_canary");
+        assert_eq!(canary.pack_id, "porch_desktop_canary");
         assert_eq!(canary.runtime, "win-arm64");
-        assert_eq!(canary.main_exe, "Fluxer Canary.exe");
+        assert_eq!(canary.main_exe, "Porch Canary.exe");
     }
 
     #[test]
@@ -3869,9 +3869,9 @@ export const CHANNEL_DISPLAY_NAME = BUILD_CHANNEL;\n"
         assert!(table.contains("## Windows Game Capture (`win32`)"));
         assert!(table.contains("| Arch | Format | URL |"));
         assert!(table.contains("|---|---|---|"));
-        assert!(table.contains("| x64 | Setup.exe | https://api.fluxer.app/dl/desktop/canary/win32/x64/2026.520.1/setup?test=1 |"));
-        assert!(table.contains("| x64 | Portable ZIP | https://api.fluxer.app/dl/desktop/canary/win32/x64/2026.520.1/portable?test=1 |"));
-        assert!(table.contains("| x64 | Setup.exe | https://api.fluxer.app/dl/desktop/canary/win32/x64/windows-game-capture/2026.520.1/setup?test=1 |"));
+        assert!(table.contains("| x64 | Setup.exe | https://releases.porch.chat/desktop/canary/win32/x64/2026.520.1/setup?test=1 |"));
+        assert!(table.contains("| x64 | Portable ZIP | https://releases.porch.chat/desktop/canary/win32/x64/2026.520.1/portable?test=1 |"));
+        assert!(table.contains("| x64 | Setup.exe | https://releases.porch.chat/desktop/canary/win32/x64/windows-game-capture/2026.520.1/setup?test=1 |"));
         assert!(!table.contains("SHA-256"));
     }
 

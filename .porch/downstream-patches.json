@@ -24,6 +24,47 @@
       "conflict_risk": "low",
       "upstream_status": "permanently-downstream",
       "removal_condition": "Remove only if Porch ceases to be a downstream distribution."
+    },
+    {
+      "id": "porch-desktop-distribution-0002",
+      "title": "Porch Stable and Canary desktop distribution identities",
+      "status": "active",
+      "category": "desktop-distribution",
+      "reason": "Ship independently installable Porch clients with Porch-owned origins, branding, update feeds, and release automation while preserving Fluxer runtime behavior.",
+      "paths": [
+        ".github/upstream-workflows/build-desktop.yaml",
+        ".github/workflows/build-porch-desktop.yaml",
+        "docs/porch/DESKTOP_DISTRIBUTION.md",
+        "fluxer_desktop/build_resources/entitlements.mac.canary.plist",
+        "fluxer_desktop/build_resources/entitlements.mac.stable.plist",
+        "fluxer_desktop/build_resources/icons-canary",
+        "fluxer_desktop/build_resources/icons-stable",
+        "fluxer_desktop/build_resources/porch",
+        "fluxer_desktop/electron-builder.config.cjs",
+        "fluxer_desktop/package.json",
+        "fluxer_desktop/porch-product.json",
+        "fluxer_desktop/scripts/generate-porch-icons.ps1",
+        "fluxer_desktop/scripts/validate-porch-product.mjs",
+        "fluxer_desktop/scripts/validate-porch-workflow.mjs",
+        "fluxer_desktop/src/common",
+        "fluxer_desktop/src/main/ChromiumRuntime.ts",
+        "fluxer_desktop/src/main/DesktopTray.ts",
+        "fluxer_desktop/src/main/FluxerAudioIdentity.ts",
+        "fluxer_desktop/src/main/Menu.ts",
+        "fluxer_desktop/src/main/Updater.ts",
+        "tools/ci/src/desktop.rs"
+      ],
+      "tests": [
+        "Porch product contract validation",
+        "active workflow isolation validation",
+        "desktop TypeScript typecheck",
+        "desktop CI helper Rust tests",
+        "Windows x64 Canary package build",
+        "channel identity and default-origin smoke tests"
+      ],
+      "conflict_risk": "medium",
+      "upstream_status": "permanently-downstream",
+      "removal_condition": "Remove only if Porch stops distributing branded desktop clients."
     }
   ]
 }

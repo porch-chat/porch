@@ -90,8 +90,8 @@ const CHROMIUM_FEATURE_SWITCHES = new Set([
 ]);
 
 const LINUX_FLAGS_CONFIG_FILE_NAMES: Record<'stable' | 'canary', Array<string>> = {
-	stable: ['fluxer_desktop-flags.conf', 'fluxer-flags.conf'],
-	canary: ['fluxer_desktop_canary-flags.conf', 'fluxer-canary-flags.conf'],
+	stable: ['porch_desktop-flags.conf', 'porch-flags.conf'],
+	canary: ['porch_desktop_canary-flags.conf', 'porch-canary-flags.conf'],
 };
 
 export const MIDDLE_CLICK_AUTOSCROLL_BLINK_FEATURE = 'MiddleClickAutoscroll';

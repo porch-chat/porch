@@ -3,6 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {BUILD_CHANNEL, type BuildChannel} from '@electron/common/BuildChannel';
+import {PORCH_DESKTOP_PRODUCT} from '@electron/common/PorchProduct';
 import {app} from 'electron';
 
 interface UserDataPaths {
@@ -18,8 +19,8 @@ interface ChannelStorageDirectoryMap {
 }
 
 const channelStorageDirectoryMap: ChannelStorageDirectoryMap = {
-	stable: 'fluxer',
-	canary: 'fluxercanary',
+	stable: PORCH_DESKTOP_PRODUCT.channels.stable.userDataDirectory,
+	canary: PORCH_DESKTOP_PRODUCT.channels.canary.userDataDirectory,
 };
 
 let portableMode = false;

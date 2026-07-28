@@ -1,12 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import {basename} from 'node:path';
+import {PORCH_DESKTOP_PRODUCT} from '@electron/common/PorchProduct';
 import type {VirtmicNode} from '@electron/common/Types';
 import {app, webContents} from 'electron';
 
 const FLUXER_AUDIO_DISPLAY_IDENTITY_KEYS = ['application.name', 'node.name', 'node.nick', 'node.description'] as const;
-const FALLBACK_PRODUCT_NAMES = ['Fluxer', 'Fluxer Canary'];
-const FLUXER_AUDIO_PREFIXES = ['fluxer ', 'fluxer-', 'fluxer_', 'fluxer.'];
+const FALLBACK_PRODUCT_NAMES = [
+	PORCH_DESKTOP_PRODUCT.channels.stable.appName,
+	PORCH_DESKTOP_PRODUCT.channels.canary.appName,
+];
+const FLUXER_AUDIO_PREFIXES = ['porch ', 'porch-', 'porch_', 'porch.'];
 
 function stripDesktopBinarySuffix(name: string): string | null {
 	const suffixes = ['.AppImage', '.bin', '.exe'];

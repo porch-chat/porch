@@ -7,11 +7,14 @@ const os = require('node:os');
 const path = require('node:path');
 const {promisify} = require('node:util');
 const execFileAsync = promisify(execFile);
-const productName = isCanary ? 'Fluxer Canary' : 'Fluxer';
-const appId = isCanary ? 'app.fluxer.canary' : 'app.fluxer';
+const product = require('./porch-product.json');
+const channel = isCanary ? 'canary' : 'stable';
+const channelProduct = product.channels[channel];
+const productName = channelProduct.appName;
+const appId = channelProduct.appId;
 const iconDir = isCanary ? 'icons-canary' : 'icons-stable';
-const packageName = isCanary ? 'fluxer_desktop_canary' : 'fluxer_desktop';
-const linuxPackageName = isCanary ? 'fluxer-canary' : 'fluxer';
+const packageName = channelProduct.packageName;
+const linuxPackageName = channelProduct.linuxPackageName;
 const desktopBuildVariant = process.env.FLUXER_DESKTOP_BUILD_VARIANT || process.env.DESKTOP_VARIANT || 'default';
 const windowsGameCaptureModuleEnabled =
 	desktopBuildVariant === 'windows-game-capture' || process.env.FLUXER_WINDOWS_GAME_CAPTURE_MODULE_ENABLED === 'true';
@@ -30,9 +33,8 @@ const isMacBuild = process.argv.includes('--mac');
 const isWindowsBuild = process.argv.includes('--win');
 const targetPlatform = isLinuxBuild ? 'linux' : isMacBuild ? 'darwin' : isWindowsBuild ? 'win32' : process.platform;
 const metadataName = isLinuxBuild ? linuxPackageName : packageName;
-const provisioningProfile = isCanary
-	? 'build_resources/profiles/Fluxer_Canary.provisionprofile'
-	: 'build_resources/profiles/Fluxer.provisionprofile';
+const provisioningProfile = process.env.PORCH_MAC_PROVISIONING_PROFILE || undefined;
+const notarizeMacBuild = process.env.PORCH_MAC_NOTARIZE === 'true';
 const supportedTargetArchs = ['x64', 'arm64'];
 const electronArch = process.env.ELECTRON_ARCH;
 const cliTargetArch = supportedTargetArchs.find((arch) => process.argv.includes(`--${arch}`)) || null;
@@ -319,13 +321,13 @@ const platformRuntimeDependencyExcludes =
 const linuxDesktopEntry = {
 	Name: productName,
 	GenericName: 'Instant Messenger',
-	Comment: isCanary ? 'Canary build of Fluxer' : 'Instant messaging and VoIP',
+	Comment: isCanary ? 'Canary build of Porch' : 'Instant messaging and VoIP',
 	Keywords: 'chat;im;messaging;messenger;voip;voice;video;call;',
 	Categories: 'Network;InstantMessaging;Chat;',
 	StartupWMClass: linuxPackageName,
 	StartupNotify: 'true',
 	SingleMainWindow: 'true',
-	MimeType: 'x-scheme-handler/fluxer;',
+	MimeType: `x-scheme-handler/${channelProduct.protocol};`,
 	'X-GNOME-UsesNotifications': 'true',
 };
 const linuxDesktopEntryWithActions = {
@@ -1051,7 +1053,7 @@ async function verifyLinuxArtifactContracts(buildResult) {
 module.exports = {
 	appId,
 	productName,
-	copyright: 'Copyright © 2026 Fluxer Platform AB',
+	copyright: product.copyright,
 	// biome-ignore lint/suspicious/noTemplateCurlyInString: electron-builder placeholders, not JS template literals.
 	artifactName: '${productName}-${version}-${os}-${arch}.${ext}',
 	directories: {
@@ -1073,6 +1075,8 @@ module.exports = {
 	extraMetadata: {
 		main: 'dist/main/index.js',
 		name: metadataName,
+		homepage: product.homepageUrl,
+		author: product.companyName,
 		...(Boolean(process.env.VERSION) ? {version: process.env.VERSION} : {}),
 		...(targetPlatform === 'linux' ? {desktopName: `${linuxPackageName}.desktop`} : {}),
 	},
@@ -1173,7 +1177,7 @@ module.exports = {
 		{
 			name: appId,
 			role: 'Viewer',
-			schemes: ['fluxer'],
+			schemes: [channelProduct.protocol],
 		},
 	],
 	beforePack: verifyNativePackageInputs,
@@ -1189,8 +1193,8 @@ module.exports = {
 		darkModeSupport: true,
 		hardenedRuntime: true,
 		gatekeeperAssess: false,
-		notarize: true,
-		provisioningProfile,
+		notarize: notarizeMacBuild,
+		...(provisioningProfile ? {provisioningProfile} : {}),
 		entitlements: isCanary
 			? 'build_resources/entitlements.mac.canary.plist'
 			: 'build_resources/entitlements.mac.stable.plist',
@@ -1206,11 +1210,11 @@ module.exports = {
 			},
 		],
 		extendInfo: {
-			NSMicrophoneUsageDescription: 'Fluxer needs access to your microphone to enable voice chat features.',
-			NSCameraUsageDescription: 'Fluxer needs access to your camera to enable video chat features.',
-			NSAppleEventsUsageDescription: 'Fluxer needs access to Apple Events for automation features.',
-			NSAudioCaptureUsageDescription: 'Fluxer captures audio from the screen or window you choose to share.',
-			NSScreenCaptureUsageDescription: 'Fluxer captures the screen or window you choose to share.',
+			NSMicrophoneUsageDescription: 'Porch needs access to your microphone to enable voice chat features.',
+			NSCameraUsageDescription: 'Porch needs access to your camera to enable video chat features.',
+			NSAppleEventsUsageDescription: 'Porch needs access to Apple Events for automation features.',
+			NSAudioCaptureUsageDescription: 'Porch captures audio from the screen or window you choose to share.',
+			NSScreenCaptureUsageDescription: 'Porch captures the screen or window you choose to share.',
 		},
 	},
 	dmg: {

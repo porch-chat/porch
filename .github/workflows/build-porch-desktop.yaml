@@ -1,0 +1,251 @@
+name: build Porch desktop
+
+on:
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: Porch release channel
+        required: true
+        type: choice
+        options:
+          - canary
+          - stable
+        default: canary
+  push:
+    branches:
+      - canary
+    paths:
+      - ".github/workflows/build-porch-desktop.yaml"
+      - "fluxer_desktop/**"
+      - "packages/voice_engine_v2/**"
+      - "tools/ci/**"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: porch-desktop-${{ github.event_name == 'workflow_dispatch' && inputs.channel || 'canary' }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate Porch distribution contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout Porch source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9
+        with:
+          toolchain: "1.93.0"
+
+      - name: Validate product contract
+        working-directory: fluxer_desktop
+        run: node scripts/validate-porch-product.mjs
+
+      - name: Test desktop release helpers
+        run: cargo test --locked --manifest-path tools/ci/Cargo.toml desktop::tests
+
+      - name: Ensure active desktop workflow has no Fluxer release target
+        working-directory: fluxer_desktop
+        run: node scripts/validate-porch-workflow.mjs
+
+  windows:
+    name: Windows x64 (${{ github.event_name == 'workflow_dispatch' && inputs.channel || 'canary' }})
+    needs: validate
+    runs-on: windows-2025
+    timeout-minutes: 120
+    env:
+      CHANNEL: ${{ github.event_name == 'workflow_dispatch' && inputs.channel || 'canary' }}
+      BUILD_CHANNEL: ${{ github.event_name == 'workflow_dispatch' && inputs.channel || 'canary' }}
+      RELEASE_CHANNEL: ${{ github.event_name == 'workflow_dispatch' && inputs.channel || 'canary' }}
+      PUBLIC_RELEASE_CHANNEL: ${{ github.event_name == 'workflow_dispatch' && inputs.channel || 'canary' }}
+      PLATFORM: windows
+      ARCH: x64
+      ELECTRON_ARCH: x64
+      DESKTOP_PLATFORM: windows
+      DESKTOP_ARCH: x64
+      DESKTOP_VARIANT: default
+      FLUXER_DESKTOP_BUILD_VARIANT: default
+      FLUXER_WINDOWS_GAME_CAPTURE_MODULE_ENABLED: "false"
+    steps:
+      - name: Checkout Porch CI helpers
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          path: _ci
+
+      - name: Checkout Porch source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          path: source
+
+      - name: Set build metadata
+        shell: pwsh
+        run: |
+          $now = (Get-Date).ToUniversalTime()
+          $version = "$($now.ToString('yyyy.Mdd')).$([int]$now.ToString('HHmmss'))"
+          "VERSION=$version" >> $env:GITHUB_ENV
+          "BUILD_VERSION=$version" >> $env:GITHUB_ENV
+          "PUBLIC_BUILD_VERSION=$version" >> $env:GITHUB_ENV
+          "PUB_DATE=$($now.ToString('o'))" >> $env:GITHUB_ENV
+          "SOURCE_SHA=${{ github.sha }}" >> $env:GITHUB_ENV
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9
+        with:
+          toolchain: "1.93.0"
+
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.13"
+
+      - name: Ensure python3 command
+        run: >-
+          cargo run --locked --quiet --manifest-path
+          ${{ github.workspace }}/_ci/tools/ci/Cargo.toml --
+          build-desktop --step ensure_python3_windows
+
+      - name: Shorten paths
+        env:
+          SUBST_TARGET: ${{ github.workspace }}/source
+        run: >-
+          cargo run --locked --quiet --manifest-path
+          ${{ github.workspace }}/_ci/tools/ci/Cargo.toml --
+          build-desktop --step windows_paths
+
+      - name: Set up Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        with:
+          node-version: 24
+
+      - name: Set up pnpm
+        run: >-
+          cargo run --locked --quiet --manifest-path
+          ${{ github.workspace }}/_ci/tools/ci/Cargo.toml --
+          build-desktop --step setup_pnpm_corepack
+
+      - name: Resolve pnpm store
+        run: >-
+          cargo run --locked --quiet --manifest-path
+          ${{ github.workspace }}/_ci/tools/ci/Cargo.toml --
+          build-desktop --step resolve_pnpm_store_windows
+
+      - name: Cache pnpm store
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: ${{ env.PNPM_STORE_PATH }}
+          key: windows-x64-porch-desktop-${{ hashFiles('source/**/pnpm-lock.yaml') }}
+          restore-keys: windows-x64-porch-desktop-
+
+      - name: Set up MSVC
+        uses: TheMrMilchmann/setup-msvc-dev@79dac248aac9d0059f86eae9d8b5bfab4e95e97c
+        with:
+          arch: amd64
+
+      - name: Install Rust Windows targets
+        run: >-
+          cargo run --locked --quiet --manifest-path
+          ${{ github.workspace }}/_ci/tools/ci/Cargo.toml --
+          build-desktop --step install_rust_windows_targets
+
+      - name: Install dependencies
+        working-directory: ${{ env.WORKDIR }}/fluxer_desktop
+        run: >-
+          cargo run --locked --quiet --manifest-path
+          ${{ github.workspace }}/_ci/tools/ci/Cargo.toml --
+          build-desktop --step install_dependencies
+
+      - name: Update package version
+        working-directory: ${{ env.WORKDIR }}/fluxer_desktop
+        run: >-
+          cargo run --locked --quiet --manifest-path
+          ${{ github.workspace }}/_ci/tools/ci/Cargo.toml --
+          build-desktop --step update_version
+
+      - name: Set release channel
+        working-directory: ${{ env.WORKDIR }}/fluxer_desktop
+        run: >-
+          cargo run --locked --quiet --manifest-path
+          ${{ github.workspace }}/_ci/tools/ci/Cargo.toml --
+          build-desktop --step set_build_channel
+
+      - name: Build Electron runtime
+        working-directory: ${{ env.WORKDIR }}/fluxer_desktop
+        run: >-
+          cargo run --locked --quiet --manifest-path
+          ${{ github.workspace }}/_ci/tools/ci/Cargo.toml --
+          build-desktop --step build_electron_main
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Install Velopack
+        working-directory: ${{ env.WORKDIR }}/fluxer_desktop
+        run: >-
+          cargo run --locked --quiet --manifest-path
+          ${{ github.workspace }}/_ci/tools/ci/Cargo.toml --
+          build-desktop --step install_velopack_cli
+
+      - name: Build unpacked application
+        working-directory: ${{ env.WORKDIR }}/fluxer_desktop
+        env:
+          TEMP: C:\t
+          TMP: C:\t
+          ELECTRON_BUILDER_CACHE: C:\ebcache
+        run: >-
+          cargo run --locked --quiet --manifest-path
+          ${{ github.workspace }}/_ci/tools/ci/Cargo.toml --
+          build-desktop --step build_app_windows
+
+      - name: Package Velopack installer
+        working-directory: ${{ env.WORKDIR }}/fluxer_desktop
+        run: >-
+          cargo run --locked --quiet --manifest-path
+          ${{ github.workspace }}/_ci/tools/ci/Cargo.toml --
+          build-desktop --step package_app_windows_velopack
+
+      - name: Check Windows path budget
+        working-directory: ${{ env.WORKDIR }}/fluxer_desktop
+        env:
+          MAX_WINDOWS_PATH_LEN: "260"
+          PATH_HEADROOM: "10"
+        run: >-
+          cargo run --locked --quiet --manifest-path
+          ${{ github.workspace }}/_ci/tools/ci/Cargo.toml --
+          build-desktop --step analyse_velopack_paths
+
+      - name: Create portable archive
+        working-directory: ${{ env.WORKDIR }}/fluxer_desktop
+        run: >-
+          cargo run --locked --quiet --manifest-path
+          ${{ github.workspace }}/_ci/tools/ci/Cargo.toml --
+          build-desktop --step create_portable_zip_windows
+
+      - name: Stage release files
+        working-directory: ${{ env.WORKDIR }}/fluxer_desktop
+        run: >-
+          cargo run --locked --quiet --manifest-path
+          ${{ github.workspace }}/_ci/tools/ci/Cargo.toml --
+          build-desktop --step prepare_artifacts_windows
+
+      - name: Generate checksums
+        working-directory: ${{ env.WORKDIR }}/fluxer_desktop
+        run: >-
+          cargo run --locked --quiet --manifest-path
+          ${{ github.workspace }}/_ci/tools/ci/Cargo.toml --
+          build-desktop --step generate_checksums_windows
+
+      - name: Upload unsigned Porch artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: porch-desktop-${{ env.BUILD_CHANNEL }}-windows-x64-${{ env.VERSION }}
+          path: ${{ env.WORKDIR }}/fluxer_desktop/upload_staging
+          if-no-files-found: error
+          retention-days: 14

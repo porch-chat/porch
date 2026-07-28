@@ -1,4 +1,4 @@
-name: build desktop
+name: upstream build desktop (disabled reference)
 
 on:
   workflow_dispatch:

@@ -1,0 +1,35 @@
+{
+	"schemaVersion": 1,
+	"brandName": "Porch",
+	"companyName": "Porch",
+	"homepageUrl": "https://porch.chat",
+	"repositoryUrl": "https://github.com/porch-chat/porch",
+	"issuesUrl": "https://github.com/porch-chat/porch/issues",
+	"downloadPageUrl": "https://porch.chat/download",
+	"updateBaseUrl": "https://releases.porch.chat/desktop",
+	"copyright": "Copyright © 2026 Porch",
+	"channels": {
+		"stable": {
+			"appName": "Porch",
+			"defaultAppUrl": "https://app.porch.chat",
+			"protocol": "porch",
+			"appId": "chat.porch.desktop",
+			"packageName": "porch_desktop",
+			"linuxPackageName": "porch",
+			"userDataDirectory": "porch",
+			"windowsAppUserModelId": "Porch.Porch",
+			"windowsToastActivatorClsid": "{36DBE988-6AB3-47C2-920A-DC5C4444CE36}"
+		},
+		"canary": {
+			"appName": "Porch Canary",
+			"defaultAppUrl": "https://canary.porch.chat",
+			"protocol": "porch-canary",
+			"appId": "chat.porch.desktop.canary",
+			"packageName": "porch_desktop_canary",
+			"linuxPackageName": "porch-canary",
+			"userDataDirectory": "porchcanary",
+			"windowsAppUserModelId": "Porch.Porch.Canary",
+			"windowsToastActivatorClsid": "{972A5313-7B12-4D0C-A11A-ED799889D6DA}"
+		}
+	}
+}

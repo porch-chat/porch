@@ -1,9 +1,9 @@
 {
 	"name": "fluxer_desktop",
 	"version": "0.0.0",
-	"description": "Instant messaging and VoIP application",
-	"homepage": "https://fluxer.app",
-	"author": "Fluxer Platform AB <support@fluxer.app>",
+	"description": "Private communication for close friends",
+	"homepage": "https://porch.chat",
+	"author": "Porch",
 	"license": "AGPL-3.0-or-later",
 	"private": true,
 	"type": "module",
@@ -11,6 +11,7 @@
 	"scripts": {
 		"build": "node scripts/build.mjs",
 		"set-channel": "cargo run --manifest-path ../tools/ci/Cargo.toml -- build-desktop --step set_build_channel",
+		"validate:porch": "node scripts/validate-porch-product.mjs && node scripts/validate-porch-workflow.mjs",
 		"test": "cargo test --manifest-path native/rust/Cargo.toml",
 		"typecheck": "tsgo --noEmit",
 		"test:native-media": "node scripts/native-media-integration.mjs",
