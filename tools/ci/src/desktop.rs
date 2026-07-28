@@ -674,8 +674,16 @@ fn workspace_dir() -> PathBuf {
 
 fn workdir() -> PathBuf {
     env::var("WORKDIR")
-        .map(PathBuf::from)
+        .map(|value| normalize_workdir_value(&value))
         .unwrap_or_else(|_| workspace_dir())
+}
+
+fn normalize_workdir_value(value: &str) -> PathBuf {
+    let bytes = value.as_bytes();
+    if bytes.len() == 2 && bytes[0].is_ascii_alphabetic() && bytes[1] == b':' {
+        return PathBuf::from(format!("{value}\\"));
+    }
+    PathBuf::from(value)
 }
 
 fn desktop_dist_dir() -> PathBuf {
@@ -3803,6 +3811,19 @@ export const CHANNEL_DISPLAY_NAME = BUILD_CHANNEL;\n"
         assert_eq!(canary.pack_id, "porch_desktop_canary");
         assert_eq!(canary.runtime, "win-arm64");
         assert_eq!(canary.main_exe, "Porch Canary.exe");
+    }
+
+    #[test]
+    fn workdir_normalization_makes_windows_drive_roots_absolute() {
+        assert_eq!(normalize_workdir_value("W:").to_string_lossy(), r"W:\");
+        assert_eq!(
+            normalize_workdir_value(r"W:\source").to_string_lossy(),
+            r"W:\source"
+        );
+        assert_eq!(
+            normalize_workdir_value("/workspace").to_string_lossy(),
+            "/workspace"
+        );
     }
 
     #[test]

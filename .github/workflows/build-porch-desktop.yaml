@@ -72,6 +72,7 @@ jobs:
       DESKTOP_VARIANT: default
       FLUXER_DESKTOP_BUILD_VARIANT: default
       FLUXER_WINDOWS_GAME_CAPTURE_MODULE_ENABLED: "false"
+      CARGO_TARGET_DIR: C:\porch-cargo-target
     steps:
       - name: Checkout Porch CI helpers
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
@@ -98,6 +99,16 @@ jobs:
         uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9
         with:
           toolchain: "1.93.0"
+
+      - name: Cache Rust and native desktop builds
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            C:\porch-cargo-target
+          key: windows-x64-porch-cargo-v1-${{ hashFiles('_ci/tools/ci/Cargo.lock', '_ci/tools/ci/**/*.rs', 'source/fluxer_desktop/native/**/Cargo.lock', 'source/fluxer_desktop/native/**/Cargo.toml', 'source/fluxer_desktop/native/**/*.rs') }}
+          restore-keys: windows-x64-porch-cargo-v1-
 
       - name: Set up Python
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
