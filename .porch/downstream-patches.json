@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "upstream_base": "21a898e602bb263d98acf472a8b484a6785e3e39",
+  "patches": [
+    {
+      "id": "porch-governance-0001",
+      "title": "Porch downstream governance and AI disclosure",
+      "status": "active",
+      "category": "governance",
+      "reason": "Identify the public Porch distribution, preserve upstream policy, and make all future divergence auditable.",
+      "paths": [
+        ".github/pull_request_template.md",
+        ".porch/downstream-patches.json",
+        ".porch/upstream-lock.json",
+        "AGENTS.md",
+        "PORCH.md",
+        "docs/porch/RELEASE_CHANNELS.md"
+      ],
+      "tests": [
+        "JSON manifests parse",
+        "git diff --check",
+        "remote and ancestry verification"
+      ],
+      "conflict_risk": "low",
+      "upstream_status": "permanently-downstream",
+      "removal_condition": "Remove only if Porch ceases to be a downstream distribution."
+    }
+  ]
+}
