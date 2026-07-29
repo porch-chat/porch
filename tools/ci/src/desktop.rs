@@ -1174,11 +1174,8 @@ fn windows_installer_process_running() -> Result<bool> {
 
 fn install_rust_windows_targets_step() -> Result<()> {
     let arch = require_env("ARCH")?;
-    let target = if arch == "arm64" {
-        "aarch64-pc-windows-msvc"
-    } else {
-        "x86_64-pc-windows-msvc"
-    };
+    let game_capture_enabled = env_bool("FLUXER_WINDOWS_GAME_CAPTURE_MODULE_ENABLED")
+        || env_string("DESKTOP_VARIANT").as_deref() == Some(WINDOWS_GAME_CAPTURE_DESKTOP_VARIANT);
     run_command(CommandSpec::new("rustup").args([
         "toolchain",
         "install",
@@ -1186,27 +1183,13 @@ fn install_rust_windows_targets_step() -> Result<()> {
         "--profile",
         "minimal",
     ]))?;
-    run_command(CommandSpec::new("rustup").args([
-        "target",
-        "add",
-        "--toolchain",
-        RUST_TOOLCHAIN,
-        target,
-    ]))?;
-    if arch == "x64" {
+    for target in rust_windows_targets(&arch, game_capture_enabled) {
         run_command(CommandSpec::new("rustup").args([
             "target",
             "add",
             "--toolchain",
             RUST_TOOLCHAIN,
-            "i686-pc-windows-msvc",
-        ]))?;
-        run_command(CommandSpec::new("rustup").args([
-            "target",
-            "add",
-            "--toolchain",
-            RUST_TOOLCHAIN,
-            "aarch64-pc-windows-msvc",
+            target,
         ]))?;
     }
     if let Ok(user_profile) = env::var("USERPROFILE") {
@@ -1216,6 +1199,22 @@ fn install_rust_windows_targets_step() -> Result<()> {
         }
     }
     run_command(CommandSpec::new("cargo").arg("--version"))
+}
+
+fn rust_windows_targets(arch: &str, game_capture_enabled: bool) -> &'static [&'static str] {
+    const X64: &[&str] = &["x86_64-pc-windows-msvc"];
+    const X64_GAME_CAPTURE: &[&str] = &[
+        "x86_64-pc-windows-msvc",
+        "i686-pc-windows-msvc",
+        "aarch64-pc-windows-msvc",
+    ];
+    const ARM64: &[&str] = &["aarch64-pc-windows-msvc"];
+
+    match (arch, game_capture_enabled) {
+        ("arm64", _) => ARM64,
+        ("x64", true) => X64_GAME_CAPTURE,
+        _ => X64,
+    }
 }
 
 fn build_electron_main_step() -> Result<()> {
@@ -3382,6 +3381,30 @@ mod tests {
             fs::create_dir_all(parent).unwrap();
         }
         fs::write(path, contents).unwrap();
+    }
+
+    #[test]
+    fn windows_rust_targets_only_include_cross_arches_for_x64_game_capture() {
+        assert_eq!(
+            rust_windows_targets("x64", false),
+            &["x86_64-pc-windows-msvc"]
+        );
+        assert_eq!(
+            rust_windows_targets("x64", true),
+            &[
+                "x86_64-pc-windows-msvc",
+                "i686-pc-windows-msvc",
+                "aarch64-pc-windows-msvc",
+            ]
+        );
+        assert_eq!(
+            rust_windows_targets("arm64", false),
+            &["aarch64-pc-windows-msvc"]
+        );
+        assert_eq!(
+            rust_windows_targets("arm64", true),
+            &["aarch64-pc-windows-msvc"]
+        );
     }
 
     #[test]
