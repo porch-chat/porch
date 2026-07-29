@@ -2,19 +2,15 @@
 
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import {createRequire} from 'node:module';
 import os from 'node:os';
 import path from 'node:path';
-import {createRequire} from 'node:module';
 
 const require = createRequire(import.meta.url);
 const velopackPackage = require('velopack/package.json');
 const {VelopackApp} = require('velopack');
 
-assert.equal(
-	velopackPackage.version,
-	'1.2.0',
-	'The runtime smoke must track the pinned stable Velopack release.',
-);
+assert.equal(velopackPackage.version, '1.2.0', 'The runtime smoke must track the pinned stable Velopack release.');
 
 const nodeMajor = Number.parseInt(process.versions.node.split('.')[0] ?? '', 10);
 assert.ok(

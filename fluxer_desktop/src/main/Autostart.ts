@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import {execFileSync} from 'node:child_process';
 import fs from 'node:fs';
 import {createRequire} from 'node:module';
 import os from 'node:os';
@@ -209,6 +210,17 @@ export function disableWindowsAutostartForUninstall(): void {
 				args: config.args,
 				error,
 			});
+		}
+	}
+	for (const name of getWindowsLoginItemNames()) {
+		try {
+			execFileSync(
+				'reg.exe',
+				['delete', 'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run', '/v', name, '/f'],
+				{stdio: 'ignore', windowsHide: true},
+			);
+		} catch {
+			// A missing value is already the desired uninstall state.
 		}
 	}
 }
