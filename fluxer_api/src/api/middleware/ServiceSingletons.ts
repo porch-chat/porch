@@ -164,11 +164,19 @@ function createEmailServiceForConfig(
 }
 
 function createRuntimeEmailService(bouncedEmailChecker: UserBouncedEmailChecker): IEmailService {
-	const emailI18n = new EmailI18nService();
 	return new Proxy({} as IEmailService, {
 		get(_target, property) {
 			return async (...args: Array<unknown>): Promise<boolean> => {
-				const emailConfig = await getInstanceConfigRepository().getEffectiveEmailConfig();
+				const instanceConfigRepository = getInstanceConfigRepository();
+				const [emailConfig, appPublicConfig] = await Promise.all([
+					instanceConfigRepository.getEffectiveEmailConfig(),
+					instanceConfigRepository.getAppPublicConfig(),
+				]);
+				const emailI18n = new EmailI18nService({
+					product_name: appPublicConfig.branding.product_name,
+					appeals_email: 'admin@porch.chat',
+					safety_email: 'admin@porch.chat',
+				});
 				const delegate = createEmailServiceForConfig(emailConfig, bouncedEmailChecker, emailI18n);
 				const method = delegate[property as keyof IEmailService];
 				if (typeof method !== 'function') {

@@ -185,6 +185,29 @@
 			"conflict_risk": "low",
 			"upstream_status": "downstream-until-configurable",
 			"removal_condition": "Remove after upstream exposes an independent additional API CORS origins setting."
+		},
+		{
+			"id": "porch-email-branding-0006",
+			"title": "Runtime Porch branding for transactional email",
+			"status": "active",
+			"category": "branding",
+			"reason": "Prevent transactional email and report-system messages from leaking upstream product and contact identities.",
+			"paths": [
+				"fluxer_api/pkgs/email/src/EmailI18nService.ts",
+				"fluxer_api/pkgs/email/src/email_i18n/EmailI18n.ts",
+				"fluxer_api/pkgs/email/src/email_i18n/EmailI18nLocaleFiles.test.ts",
+				"fluxer_api/src/api/middleware/ServiceSingletons.ts"
+			],
+			"tests": [
+				"Email i18n unit tests",
+				"Email package typecheck",
+				"API typecheck",
+				"Porch branding validation",
+				"git diff --check"
+			],
+			"conflict_risk": "low",
+			"upstream_status": "permanently-downstream",
+			"removal_condition": "Remove only if upstream makes transactional email branding and contact identity fully instance-configurable."
 		}
 	]
 }

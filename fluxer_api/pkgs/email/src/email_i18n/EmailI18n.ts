@@ -9,11 +9,17 @@ import {EMAIL_I18N_MESSAGES} from '@pkgs/email/src/email_i18n/EmailI18nMessages'
 import type {EmailTemplate, EmailTemplateKey} from '@pkgs/email/src/email_i18n/EmailI18nTypes.generated';
 
 const DEFAULT_LOCALE = 'en-US';
-const DEFAULT_EMAIL_TEMPLATE_VARIABLES = {
-	product_name: 'Fluxer',
-	appeals_email: 'appeals@fluxer.app',
-	safety_email: 'safety@fluxer.app',
-} satisfies Record<string, string>;
+export interface EmailTemplateBranding {
+	product_name: string;
+	appeals_email: string;
+	safety_email: string;
+}
+
+export const DEFAULT_EMAIL_TEMPLATE_BRANDING = {
+	product_name: 'Porch',
+	appeals_email: 'admin@porch.chat',
+	safety_email: 'admin@porch.chat',
+} satisfies EmailTemplateBranding;
 const emailI18n = createStaticI18n<EmailTemplateKey, EmailTemplate, Record<string, unknown>>(
 	{
 		defaultLocale: DEFAULT_LOCALE,
@@ -44,8 +50,9 @@ export function getEmailTemplate(
 	templateKey: EmailTemplateKey,
 	locale: string | null,
 	variables: Record<string, unknown>,
+	branding: EmailTemplateBranding = DEFAULT_EMAIL_TEMPLATE_BRANDING,
 ): I18nResult<EmailTemplateKey, EmailTemplate> {
-	return emailI18n.getTemplate(templateKey, locale, {...DEFAULT_EMAIL_TEMPLATE_VARIABLES, ...variables});
+	return emailI18n.getTemplate(templateKey, locale, {...branding, ...variables});
 }
 
 export function resetEmailI18n(): void {
