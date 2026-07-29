@@ -108,6 +108,45 @@
 			"conflict_risk": "medium",
 			"upstream_status": "permanently-downstream",
 			"removal_condition": "Remove after upstream independently ships equivalent READY timeout, stale-shell protection, and user-visible bootstrap recovery."
+		},
+		{
+			"id": "porch-branding-0004",
+			"title": "Complete Porch client and package branding",
+			"status": "active",
+			"category": "branding",
+			"reason": "Prevent empty runtime branding URLs and stale packaged assets from exposing Fluxer logos on Porch web, PWA, desktop, tray, installer, and Linux metadata surfaces.",
+			"paths": [
+				".github/workflows/build-porch-app-proxy.yaml",
+				".github/workflows/build-porch-desktop.yaml",
+				"docs/porch/BRANDING.md",
+				"fluxer_app/index.html",
+				"fluxer_app/scripts/build/rspack/static-files.mjs",
+				"fluxer_app/src/features/app/config/ProductConstants.ts",
+				"fluxer_app/src/features/app/state/RuntimeConfig.ts",
+				"fluxer_app/src/features/ui/components/icons",
+				"fluxer_app/src/media/images/porch-icon.svg",
+				"fluxer_app/src/media/images/porch-symbol.svg",
+				"fluxer_desktop/build_resources/icons-canary",
+				"fluxer_desktop/build_resources/icons-stable",
+				"fluxer_desktop/build_resources/porch",
+				"fluxer_desktop/electron-builder.config.cjs",
+				"fluxer_desktop/packaging/linux",
+				"fluxer_desktop/scripts/generate-porch-icons.ps1",
+				"fluxer_static/web",
+				"fluxer_static/marketing/branding",
+				"README.md",
+				"scripts/validate-porch-branding.mjs"
+			],
+			"tests": [
+				"Porch branding contract validation",
+				"app TypeScript typecheck and production build",
+				"desktop product and workflow isolation validation",
+				"Stable and Canary packaged branding inspection",
+				"production Stable and Canary visual smoke"
+			],
+			"conflict_risk": "medium",
+			"upstream_status": "permanently-downstream",
+			"removal_condition": "Remove only if Porch stops distributing branded clients or upstream provides an equivalent compile-time self-host branding contract."
 		}
 	]
 }

@@ -67,6 +67,9 @@ jobs:
         working-directory: fluxer_desktop
         run: node scripts/validate-porch-product.mjs
 
+      - name: Validate Porch branding contract
+        run: node scripts/validate-porch-branding.mjs
+
       - name: Test desktop build orchestration
         working-directory: fluxer_desktop
         run: node --test scripts/ci-helper-command.test.mjs

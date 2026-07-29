@@ -1,12 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import RuntimeConfig, {DEFAULT_APP_PUBLIC_CONFIG} from '@app/features/app/state/RuntimeConfig';
-import FluxerWordmarkMonochromeAsset from '@app/media/images/fluxer-logo-wordmark-monochrome.svg?react';
-import FluxerWordmarkAsset from '@app/media/images/fluxer-wordmark.svg?react';
+import RuntimeConfig from '@app/features/app/state/RuntimeConfig';
 import {msg} from '@lingui/core/macro';
 import {useLingui} from '@lingui/react/macro';
 import {observer} from 'mobx-react-lite';
-import type React from 'react';
 import {type BrandSvgProps, getDataFlx, getImageSizingProps} from './BrandImageUtils';
 
 const APPLICATION_WORDMARK_DESCRIPTOR = msg({
@@ -32,26 +29,27 @@ export const FluxerWordmark = observer(({variant = 'default', ...props}: FluxerW
 			/>
 		);
 	}
-	if (productName !== DEFAULT_APP_PUBLIC_CONFIG.branding.product_name) {
-		const style: React.CSSProperties = {
-			...(props.style as React.CSSProperties | undefined),
-			alignItems: 'center',
-			display: 'inline-flex',
-			fontWeight: 800,
-			lineHeight: 1,
-		};
-		return (
-			<span
-				className={props.className}
-				style={style}
-				role="img"
-				aria-label={ariaLabel}
-				data-flx={getDataFlx(props, 'ui.icons.fluxer-wordmark.text')}
+	return (
+		<svg
+			xmlns="http://www.w3.org/2000/svg"
+			viewBox="0 0 92 32"
+			role="img"
+			aria-label={ariaLabel}
+			data-variant={variant}
+			data-flx={getDataFlx(props, 'ui.icons.fluxer-wordmark.text')}
+			{...props}
+		>
+			<text
+				x="0"
+				y="25"
+				fill="currentColor"
+				fontFamily="'IBM Plex Sans', system-ui, sans-serif"
+				fontSize="30"
+				fontWeight="700"
+				letterSpacing="-0.8"
 			>
 				{productName}
-			</span>
-		);
-	}
-	const Asset = variant === 'monochrome' ? FluxerWordmarkMonochromeAsset : FluxerWordmarkAsset;
-	return <Asset role="img" aria-label={ariaLabel} {...props} />;
+			</text>
+		</svg>
+	);
 });

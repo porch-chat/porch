@@ -1192,7 +1192,7 @@ module.exports = {
 	mac: {
 		category: 'public.app-category.social-networking',
 		minimumSystemVersion: macOSMinimumSystemVersion,
-		icon: `build_resources/${iconDir}/_compiled/AppIcon.icns`,
+		icon: `build_resources/${iconDir}/icon.png`,
 		darkModeSupport: true,
 		hardenedRuntime: true,
 		gatekeeperAssess: false,

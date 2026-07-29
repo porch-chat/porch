@@ -12,14 +12,13 @@ function resolveStaticCdnEndpoint(staticCdnEndpoint) {
 function generateManifest(staticCdnEndpoint) {
 	const cdn = resolveStaticCdnEndpoint(staticCdnEndpoint);
 	const manifest = {
-		name: 'Fluxer',
-		short_name: 'Fluxer',
-		description:
-			'Fluxer is a free and open source instant messaging and VoIP platform built for friends, groups, and communities.',
+		name: 'Porch',
+		short_name: 'Porch',
+		description: 'Porch is a close-friends communication app for messaging, voice, video, and screen sharing.',
 		start_url: '/',
 		display: 'standalone',
 		orientation: 'portrait-primary',
-		theme_color: '#4641D9',
+		theme_color: '#14B8A6',
 		background_color: '#2b2d31',
 		categories: ['social', 'communication'],
 		lang: 'en',
@@ -65,7 +64,7 @@ function generateBrowserConfig(staticCdnEndpoint) {
   <msapplication>
     <tile>
       <square150x150logo src="${cdn}/web/mstile-150x150.png"/>
-      <TileColor>#4641D9</TileColor>
+      <TileColor>#14B8A6</TileColor>
     </tile>
   </msapplication>
 </browserconfig>`;

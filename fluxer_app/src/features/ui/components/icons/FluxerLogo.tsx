@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import RuntimeConfig from '@app/features/app/state/RuntimeConfig';
-import FluxerLogoAsset from '@app/media/images/fluxer-logo-color.svg?react';
+import PorchIconAsset from '@app/media/images/porch-icon.svg?react';
 import {msg} from '@lingui/core/macro';
 import {useLingui} from '@lingui/react/macro';
 import {observer} from 'mobx-react-lite';
@@ -25,5 +25,12 @@ export const FluxerLogo = observer((props: BrandSvgProps) => {
 			/>
 		);
 	}
-	return <FluxerLogoAsset role="img" aria-label={ariaLabel} {...props} />;
+	return (
+		<PorchIconAsset
+			role="img"
+			aria-label={ariaLabel}
+			data-flx={getDataFlx(props, 'ui.icons.fluxer-logo.svg')}
+			{...props}
+		/>
+	);
 });
