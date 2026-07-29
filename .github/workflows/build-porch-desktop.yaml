@@ -34,9 +34,29 @@ jobs:
     name: Validate Porch distribution contract
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    outputs:
+      version: ${{ steps.metadata.outputs.version }}
+      pub_date: ${{ steps.metadata.outputs.pub_date }}
+      source_sha: ${{ steps.metadata.outputs.source_sha }}
     steps:
       - name: Checkout Porch source
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+      - name: Set build metadata
+        id: metadata
+        shell: bash
+        run: |
+          now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          year="$(date -u +%Y)"
+          month="$((10#$(date -u +%m)))"
+          day="$(date -u +%d)"
+          clock="$((10#$(date -u +%H%M%S)))"
+          version="${year}.${month}${day}.${clock}"
+          {
+            echo "version=$version"
+            echo "pub_date=$now"
+            echo "source_sha=${{ github.sha }}"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9
@@ -78,6 +98,11 @@ jobs:
       FLUXER_WINDOWS_GAME_CAPTURE_MODULE_ENABLED: "false"
       FLUXER_CI_MANIFEST_PATH: ${{ github.workspace }}\_ci\tools\ci\Cargo.toml
       CARGO_TARGET_DIR: C:\porch-cargo-target
+      VERSION: ${{ needs.validate.outputs.version }}
+      BUILD_VERSION: ${{ needs.validate.outputs.version }}
+      PUBLIC_BUILD_VERSION: ${{ needs.validate.outputs.version }}
+      PUB_DATE: ${{ needs.validate.outputs.pub_date }}
+      SOURCE_SHA: ${{ needs.validate.outputs.source_sha }}
     steps:
       - name: Checkout Porch CI helpers
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
@@ -88,17 +113,6 @@ jobs:
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
           path: source
-
-      - name: Set build metadata
-        shell: pwsh
-        run: |
-          $now = (Get-Date).ToUniversalTime()
-          $version = "$($now.ToString('yyyy.Mdd')).$([int]$now.ToString('HHmmss'))"
-          "VERSION=$version" >> $env:GITHUB_ENV
-          "BUILD_VERSION=$version" >> $env:GITHUB_ENV
-          "PUBLIC_BUILD_VERSION=$version" >> $env:GITHUB_ENV
-          "PUB_DATE=$($now.ToString('o'))" >> $env:GITHUB_ENV
-          "SOURCE_SHA=${{ github.sha }}" >> $env:GITHUB_ENV
 
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9
@@ -314,6 +328,11 @@ jobs:
       PORCH_UNSIGNED_DESKTOP_BUILD: "true"
       FLUXER_CI_MANIFEST_PATH: ${{ github.workspace }}/_ci/tools/ci/Cargo.toml
       CARGO_TARGET_DIR: ${{ github.workspace }}/.porch-cargo-target
+      VERSION: ${{ needs.validate.outputs.version }}
+      BUILD_VERSION: ${{ needs.validate.outputs.version }}
+      PUBLIC_BUILD_VERSION: ${{ needs.validate.outputs.version }}
+      PUB_DATE: ${{ needs.validate.outputs.pub_date }}
+      SOURCE_SHA: ${{ needs.validate.outputs.source_sha }}
     steps:
       - name: Checkout Porch CI helpers
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
@@ -324,23 +343,6 @@ jobs:
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
           path: source
-
-      - name: Set build metadata
-        shell: bash
-        run: |
-          now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          year="$(date -u +%Y)"
-          month="$((10#$(date -u +%m)))"
-          day="$(date -u +%d)"
-          clock="$(date -u +%H%M%S)"
-          version="${year}.${month}${day}.${clock}"
-          {
-            echo "VERSION=$version"
-            echo "BUILD_VERSION=$version"
-            echo "PUBLIC_BUILD_VERSION=$version"
-            echo "PUB_DATE=$now"
-            echo "SOURCE_SHA=${{ github.sha }}"
-          } >> "$GITHUB_ENV"
 
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9
