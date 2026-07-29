@@ -29,10 +29,10 @@ interface GeneratorSettings {
 function createGeneratorSettings(options: OpenAPIGeneratorOptions): GeneratorSettings {
 	return {
 		basePath: options.basePath,
-		title: options.title ?? 'Fluxer API',
+		title: options.title ?? 'Porch API',
 		version: options.version ?? '1.0.0',
-		description: options.description ?? 'The Fluxer API',
-		serverUrl: options.serverUrl ?? 'https://api.fluxer.app',
+		description: options.description ?? 'The Porch API',
+		serverUrl: options.serverUrl ?? 'https://api.porch.chat/api',
 		routeScope: options.routeScope ?? 'public',
 	};
 }
@@ -80,8 +80,8 @@ export class OpenAPIGenerator {
 				version: this.settings.version,
 				description: this.settings.description,
 				contact: {
-					name: 'Fluxer Platform AB',
-					email: 'support@fluxer.app',
+					name: 'Porch',
+					email: 'admin@porch.chat',
 				},
 				license: {
 					name: 'AGPL-3.0',

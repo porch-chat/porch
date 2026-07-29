@@ -15,6 +15,7 @@ pub struct RuntimeCspSources {
 const FRAME_SOURCES: &[&str] = &[
     "https://www.youtube.com/embed/",
     "https://www.youtube.com/s/player/",
+    "https://challenges.cloudflare.com",
     "https://hcaptcha.com",
     "https://*.hcaptcha.com",
 ];
@@ -36,6 +37,7 @@ const MEDIA_SOURCES: &[&str] = &[
 
 const SCRIPT_SOURCES: &[&str] = &[
     "https://*.fluxer.app",
+    "https://challenges.cloudflare.com",
     "https://hcaptcha.com",
     "https://*.hcaptcha.com",
 ];
@@ -273,6 +275,23 @@ mod tests {
         assert!(csp.contains("object-src 'none'"));
         assert!(csp.contains("base-uri 'self'"));
         assert!(csp.contains("frame-ancestors 'none'"));
+    }
+
+    #[test]
+    fn build_csp_allows_cloudflare_turnstile_script_and_frame() {
+        let config = default_csp_config();
+        let csp = build_csp(&config, "testnonce", &runtime_sources());
+        let script_src = csp
+            .split("; ")
+            .find(|directive| directive.starts_with("script-src "))
+            .expect("script-src directive");
+        let frame_src = csp
+            .split("; ")
+            .find(|directive| directive.starts_with("frame-src "))
+            .expect("frame-src directive");
+
+        assert!(script_src.contains("https://challenges.cloudflare.com"));
+        assert!(frame_src.contains("https://challenges.cloudflare.com"));
     }
 
     #[test]

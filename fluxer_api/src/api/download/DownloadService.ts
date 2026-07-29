@@ -47,7 +47,7 @@ function isUnsatisfiableRangeError(error: unknown): boolean {
 const DESKTOP_BUCKET_PREFIX = 'desktop';
 const DESKTOP_TEST_BUCKET_PREFIX = 'desktop-test';
 const DESKTOP_SOURCE_MANIFEST_KEY = `${DESKTOP_BUCKET_PREFIX}/source/latest.json`;
-const DEFAULT_API_CLIENT_BASE_URL = 'https://api.fluxer.app';
+const DEFAULT_API_CLIENT_BASE_URL = 'https://api.porch.chat/api';
 
 function desktopBucketPrefix(test?: boolean): string {
 	return test ? DESKTOP_TEST_BUCKET_PREFIX : DESKTOP_BUCKET_PREFIX;
@@ -960,7 +960,7 @@ export class DownloadService {
 	}
 
 	private getModernProductName(channel: DesktopChannel): string {
-		return channel === 'canary' ? 'Fluxer Canary' : 'Fluxer';
+		return channel === 'canary' ? 'Porch Canary' : 'Porch';
 	}
 
 	private buildModernArtifactFilename(

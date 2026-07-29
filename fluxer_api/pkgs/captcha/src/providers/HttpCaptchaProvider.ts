@@ -4,7 +4,7 @@ import type {LoggerInterface} from '@fluxer/logger/src/LoggerInterface';
 import type {CaptchaProviderType, ICaptchaProvider, VerifyCaptchaParams} from '@pkgs/captcha/src/ICaptchaProvider';
 import {ms} from 'itty-time';
 
-const DEFAULT_USER_AGENT = 'Mozilla/5.0 (compatible; Fluxerbot/1.0; +https://fluxer.app)';
+const DEFAULT_USER_AGENT = 'Mozilla/5.0 (compatible; PorchBot/1.0; +https://porch.chat)';
 const DEFAULT_TIMEOUT = ms('10 seconds');
 
 export interface HttpCaptchaProviderOptions {

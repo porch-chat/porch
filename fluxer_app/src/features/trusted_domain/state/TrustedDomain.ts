@@ -8,8 +8,8 @@ import {makeAutoObservable} from 'mobx';
 const BUILT_IN_TRUST_PATTERNS = [
 	'fluxer.app',
 	'*.fluxer.app',
-	'fluxerstatus.com',
-	'*.fluxerstatus.com',
+	'porch.chat',
+	'*.porch.chat',
 	'fluxer.gg',
 	'fluxer.gift',
 ] as const;

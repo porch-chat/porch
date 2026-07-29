@@ -55,8 +55,8 @@ export class DonationCheckoutService {
 						price_data: {
 							currency: params.currency,
 							product_data: {
-								name: 'Fluxer Recurring Donation',
-								description: `${params.interval === 'month' ? 'Monthly' : 'Yearly'} donation to support Fluxer`,
+								name: 'Porch Recurring Donation',
+								description: `${params.interval === 'month' ? 'Monthly' : 'Yearly'} donation to support Porch`,
 							},
 							unit_amount: params.amountCents,
 							recurring: {
@@ -69,8 +69,8 @@ export class DonationCheckoutService {
 						price_data: {
 							currency: params.currency,
 							product_data: {
-								name: 'Fluxer Donation',
-								description: 'One-time donation to support Fluxer',
+								name: 'Porch Donation',
+								description: 'One-time donation to support Porch',
 							},
 							unit_amount: params.amountCents,
 						},

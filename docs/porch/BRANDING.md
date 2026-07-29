@@ -25,6 +25,24 @@ invite fallbacks use `porch-pattern.svg`. The upstream purple palette,
 food-pattern artwork, and `fluxer.app` instance example are user-visible
 branding leaks and are rejected by the branding guard.
 
+Public identity is Porch across more than artwork. The same guard covers the
+developer applications documentation link, generated public and admin OpenAPI
+metadata, support and localization contacts, status/help navigation, setup
+defaults, push and system-user fallbacks, checkout labels, and API error
+messages. Protocol, schema, package, and source identifiers may retain
+`Fluxer` where changing them would break compatibility; those identifiers must
+not be presented as the product name.
+
+The developer applications screen links to the instance-owned specification at
+`https://api.porch.chat/api/openapi.json`. That document advertises
+`https://api.porch.chat/api` as its production server and must contain Porch
+contact and product metadata.
+
+The app proxy CSP must allow `https://challenges.cloudflare.com` in both
+`script-src` and `frame-src` so the configured Cloudflare Turnstile widget can
+render. The browser already submits the resulting token to the API, where
+server-side Siteverify validation fails closed.
+
 macOS packaging consumes the generated Porch `icon.png` and lets
 electron-builder create the platform icon. It must not consume the historical
 precompiled upstream `.icns`.

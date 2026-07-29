@@ -6,7 +6,7 @@ export const PNEUMATIC_POST_SYSTEM_NAME = 'Pneumatic Post';
 
 export const PLUTONIUM_MOBILE_BETA_DISPATCH = {
 	key: 'plutonium_mobile_beta_2026_06',
-	productName: 'Fluxer',
+	productName: 'Porch',
 	premiumProductName: 'Plutonium',
 	androidProductName: 'Android',
 	iosProductName: 'iOS',

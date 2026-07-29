@@ -25,7 +25,7 @@ export function CanaryTesterController(app: HonoApp) {
 			operationId: 'join_canary_testers',
 			summary: 'Join the canary testers guild',
 			description:
-				'Adds the authenticated user to the hardcoded Fluxer Testers guild used for canary feedback. Restricted to non-bot users with verified email, an account at least 30 minutes old, no effective suspicious-activity flags, and not banned from the target guild. Rate-limited; surfaced via the canary nagbar.',
+				'Adds the authenticated user to the hardcoded Porch Testers community used for canary feedback. Restricted to non-bot users with verified email, an account at least 30 minutes old, no effective suspicious-activity flags, and not banned from the target community. Rate-limited; surfaced via the canary nagbar.',
 			responseSchema: SuccessResponse,
 			statusCode: 200,
 			security: ['bearerToken', 'sessionToken'],

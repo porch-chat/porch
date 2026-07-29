@@ -13,7 +13,7 @@ interface ConnectionIssuesLinksProps {
 	onSignOut?: () => void;
 }
 
-const STATUS_HISTORY_URL = `${ExternalUrls.SERVICE_STATUS}/history`;
+const STATUS_HISTORY_URL = ExternalUrls.SERVICE_STATUS_HISTORY;
 
 export function ConnectionIssuesLinks({incident, className, onReload, onSignOut}: ConnectionIssuesLinksProps) {
 	const containerClassName = className != null ? `${styles.container} ${className}` : styles.container;

@@ -2,6 +2,7 @@
 
 import styles from '@app/features/app/components/setup/SelfHostedSetupWizardGate.module.css';
 import type {SetupBrandingAssetKind} from '@app/features/app/components/setup/SetupWizardClient';
+import {PRODUCT_NAME} from '@app/features/app/config/I18nDisplayConstants';
 import {
 	createRandomWelcomeRotationState,
 	createWelcomeRotationState,
@@ -89,10 +90,6 @@ const BRANDING_BODY_DESCRIPTOR = msg({
 const PRODUCT_NAME_LABEL_DESCRIPTOR = msg({
 	message: 'Product name',
 	comment: 'Label for the product name input in the setup wizard.',
-});
-const PRODUCT_NAME_PLACEHOLDER_DESCRIPTOR = msg({
-	message: 'Fluxer',
-	comment: 'Placeholder for the product name input in the setup wizard.',
 });
 const PRODUCT_NAME_ERROR_DESCRIPTOR = msg({
 	message: 'Enter a product name between 1 and 80 characters.',
@@ -674,7 +671,7 @@ export const BrandingStep = observer(
 					label={i18n._(PRODUCT_NAME_LABEL_DESCRIPTOR)}
 					value={productName}
 					onChange={(event) => onProductNameChange(event.target.value)}
-					placeholder={i18n._(PRODUCT_NAME_PLACEHOLDER_DESCRIPTOR)}
+					placeholder={PRODUCT_NAME}
 					maxLength={80}
 					disabled={disabled}
 					error={productNameError ? i18n._(PRODUCT_NAME_ERROR_DESCRIPTOR) : undefined}

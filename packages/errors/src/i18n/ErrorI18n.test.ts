@@ -53,6 +53,15 @@ describe('ErrorI18n', () => {
 			const message = getErrorMessageUnsafe('nonexistent.key', 'en-US', undefined, 'Custom fallback');
 			expect(message).toBe('Custom fallback');
 		});
+		it('rebrands inherited API-ban translations for Porch in every locale', () => {
+			const message = getErrorMessage('permissions.global_ip_banned', 'fr', {
+				ipAddress: '203.0.113.10',
+			});
+			expect(message).toContain('Porch');
+			expect(message).toContain('admin@porch.chat');
+			expect(message).not.toContain('Fluxer');
+			expect(message).not.toContain('support@fluxer.app');
+		});
 	});
 	describe('getMessage() - locale handling', () => {
 		it('normalizes en-GB locale to en-US', () => {

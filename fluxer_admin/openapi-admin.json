@@ -1,13 +1,13 @@
 {
 	"openapi": "3.0.3",
 	"info": {
-		"title": "Fluxer API",
+		"title": "Porch API",
 		"version": "1.0.0",
-		"description": "API for Fluxer, a free and open source instant messaging and VoIP chat app built for friends, groups, and communities.",
-		"contact": {"name": "Fluxer Platform AB", "email": "support@fluxer.app"},
+		"description": "API for Porch, a private communication platform for friends, groups, and communities.",
+		"contact": {"name": "Porch", "email": "admin@porch.chat"},
 		"license": {"name": "AGPL-3.0", "url": "https://www.gnu.org/licenses/agpl-3.0.html"}
 	},
-	"servers": [{"url": "https://api.fluxer.app/v1", "description": "Production API"}],
+	"servers": [{"url": "https://api.porch.chat/api", "description": "Production API"}],
 	"paths": {
 		"/admin/api-keys": {
 			"post": {

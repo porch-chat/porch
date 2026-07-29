@@ -3,7 +3,7 @@
 import {SettingsSection} from '@app/features/app/components/dialogs/shared/SettingsSection';
 import {SettingsTabContainer, SettingsTabContent} from '@app/features/app/components/dialogs/shared/SettingsTabLayout';
 import {StatusSlate} from '@app/features/app/components/dialogs/shared/StatusSlate';
-import {FLUXER_DOCS_DOMAIN, FLUXER_DOCS_URL} from '@app/features/app/config/I18nDisplayConstants';
+import {API_DOCUMENTATION_DOMAIN, API_DOCUMENTATION_URL} from '@app/features/app/config/I18nDisplayConstants';
 import type {DeveloperApplication} from '@app/features/devtools/models/DeveloperApplication';
 import {TRY_AGAIN_DESCRIPTOR} from '@app/features/i18n/utils/CommonMessageDescriptors';
 import {Button} from '@app/features/ui/button/Button';
@@ -159,7 +159,7 @@ const ApplicationsTab: React.FC = observer(() => {
 						)}
 						<a
 							className={styles.documentationLink}
-							href={FLUXER_DOCS_URL}
+							href={API_DOCUMENTATION_URL}
 							target="_blank"
 							rel="noreferrer"
 							data-flx="user.applications-tab.documentation-link"
@@ -170,7 +170,7 @@ const ApplicationsTab: React.FC = observer(() => {
 								className={styles.documentationIcon}
 								data-flx="user.applications-tab.documentation-icon"
 							/>
-							{i18n._(READ_DOCUMENTATION_DESCRIPTOR, {domain: FLUXER_DOCS_DOMAIN})}
+							{i18n._(READ_DOCUMENTATION_DESCRIPTOR, {domain: API_DOCUMENTATION_DOMAIN})}
 						</a>
 					</div>
 					<ApplicationsList

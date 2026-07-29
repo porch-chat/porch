@@ -80,13 +80,17 @@ function getResolvedErrorMessage(
 ): string {
 	const result = getErrorMessageResultUnsafe(key, locale, variables);
 	if (result.ok) {
-		return result.value;
+		return applyPorchPublicBranding(result.value);
 	}
 	if (result.error.kind === 'missing-template') {
 		console.warn(`Missing translation for error message: ${key} (locale: ${locale ?? DEFAULT_LOCALE})`);
 		return fallbackMessage ?? key;
 	}
 	return fallbackMessage ?? key;
+}
+
+function applyPorchPublicBranding(message: string): string {
+	return message.replaceAll('Fluxer', 'Porch').replaceAll('support@fluxer.app', 'admin@porch.chat');
 }
 
 export function getErrorMessage<TKey extends ErrorI18nKey>(

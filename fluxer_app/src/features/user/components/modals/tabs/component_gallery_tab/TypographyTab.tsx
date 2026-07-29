@@ -150,7 +150,7 @@ const THIS_TEXT_DEMONSTRATES_BOLD_TITLE_STYLING_DESCRIPTOR = msg({
 const fontSamples = [
 	{
 		fontFamily: 'Fluxer Sans',
-		name: 'Fluxer Sans',
+		name: 'Porch Sans',
 		sample: 'The quick brown fox jumps over the lazy dog',
 		lang: 'en',
 	},
@@ -180,32 +180,32 @@ const fontSamples = [
 	},
 	{
 		fontFamily: 'Fluxer Sans Arabic',
-		name: 'Fluxer Sans Arabic',
+		name: 'Porch Sans Arabic',
 		sample: 'هذه عينة نصية باللغة العربية',
 		lang: 'ar',
 		rtl: true,
 	},
 	{
 		fontFamily: 'Fluxer Sans Hebrew',
-		name: 'Fluxer Sans Hebrew',
+		name: 'Porch Sans Hebrew',
 		sample: 'זוהי דוגמה לטקסט בעברית',
 		lang: 'he',
 	},
 	{
 		fontFamily: 'Fluxer Sans Devanagari',
-		name: 'Fluxer Sans Devanagari',
+		name: 'Porch Sans Devanagari',
 		sample: 'यह हिंदी का नमूना पाठ है',
 		lang: 'hi',
 	},
 	{
 		fontFamily: 'Fluxer Sans Thai',
-		name: 'Fluxer Sans Thai',
+		name: 'Porch Sans Thai',
 		sample: 'นี่คือข้อความตัวอย่างภาษาไทย',
 		lang: 'th',
 	},
 	{
 		fontFamily: 'Fluxer Sans Thai Looped',
-		name: 'Fluxer Sans Thai Looped',
+		name: 'Porch Sans Thai Looped',
 		sample: 'นี่คือข้อความตัวอย่างภาษาไทยแบบ Loop',
 		lang: 'th',
 	},
@@ -512,7 +512,7 @@ export const TypographyTabContent: React.FC = observer(() => {
 							<strong data-flx="user.component-gallery-tab.typography-tab.typography-tab-content.strong">
 								English:
 							</strong>{' '}
-							Welcome to Fluxer's typography showcase
+							Welcome to Porch's typography showcase
 						</div>
 						<div
 							className={styles.multilingualItem}
@@ -532,7 +532,7 @@ export const TypographyTabContent: React.FC = observer(() => {
 							<strong data-flx="user.component-gallery-tab.typography-tab.typography-tab-content.strong--3">
 								한국어:
 							</strong>{' '}
-							Fluxer의 타이포그래피 쇼케이스에 오신 것을 환영합니다
+							Porch의 타이포그래피 쇼케이스에 오신 것을 환영합니다
 						</div>
 						<div
 							className={styles.multilingualItem}
@@ -542,7 +542,7 @@ export const TypographyTabContent: React.FC = observer(() => {
 							<strong data-flx="user.component-gallery-tab.typography-tab.typography-tab-content.strong--4">
 								简体中文:
 							</strong>{' '}
-							欢迎来到 Fluxer 的字体展示
+							欢迎来到 Porch 的字体展示
 						</div>
 						<div
 							className={styles.multilingualItem}
@@ -552,7 +552,7 @@ export const TypographyTabContent: React.FC = observer(() => {
 							<strong data-flx="user.component-gallery-tab.typography-tab.typography-tab-content.strong--5">
 								繁體中文:
 							</strong>{' '}
-							歡迎來到 Fluxer 的字體展示
+							歡迎來到 Porch 的字體展示
 						</div>
 						<div
 							className={styles.multilingualItem}
@@ -563,7 +563,7 @@ export const TypographyTabContent: React.FC = observer(() => {
 							<strong data-flx="user.component-gallery-tab.typography-tab.typography-tab-content.strong--6">
 								العربية:
 							</strong>{' '}
-							مرحباً بك في عرض طباعة Fluxer
+							مرحباً بك في عرض طباعة Porch
 						</div>
 						<div
 							className={styles.multilingualItem}
@@ -573,7 +573,7 @@ export const TypographyTabContent: React.FC = observer(() => {
 							<strong data-flx="user.component-gallery-tab.typography-tab.typography-tab-content.strong--7">
 								עברית:
 							</strong>{' '}
-							ברוכים הבאים לתצוגת הטיפוגרפיה של Fluxer
+							ברוכים הבאים לתצוגת הטיפוגרפיה של Porch
 						</div>
 						<div
 							className={styles.multilingualItem}
@@ -583,7 +583,7 @@ export const TypographyTabContent: React.FC = observer(() => {
 							<strong data-flx="user.component-gallery-tab.typography-tab.typography-tab-content.strong--8">
 								हिंदी:
 							</strong>{' '}
-							Fluxer के टाइपोग्राफी शोकेस में आपका स्वागत है
+							Porch के टाइपोग्राफी शोकेस में आपका स्वागत है
 						</div>
 						<div
 							className={styles.multilingualItem}
@@ -593,7 +593,7 @@ export const TypographyTabContent: React.FC = observer(() => {
 							<strong data-flx="user.component-gallery-tab.typography-tab.typography-tab-content.strong--9">
 								ไทย:
 							</strong>{' '}
-							ยินดีต้อนรับสู่การจัดแสดงพิมพ์ของ Fluxer
+							ยินดีต้อนรับสู่การจัดแสดงพิมพ์ของ Porch
 						</div>
 					</div>
 				</div>

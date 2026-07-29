@@ -76,7 +76,7 @@ export function InstanceController(app: Hono<HonoEnv>) {
 			security: [],
 			tags: ['Instance'],
 			description:
-				'Returns the instance discovery document including API endpoints, feature flags, and limits. This is the canonical discovery endpoint for all Fluxer clients.',
+				'Returns the instance discovery document including API endpoints, feature flags, and limits. This is the canonical discovery endpoint for Porch clients.',
 		}),
 		async (ctx) => {
 			ctx.header('Access-Control-Allow-Origin', '*');

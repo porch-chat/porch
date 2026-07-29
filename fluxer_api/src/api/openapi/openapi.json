@@ -1,13 +1,13 @@
 {
 	"openapi": "3.1.0",
 	"info": {
-		"title": "Fluxer API",
+		"title": "Porch API",
 		"version": "1.0.0",
-		"description": "API for Fluxer, a free and open source instant messaging and VoIP chat app built for friends, groups, and communities.",
-		"contact": {"name": "Fluxer Platform AB", "email": "support@fluxer.app"},
+		"description": "API for Porch, a private communication platform for friends, groups, and communities.",
+		"contact": {"name": "Porch", "email": "admin@porch.chat"},
 		"license": {"name": "AGPL-3.0", "url": "https://www.gnu.org/licenses/agpl-3.0.html"}
 	},
-	"servers": [{"url": "https://api.fluxer.app/v1", "description": "Production API"}],
+	"servers": [{"url": "https://api.porch.chat/api", "description": "Production API"}],
 	"paths": {
 		"/.well-known/fluxer": {
 			"get": {
@@ -64,7 +64,7 @@
 					}
 				},
 				"x-mint": {"metadata": {"title": "Get instance discovery document"}},
-				"description": "Returns the instance discovery document including API endpoints, feature flags, and limits. This is the canonical discovery endpoint for all Fluxer clients."
+				"description": "Returns the instance discovery document including API endpoints, feature flags, and limits. This is the canonical discovery endpoint for Porch clients."
 			}
 		},
 		"/applications/@me": {
@@ -16193,7 +16193,7 @@
 					}
 				},
 				"x-mint": {"metadata": {"title": "Join the canary testers guild"}},
-				"description": "Adds the authenticated user to the hardcoded Fluxer Testers guild used for canary feedback. Restricted to non-bot users with verified email, an account at least 30 minutes old, no effective suspicious-activity flags, and not banned from the target guild. Rate-limited; surfaced via the canary nagbar.",
+				"description": "Adds the authenticated user to the hardcoded Porch Testers community used for canary feedback. Restricted to non-bot users with verified email, an account at least 30 minutes old, no effective suspicious-activity flags, and not banned from the target community. Rate-limited; surfaced via the canary nagbar.",
 				"security": [{"sessionToken": []}]
 			}
 		},
@@ -25604,9 +25604,9 @@
 					"IP authorization is required.",
 					"IP authorization resend is on cooldown.",
 					"IP authorization resend limit exceeded.",
-					"Your IP address {ipAddress} has been permanently blocked from the Fluxer API by platform administrators. If you believe this is a mistake, contact support@fluxer.app to appeal. Include this IP address in your appeal.",
-					"Your IP address {ipAddress} has been temporarily blocked from the Fluxer API for 24 hours because of abusive or unusual access patterns. We usually do not provide appeals for temporary API bans. Change IP addresses or wait for the ban to expire, and review the Fluxer API access patterns coming from your client.",
-					"Your IP address {ipAddress} has been permanently blocked from the Fluxer API by platform administrators. If you believe this is a mistake, contact support@fluxer.app to appeal. Include this IP address in your appeal.",
+					"Your IP address {ipAddress} has been permanently blocked from the Porch API by platform administrators. If you believe this is a mistake, contact admin@porch.chat to appeal. Include this IP address in your appeal.",
+					"Your IP address {ipAddress} has been temporarily blocked from the Porch API for 24 hours because of abusive or unusual access patterns. We usually do not provide appeals for temporary API bans. Change IP addresses or wait for the ban to expire, and review the Porch API access patterns coming from your client.",
+					"Your IP address {ipAddress} has been permanently blocked from the Porch API by platform administrators. If you believe this is a mistake, contact admin@porch.chat to appeal. Include this IP address in your appeal.",
 					"This user's IP is banned from this community.",
 					"This user's IP is banned from this community.",
 					"You've reached the maximum of {count, plural, one {# animated emoji} other {# animated emojis}}.",
@@ -33368,7 +33368,7 @@
 						"type": "string",
 						"minLength": 3,
 						"maxLength": 37,
-						"description": "Fluxer tag of the reporter if they have an account"
+						"description": "Porch tag of the reporter if they have an account"
 					},
 					"report_type": {"type": "string", "enum": ["message"], "description": "Type of report"},
 					"category": {
@@ -33422,7 +33422,7 @@
 						"type": "string",
 						"minLength": 3,
 						"maxLength": 37,
-						"description": "Fluxer tag of the user who sent the message"
+						"description": "Porch tag of the user who sent the message"
 					}
 				},
 				"required": [
@@ -33480,7 +33480,7 @@
 						"type": "string",
 						"minLength": 3,
 						"maxLength": 37,
-						"description": "Fluxer tag of the reporter if they have an account"
+						"description": "Porch tag of the reporter if they have an account"
 					},
 					"report_type": {"type": "string", "enum": ["user"], "description": "Type of report"},
 					"category": {
@@ -33519,7 +33519,7 @@
 						"type": "string",
 						"minLength": 3,
 						"maxLength": 37,
-						"description": "Fluxer tag of the user being reported"
+						"description": "Porch tag of the user being reported"
 					}
 				},
 				"required": ["ticket", "reporter_full_legal_name", "reporter_country_of_residence", "report_type", "category"]
@@ -33570,7 +33570,7 @@
 						"type": "string",
 						"minLength": 3,
 						"maxLength": 37,
-						"description": "Fluxer tag of the reporter if they have an account"
+						"description": "Porch tag of the reporter if they have an account"
 					},
 					"report_type": {"type": "string", "enum": ["guild"], "description": "Type of report"},
 					"category": {
@@ -36305,7 +36305,7 @@
 							"channel": {
 								"type": "string",
 								"enum": ["inbound_challenge"],
-								"description": "The user must send Fluxer an SMS instead of receiving one"
+								"description": "The user must send Porch an SMS instead of receiving one"
 							},
 							"challenge_code": {"type": "string", "description": "The numeric code the user must text to our number"},
 							"our_number": {

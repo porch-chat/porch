@@ -44,9 +44,9 @@ import {
 } from '../StripeSubscriptionPeriod';
 import {extractId} from '../StripeUtils';
 
-const PRODUCT_NAME = 'Fluxer';
+const PRODUCT_NAME = 'Porch';
 const PREMIUM_TIER_NAME = 'Plutonium';
-const TERMS_URL = 'https://fluxer.app/terms';
+const TERMS_URL = 'https://porch.chat';
 export const EU_WITHDRAWAL_WAIVER_TEXT_VERSION = '2026-04-23';
 
 type CheckoutSessionCreateParams = Stripe.Checkout.SessionCreateParams;
@@ -91,7 +91,7 @@ export interface CreateCheckoutSessionParams {
 	isBusiness?: boolean;
 }
 
-const UPI_MANDATE_DESCRIPTION = 'Fluxer Premium';
+const UPI_MANDATE_DESCRIPTION = 'Porch Premium';
 const PIX_UPI_MANDATE_HEADROOM_MULTIPLIER = 1.25;
 
 interface ResolvedPriceIds {

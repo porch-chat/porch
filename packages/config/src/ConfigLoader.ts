@@ -8,13 +8,7 @@ type ConfigObject = Record<string, unknown>;
 
 let cachedConfig: MasterConfig | null = null;
 
-const DEFAULT_PASSKEY_ORIGINS = [
-	'https://fluxer.app',
-	'https://web.fluxer.app',
-	'https://web.canary.fluxer.app',
-	'android:apk-key-hash:keSY4bimyLqZQV7bKXgpa2xYuqXi0qZJzsYtp6gpx7w',
-	'android:apk-key-hash:zRmCKDKo3uCX2GDZISjJx8Rzo3J-Y3Gbp7s7mAaUH28',
-];
+const DEFAULT_PASSKEY_ORIGINS = ['https://app.porch.chat', 'https://canary.porch.chat', 'https://api.porch.chat'];
 
 function defaultConfig(): MasterConfig {
 	return {
@@ -151,8 +145,8 @@ function defaultConfig(): MasterConfig {
 			sudo_mode_secret: '',
 			connection_initiation_secret: '',
 			passkeys: {
-				rp_name: 'Fluxer',
-				rp_id: 'fluxer.app',
+				rp_name: 'Porch',
+				rp_id: 'porch.chat',
 				additional_allowed_origins: DEFAULT_PASSKEY_ORIGINS,
 			},
 			vapid: {
@@ -162,11 +156,11 @@ function defaultConfig(): MasterConfig {
 			},
 			bluesky: {
 				enabled: true,
-				client_name: 'Fluxer',
+				client_name: 'Porch',
 				client_uri: '',
 				logo_uri: '',
-				tos_uri: 'https://fluxer.app/terms',
-				policy_uri: 'https://fluxer.app/privacy',
+				tos_uri: 'https://porch.chat',
+				policy_uri: 'https://porch.chat',
 				keys: [],
 			},
 		},
@@ -179,7 +173,7 @@ function defaultConfig(): MasterConfig {
 				enabled: false,
 				provider: 'none',
 				from_email: '',
-				from_name: 'Fluxer',
+				from_name: 'Porch',
 			},
 			sms: {
 				enabled: false,
@@ -256,7 +250,7 @@ function defaultConfig(): MasterConfig {
 		instance: {
 			self_hosted: false,
 			branding: {
-				product_name: 'Fluxer',
+				product_name: 'Porch',
 			},
 			setup: {
 				configured: false,

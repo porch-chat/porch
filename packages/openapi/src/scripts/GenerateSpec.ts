@@ -15,8 +15,7 @@ import {
 } from '@fluxer/openapi/src/output/SpecWriter';
 
 type GenerateTarget = 'admin' | 'public';
-const API_DESCRIPTION =
-	'API for Fluxer, a free and open source instant messaging and VoIP chat app built for friends, groups, and communities.';
+const API_DESCRIPTION = 'API for Porch, a private communication platform for friends, groups, and communities.';
 function parseArgs(): {
 	validateOnly: boolean;
 	outputPath: string | null;
@@ -65,10 +64,10 @@ function getRouteScope(target: GenerateTarget): OpenAPIRouteScope {
 async function buildTargetSpec(basePath: string, target: GenerateTarget): Promise<WritableOpenAPISpec> {
 	const generator = new OpenAPIGenerator({
 		basePath,
-		title: 'Fluxer API',
+		title: 'Porch API',
 		version: '1.0.0',
 		description: API_DESCRIPTION,
-		serverUrl: 'https://api.fluxer.app/v1',
+		serverUrl: 'https://api.porch.chat/api',
 		routeScope: getRouteScope(target),
 	});
 	const spec = await generator.generate();
@@ -116,8 +115,8 @@ async function main(): Promise<void> {
 		throw new Error('--output requires --target when generating or validating multiple specs.');
 	}
 	const targets: Array<GenerateTarget> = requestedTarget ? [requestedTarget] : ['public', 'admin'];
-	console.log('Fluxer OpenAPI Specification Generator');
-	console.log('======================================');
+	console.log('Porch OpenAPI Specification Generator');
+	console.log('=====================================');
 	console.log(`Base path: ${basePath}`);
 	console.log(`Targets: ${targets.join(', ')}`);
 	console.log('');

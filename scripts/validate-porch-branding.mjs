@@ -94,6 +94,73 @@ for (const relativePath of [
 }
 requireText('fluxer_app/src/features/app/config/I18nDisplayConstants.ts', "EXAMPLE_INSTANCE_DOMAIN = 'api.porch.chat'");
 forbidText('fluxer_app/src/features/app/config/I18nDisplayConstants.ts', "EXAMPLE_INSTANCE_DOMAIN = 'fluxer.app'");
+for (const expected of [
+	"SUPPORT_EMAIL = 'admin@porch.chat'",
+	"I18N_EMAIL = 'admin@porch.chat'",
+	"FLUXER_TAG_LABEL = 'PorchTag'",
+	"API_DOCUMENTATION_DOMAIN = 'api.porch.chat'",
+	'API_DOCUMENTATION_URL = `https://${API_DOCUMENTATION_DOMAIN}/api/openapi.json`',
+	"PORCH_HOME_URL = 'https://porch.chat'",
+	"SPLASH_IRC_SERVER = 'irc.porch.chat:6667'",
+]) {
+	requireText('fluxer_app/src/features/app/config/I18nDisplayConstants.ts', expected);
+}
+for (const forbidden of [
+	'support@fluxer.app',
+	'i18n@fluxer.app',
+	"FLUXER_DOCS_DOMAIN = 'fluxer.dev'",
+	"FLUXER_BLUESKY_HANDLE = '@fluxer.app'",
+	'irc.fluxer.com',
+]) {
+	forbidText('fluxer_app/src/features/app/config/I18nDisplayConstants.ts', forbidden);
+}
+requireText(
+	'fluxer_app/src/features/user/components/modals/tabs/applications_tab/index.tsx',
+	'href={API_DOCUMENTATION_URL}',
+);
+forbidText('fluxer_app/src/features/user/components/modals/tabs/applications_tab/index.tsx', 'FLUXER_DOCS_URL');
+for (const relativePath of [
+	'fluxer_app/src/features/app/components/BootstrapErrorScreen.tsx',
+	'fluxer_app/src/features/app/components/whats_new/WhatsNewModal.tsx',
+	'fluxer_app/src/features/app/components/ConnectionIssuesLinks.tsx',
+	'packages/constants/src/ExternalUrls.ts',
+]) {
+	forbidText(relativePath, 'fluxerstatus.com');
+	forbidText(relativePath, 'bsky.app/profile/fluxer.app');
+}
+requireText('packages/constants/src/ExternalUrls.ts', "PRODUCT_HOME: 'https://porch.chat'");
+requireText('packages/constants/src/ExternalUrls.ts', "SERVICE_STATUS: 'https://porch.chat'");
+requireText('fluxer_app_proxy/src/csp.rs', '"https://challenges.cloudflare.com"');
+for (const relativePath of ['fluxer_api/src/api/openapi/openapi.json', 'fluxer_admin/openapi-admin.json']) {
+	requireText(relativePath, '"title": "Porch API"');
+	requireText(relativePath, '"url": "https://api.porch.chat/api"');
+	requireText(relativePath, '"name": "Porch", "email": "admin@porch.chat"');
+	for (const forbidden of [
+		'"title": "Fluxer API"',
+		'API for Fluxer',
+		'Fluxer Platform AB',
+		'support@fluxer.app',
+		'https://api.fluxer.app',
+		'Fluxer Testers',
+		'Fluxer tag of',
+		'send Fluxer an SMS',
+	]) {
+		forbidText(relativePath, forbidden);
+	}
+}
+requireText('packages/errors/src/i18n/ErrorI18n.ts', ".replaceAll('Fluxer', 'Porch')");
+requireText('packages/errors/src/i18n/ErrorI18n.ts', ".replaceAll('support@fluxer.app', 'admin@porch.chat')");
+forbidText('packages/errors/src/i18n/ErrorI18nMessages.ts', 'Fluxer API');
+forbidText('packages/errors/src/i18n/ErrorI18nMessages.ts', 'support@fluxer.app');
+for (const [relativePath, expected] of [
+	['fluxer_api/src/api/push/ApnsPushService.ts', "?? 'Porch'"],
+	['fluxer_api/src/api/system/PneumaticPostNotices.ts', "productName: 'Porch'"],
+	['fluxer_api/src/api/user/repositories/account/crud/UserDataRepository.ts', "username: 'Porch'"],
+	['fluxer_api/src/api/oauth/repositories/ApplicationRepository.ts', "name: 'Porch Admin'"],
+	['fluxer_api/pkgs/captcha/src/providers/HttpCaptchaProvider.ts', 'PorchBot/1.0; +https://porch.chat'],
+]) {
+	requireText(relativePath, expected);
+}
 for (const relativePath of [
 	'fluxer_app/src/features/auth/flow/AuthLoginLayout.tsx',
 	'fluxer_app/src/features/auth/flow/AuthSsoPanel.tsx',

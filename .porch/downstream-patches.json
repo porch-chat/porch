@@ -208,6 +208,64 @@
 			"conflict_risk": "low",
 			"upstream_status": "permanently-downstream",
 			"removal_condition": "Remove only if upstream makes transactional email branding and contact identity fully instance-configurable."
+		},
+		{
+			"id": "porch-public-identity-0007",
+			"title": "Complete Porch public terminology and links",
+			"status": "active",
+			"category": "branding",
+			"reason": "Prevent developer documentation, OpenAPI, status/help navigation, setup defaults, runtime fallbacks, API errors, and dormant public integrations from presenting upstream Fluxer identity to Porch users.",
+			"paths": [
+				"docs/porch/BRANDING.md",
+				"fluxer_admin/openapi-admin.json",
+				"fluxer_api/pkgs/captcha/src/providers/HttpCaptchaProvider.ts",
+				"fluxer_api/src/api",
+				"fluxer_app/src/features/app",
+				"fluxer_app/src/features/devtools/utils/CommandUtils.ts",
+				"fluxer_app/src/features/trusted_domain/state/TrustedDomain.ts",
+				"fluxer_app/src/features/user/components/modals/tabs/applications_tab",
+				"fluxer_app/src/features/user/components/modals/tabs/component_gallery_tab",
+				"fluxer_app/src/features/user/components/settings_utils/UserSettingsDeepLinks.ts",
+				"packages/config/src/ConfigLoader.ts",
+				"packages/constants/src/Core.ts",
+				"packages/constants/src/ExternalUrls.ts",
+				"packages/errors/src/i18n",
+				"packages/openapi/src",
+				"packages/schema/src/domains",
+				"scripts/validate-porch-branding.mjs"
+			],
+			"tests": [
+				"Porch branding contract validation",
+				"OpenAPI generation and validation",
+				"error i18n regression test",
+				"config tests",
+				"app and API typechecks",
+				"production public terminology audit"
+			],
+			"conflict_risk": "medium",
+			"upstream_status": "permanently-downstream",
+			"removal_condition": "Remove only if every public product, contact, documentation, status, and fallback identity becomes instance-configurable upstream."
+		},
+		{
+			"id": "porch-turnstile-csp-0008",
+			"title": "Allow Cloudflare Turnstile through the app CSP",
+			"status": "active",
+			"category": "security",
+			"reason": "Allow the configured Turnstile client script and challenge iframe to load while preserving backend Siteverify enforcement.",
+			"paths": [
+				"docs/porch/BRANDING.md",
+				"fluxer_app_proxy/src/csp.rs",
+				"scripts/validate-porch-branding.mjs"
+			],
+			"tests": [
+				"app-proxy CSP unit test",
+				"Porch branding contract validation",
+				"production Stable and Canary CSP inspection",
+				"live Turnstile widget load smoke"
+			],
+			"conflict_risk": "low",
+			"upstream_status": "downstream-until-configurable",
+			"removal_condition": "Remove after upstream includes Cloudflare Turnstile's required CSP origins whenever Turnstile support is enabled."
 		}
 	]
 }

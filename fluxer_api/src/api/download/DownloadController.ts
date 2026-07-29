@@ -146,7 +146,7 @@ export function DownloadController(routes: Hono<HonoEnv>): void {
 			statusCode: 200,
 			security: [],
 			tags: ['Downloads'],
-			description: 'Streams the latest published Fluxer desktop source tarball from the downloads bucket.',
+			description: 'Streams the latest published Porch desktop source tarball from the downloads bucket.',
 		}),
 		async (ctx) => {
 			const downloadService = ctx.get('downloadService');
@@ -166,7 +166,7 @@ export function DownloadController(routes: Hono<HonoEnv>): void {
 			statusCode: 200,
 			security: [],
 			tags: ['Downloads'],
-			description: 'Returns the SHA-256 checksum and metadata for the latest published Fluxer desktop source tarball.',
+			description: 'Returns the SHA-256 checksum and metadata for the latest published Porch desktop source tarball.',
 		}),
 		async (ctx) => {
 			const info = await ctx.get('downloadService').getLatestDesktopSourceInfo({baseUrl: Config.endpoints.apiClient});

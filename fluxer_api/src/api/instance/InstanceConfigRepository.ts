@@ -338,7 +338,7 @@ function normalizeOptionalPublicString(
 function getDefaultAppPublicConfig(): InstanceAppPublicConfig {
 	return {
 		branding: {
-			product_name: Config.instance.branding.productName || 'Fluxer',
+			product_name: Config.instance.branding.productName || 'Porch',
 			icon_url: normalizePublicString(Config.instance.branding.iconUrl),
 			symbol_url: normalizePublicString(Config.instance.branding.symbolUrl),
 			logo_url: normalizePublicString(Config.instance.branding.logoUrl),
