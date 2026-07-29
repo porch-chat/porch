@@ -1291,7 +1291,9 @@ impl DesktopBuildPlatform {
 }
 
 fn build_app_step(platform: DesktopBuildPlatform) -> Result<()> {
-    let macos_keychain = if matches!(platform, DesktopBuildPlatform::Macos) {
+    let unsigned_macos =
+        matches!(platform, DesktopBuildPlatform::Macos) && env_bool("PORCH_UNSIGNED_DESKTOP_BUILD");
+    let macos_keychain = if matches!(platform, DesktopBuildPlatform::Macos) && !unsigned_macos {
         Some(validate_macos_signing_env()?)
     } else {
         None
@@ -1325,6 +1327,15 @@ fn build_app_step(platform: DesktopBuildPlatform) -> Result<()> {
                 .env("CSC_KEYCHAIN", keychain.as_os_str())
                 .env_remove("CSC_LINK")
                 .env_remove("CSC_KEY_PASSWORD");
+        } else if unsigned_macos {
+            command = command
+                .env("CSC_IDENTITY_AUTO_DISCOVERY", "false")
+                .env("PORCH_MAC_NOTARIZE", "false")
+                .env_remove("CSC_LINK")
+                .env_remove("CSC_KEY_PASSWORD")
+                .env_remove("APPLE_ID")
+                .env_remove("APPLE_APP_SPECIFIC_PASSWORD")
+                .env_remove("APPLE_TEAM_ID");
         }
         let result = capture(command);
         println!("::endgroup::");
@@ -1444,6 +1455,7 @@ fn clean_electron_builder_outputs(platform: DesktopBuildPlatform) -> Result<()> 
 fn verify_bundle_id_step() -> Result<()> {
     let electron_arch = require_env("ELECTRON_ARCH")?;
     let build_channel = env::var("BUILD_CHANNEL").unwrap_or_else(|_| "stable".to_string());
+    let unsigned_macos = env_bool("PORCH_UNSIGNED_DESKTOP_BUILD");
     let zip_path = find_dist_file(Path::new("dist-electron"), |name| {
         name.ends_with(".zip") && name.contains(&electron_arch)
     })
@@ -1474,43 +1486,37 @@ fn verify_bundle_id_step() -> Result<()> {
         info_plist.to_string_lossy().as_ref(),
     ]))?;
 
-    let expected = if build_channel == "canary" {
-        "app.fluxer.canary"
-    } else {
-        "app.fluxer"
-    };
-    let expected_profile = if build_channel == "canary" {
-        "3G5837T29K.app.fluxer.canary"
-    } else {
-        "3G5837T29K.app.fluxer"
-    };
+    let expected = porch_channel_app_id(Path::new("porch-product.json"), &build_channel)?;
     println!("Bundle id in zip: {bid} (expected: {expected})");
     ensure!(bid == expected, "Unexpected bundle id: {bid}");
-    ensure!(
-        profile.exists(),
-        "Missing provisioning profile: {}",
-        profile.display()
-    );
+    if !unsigned_macos {
+        ensure!(
+            profile.exists(),
+            "Missing provisioning profile: {}",
+            profile.display()
+        );
 
-    let decoded_profile = temp.path().join("embedded.provisionprofile.plist");
-    let decoded = output_bytes(CommandSpec::new("security").args([
-        "cms",
-        "-D",
-        "-i",
-        profile.to_string_lossy().as_ref(),
-    ]))?;
-    fs::write(&decoded_profile, decoded)
-        .with_context(|| format!("Failed to write {}", decoded_profile.display()))?;
-    let profile_app_id = output_text(CommandSpec::new("/usr/libexec/PlistBuddy").args([
-        "-c",
-        "Print :Entitlements:com.apple.application-identifier",
-        decoded_profile.to_string_lossy().as_ref(),
-    ]))?;
-    println!("Provisioning profile app id: {profile_app_id} (expected: {expected_profile})");
-    ensure!(
-        profile_app_id == expected_profile,
-        "Unexpected provisioning profile app id: {profile_app_id}"
-    );
+        let decoded_profile = temp.path().join("embedded.provisionprofile.plist");
+        let decoded = output_bytes(CommandSpec::new("security").args([
+            "cms",
+            "-D",
+            "-i",
+            profile.to_string_lossy().as_ref(),
+        ]))?;
+        fs::write(&decoded_profile, decoded)
+            .with_context(|| format!("Failed to write {}", decoded_profile.display()))?;
+        let profile_app_id = output_text(CommandSpec::new("/usr/libexec/PlistBuddy").args([
+            "-c",
+            "Print :Entitlements:com.apple.application-identifier",
+            decoded_profile.to_string_lossy().as_ref(),
+        ]))?;
+        let expected_profile = format!("{}.{}", require_env("APPLE_TEAM_ID")?, expected);
+        println!("Provisioning profile app id: {profile_app_id} (expected: {expected_profile})");
+        ensure!(
+            profile_app_id == expected_profile,
+            "Unexpected provisioning profile app id: {profile_app_id}"
+        );
+    }
 
     let expected_macho_arch = if electron_arch == "arm64" {
         "arm64"
@@ -1534,6 +1540,13 @@ fn verify_bundle_id_step() -> Result<()> {
         check_macho_arch(&native_file, expected_macho_arch, &electron_arch)?;
     }
 
+    if unsigned_macos {
+        println!(
+            "Unsigned macOS acceptance verified for bundle id {expected}; skipping Developer ID, notarization, and Gatekeeper checks."
+        );
+        return Ok(());
+    }
+
     run_command(CommandSpec::new("codesign").args([
         "--verify",
         "--deep",
@@ -1553,6 +1566,27 @@ fn verify_bundle_id_step() -> Result<()> {
         "--verbose=4",
         app.to_string_lossy().as_ref(),
     ]))
+}
+
+fn porch_channel_app_id(product_path: &Path, channel: &str) -> Result<String> {
+    let product: Value = serde_json::from_str(
+        &fs::read_to_string(product_path)
+            .with_context(|| format!("Failed to read {}", product_path.display()))?,
+    )
+    .with_context(|| format!("Failed to parse {}", product_path.display()))?;
+    product
+        .get("channels")
+        .and_then(|channels| channels.get(channel))
+        .and_then(|channel| channel.get("appId"))
+        .and_then(Value::as_str)
+        .filter(|value| !value.trim().is_empty())
+        .map(str::to_string)
+        .ok_or_else(|| {
+            anyhow!(
+                "{} is missing channels.{channel}.appId",
+                product_path.display()
+            )
+        })
 }
 
 fn macos_native_runtime_rels(electron_arch: &str) -> Vec<String> {
@@ -3404,6 +3438,36 @@ mod tests {
         assert_eq!(
             rust_windows_targets("arm64", true),
             &["aarch64-pc-windows-msvc"]
+        );
+    }
+
+    #[test]
+    fn macos_bundle_id_comes_from_the_porch_product_contract() {
+        let temp = tempfile::tempdir().unwrap();
+        let product = temp.path().join("porch-product.json");
+        write_file(
+            &product,
+            r#"{
+                "channels": {
+                    "stable": {"appId": "chat.porch.desktop"},
+                    "canary": {"appId": "chat.porch.desktop.canary"}
+                }
+            }"#,
+        );
+
+        assert_eq!(
+            porch_channel_app_id(&product, "stable").unwrap(),
+            "chat.porch.desktop"
+        );
+        assert_eq!(
+            porch_channel_app_id(&product, "canary").unwrap(),
+            "chat.porch.desktop.canary"
+        );
+        assert!(
+            porch_channel_app_id(&product, "missing")
+                .unwrap_err()
+                .to_string()
+                .contains("channels.missing.appId")
         );
     }
 

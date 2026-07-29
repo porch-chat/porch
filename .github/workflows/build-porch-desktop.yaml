@@ -253,3 +253,211 @@ jobs:
           path: ${{ env.WORKDIR }}/fluxer_desktop/upload_staging
           if-no-files-found: error
           retention-days: 14
+
+  unix:
+    name: ${{ matrix.label }} (${{ github.event_name == 'workflow_dispatch' && inputs.channel || 'canary' }})
+    needs: validate
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: Linux x64
+            platform: linux
+            arch: x64
+            electron_arch: x64
+            rust_target: x86_64-unknown-linux-gnu
+            os: ubuntu-24.04
+          - label: Linux arm64
+            platform: linux
+            arch: arm64
+            electron_arch: arm64
+            rust_target: aarch64-unknown-linux-gnu
+            os: ubuntu-24.04-arm
+          - label: macOS Apple Silicon
+            platform: macos
+            arch: arm64
+            electron_arch: arm64
+            rust_target: aarch64-apple-darwin
+            os: macos-15
+          - label: macOS Intel
+            platform: macos
+            arch: x64
+            electron_arch: x64
+            rust_target: x86_64-apple-darwin
+            os: macos-15-intel
+    env:
+      CHANNEL: ${{ github.event_name == 'workflow_dispatch' && inputs.channel || 'canary' }}
+      BUILD_CHANNEL: ${{ github.event_name == 'workflow_dispatch' && inputs.channel || 'canary' }}
+      RELEASE_CHANNEL: ${{ github.event_name == 'workflow_dispatch' && inputs.channel || 'canary' }}
+      PUBLIC_RELEASE_CHANNEL: ${{ github.event_name == 'workflow_dispatch' && inputs.channel || 'canary' }}
+      PLATFORM: ${{ matrix.platform }}
+      ARCH: ${{ matrix.arch }}
+      ELECTRON_ARCH: ${{ matrix.electron_arch }}
+      DESKTOP_PLATFORM: ${{ matrix.platform }}
+      DESKTOP_ARCH: ${{ matrix.arch }}
+      DESKTOP_VARIANT: default
+      FLUXER_DESKTOP_BUILD_VARIANT: default
+      FLUXER_WINDOWS_GAME_CAPTURE_MODULE_ENABLED: "false"
+      PORCH_UNSIGNED_DESKTOP_BUILD: "true"
+      FLUXER_CI_MANIFEST_PATH: ${{ github.workspace }}/_ci/tools/ci/Cargo.toml
+      CARGO_TARGET_DIR: ${{ github.workspace }}/.porch-cargo-target
+    steps:
+      - name: Checkout Porch CI helpers
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          path: _ci
+
+      - name: Checkout Porch source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          path: source
+
+      - name: Set build metadata
+        shell: bash
+        run: |
+          now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          year="$(date -u +%Y)"
+          month="$((10#$(date -u +%m)))"
+          day="$(date -u +%d)"
+          clock="$(date -u +%H%M%S)"
+          version="${year}.${month}${day}.${clock}"
+          {
+            echo "VERSION=$version"
+            echo "BUILD_VERSION=$version"
+            echo "PUBLIC_BUILD_VERSION=$version"
+            echo "PUB_DATE=$now"
+            echo "SOURCE_SHA=${{ github.sha }}"
+          } >> "$GITHUB_ENV"
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9
+        with:
+          toolchain: "1.93.0"
+          targets: ${{ matrix.rust_target }}
+
+      - name: Cache Cargo registries
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ matrix.platform }}-${{ matrix.arch }}-porch-cargo-registry-v1-${{ hashFiles('_ci/tools/ci/Cargo.lock', 'source/fluxer_desktop/native/**/Cargo.lock') }}
+          restore-keys: ${{ matrix.platform }}-${{ matrix.arch }}-porch-cargo-registry-v1-
+
+      - name: Cache Porch CI helper
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: ~/.cache/porch-ci-helper
+          key: ${{ matrix.platform }}-${{ matrix.arch }}-porch-ci-helper-v1-rust-1.93.0-${{ hashFiles('_ci/tools/ci/Cargo.lock', '_ci/tools/ci/Cargo.toml', '_ci/tools/ci/**/*.rs') }}
+
+      - name: Cache native desktop builds
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: ${{ github.workspace }}/.porch-cargo-target
+          key: ${{ matrix.platform }}-${{ matrix.arch }}-porch-native-v1-rust-1.93.0-${{ hashFiles('source/fluxer_desktop/native/**/Cargo.lock', 'source/fluxer_desktop/native/**/Cargo.toml', 'source/fluxer_desktop/native/**/*.rs') }}
+          restore-keys: ${{ matrix.platform }}-${{ matrix.arch }}-porch-native-v1-rust-1.93.0-
+
+      - name: Prepare Porch CI helper
+        shell: bash
+        run: |
+          helper_dir="$HOME/.cache/porch-ci-helper"
+          helper="$helper_dir/fluxer-ci"
+          if [[ ! -x "$helper" ]]; then
+            CARGO_TARGET_DIR="$RUNNER_TEMP/porch-helper-target" \
+              cargo build --locked --release --manifest-path "$GITHUB_WORKSPACE/_ci/tools/ci/Cargo.toml"
+            mkdir -p "$helper_dir"
+            cp "$RUNNER_TEMP/porch-helper-target/release/fluxer-ci" "$helper"
+            chmod +x "$helper"
+          fi
+          test -x "$helper"
+          echo "FLUXER_CI_BIN=$helper" >> "$GITHUB_ENV"
+
+      - name: Set workdir
+        env:
+          SUBST_TARGET: ${{ github.workspace }}/source
+        run: '"$FLUXER_CI_BIN" build-desktop --step set_workdir_unix'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        with:
+          node-version: 24
+
+      - name: Set up pnpm
+        run: '"$FLUXER_CI_BIN" build-desktop --step setup_pnpm_corepack'
+
+      - name: Resolve pnpm store
+        run: '"$FLUXER_CI_BIN" build-desktop --step resolve_pnpm_store_unix'
+
+      - name: Cache pnpm store
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: ${{ env.PNPM_STORE_PATH }}
+          key: ${{ matrix.platform }}-${{ matrix.arch }}-porch-desktop-${{ hashFiles('source/**/pnpm-lock.yaml') }}
+          restore-keys: ${{ matrix.platform }}-${{ matrix.arch }}-porch-desktop-
+
+      - name: Install Python setuptools
+        if: matrix.platform == 'macos'
+        run: '"$FLUXER_CI_BIN" build-desktop --step install_setuptools_macos'
+
+      - name: Install Linux dependencies
+        if: matrix.platform == 'linux'
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: '"$FLUXER_CI_BIN" build-desktop --step install_linux_deps'
+
+      - name: Install dependencies
+        working-directory: ${{ env.WORKDIR }}/fluxer_desktop
+        run: '"$FLUXER_CI_BIN" build-desktop --step install_dependencies'
+
+      - name: Update package version
+        working-directory: ${{ env.WORKDIR }}/fluxer_desktop
+        run: '"$FLUXER_CI_BIN" build-desktop --step update_version'
+
+      - name: Set release channel
+        working-directory: ${{ env.WORKDIR }}/fluxer_desktop
+        run: '"$FLUXER_CI_BIN" build-desktop --step set_build_channel'
+
+      - name: Build Electron runtime
+        working-directory: ${{ env.WORKDIR }}/fluxer_desktop
+        env:
+          FLUXER_SKIP_BUILD_CHANNEL_SYNC: "true"
+        run: pnpm build
+
+      - name: Build unsigned macOS application
+        if: matrix.platform == 'macos'
+        working-directory: ${{ env.WORKDIR }}/fluxer_desktop
+        run: '"$FLUXER_CI_BIN" build-desktop --step build_app_macos'
+
+      - name: Verify unsigned macOS artifact
+        if: matrix.platform == 'macos'
+        working-directory: ${{ env.WORKDIR }}/fluxer_desktop
+        run: '"$FLUXER_CI_BIN" build-desktop --step verify_bundle_id'
+
+      - name: Build Linux application
+        if: matrix.platform == 'linux'
+        working-directory: ${{ env.WORKDIR }}/fluxer_desktop
+        env:
+          USE_SYSTEM_FPM: "true"
+        run: '"$FLUXER_CI_BIN" build-desktop --step build_app_linux'
+
+      - name: Stage release files
+        working-directory: ${{ env.WORKDIR }}/fluxer_desktop
+        run: '"$FLUXER_CI_BIN" build-desktop --step prepare_artifacts_unix'
+
+      - name: Normalize updater metadata
+        working-directory: ${{ env.WORKDIR }}/fluxer_desktop
+        run: '"$FLUXER_CI_BIN" build-desktop --step normalise_updater_yaml'
+
+      - name: Generate checksums
+        working-directory: ${{ env.WORKDIR }}/fluxer_desktop
+        run: '"$FLUXER_CI_BIN" build-desktop --step generate_checksums_unix'
+
+      - name: Upload unsigned Porch artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: porch-desktop-${{ env.BUILD_CHANNEL }}-${{ matrix.platform }}-${{ matrix.arch }}-${{ env.VERSION }}
+          path: ${{ env.WORKDIR }}/fluxer_desktop/upload_staging
+          if-no-files-found: error
+          retention-days: 14
