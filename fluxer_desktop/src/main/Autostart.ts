@@ -188,6 +188,31 @@ function getWindowsAutoLaunchConfigs(): Array<AutoLaunchConfig> {
 	return configs;
 }
 
+export function disableWindowsAutostartForUninstall(): void {
+	if (!isWindows) return;
+	const seenConfigs = new Set<string>();
+	for (const config of getWindowsAutoLaunchConfigs()) {
+		const key = JSON.stringify([config.name, config.path, config.args]);
+		if (seenConfigs.has(key)) continue;
+		seenConfigs.add(key);
+		try {
+			app.setLoginItemSettings({
+				openAtLogin: false,
+				name: config.name,
+				path: config.path,
+				args: config.args,
+			});
+		} catch (error) {
+			log.warn('[Autostart] Failed to remove Windows login item during uninstall:', {
+				name: config.name,
+				path: config.path,
+				args: config.args,
+				error,
+			});
+		}
+	}
+}
+
 function quoteWindowsCommandArg(value: string): string {
 	if (value.length > 0 && !/[\s"]/.test(value)) return value;
 	let result = '"';

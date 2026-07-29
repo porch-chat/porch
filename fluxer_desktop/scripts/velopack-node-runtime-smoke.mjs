@@ -52,6 +52,7 @@ try {
 	);
 
 	VelopackApp.build()
+		.onBeforeUninstallFastCallback(() => {})
 		.setLocator({
 			RootAppDir: root,
 			UpdateExePath: updateExe,
