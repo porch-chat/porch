@@ -18,7 +18,7 @@ import {CardAlignmentControls} from '@app/features/ui/card_alignment_controls/Ca
 import * as ModalCommands from '@app/features/ui/commands/ModalCommands';
 import * as AvatarUtils from '@app/features/user/utils/AvatarUtils';
 import Window from '@app/features/window/state/Window';
-import foodPatternUrl from '@app/media/images/i-like-food.svg';
+import porchPatternUrl from '@app/media/images/porch-pattern.svg';
 import type {GuildSplashCardAlignmentValue} from '@fluxer/constants/src/GuildConstants';
 import {GuildSplashCardAlignment} from '@fluxer/constants/src/GuildConstants';
 import {msg} from '@lingui/core/macro';
@@ -61,7 +61,7 @@ export const InvitePagePreviewModal: React.FC<InvitePagePreviewModalProps> = obs
 			}
 			return null;
 		}, [previewSplashUrl, guild?.id, guild?.splash]);
-		const {patternReady, splashLoaded, splashDimensions} = useAuthBackground(splashUrl, foodPatternUrl);
+		const {patternReady, splashLoaded, splashDimensions} = useAuthBackground(splashUrl, porchPatternUrl);
 		const shouldShowSplash = Boolean(splashUrl && splashDimensions);
 		const handleClose = useCallback(() => {
 			ModalCommands.pop();
@@ -125,7 +125,7 @@ export const InvitePagePreviewModal: React.FC<InvitePagePreviewModalProps> = obs
 						splashLoaded={splashLoaded}
 						splashDimensions={splashDimensions}
 						patternReady={patternReady}
-						patternImageUrl={foodPatternUrl}
+						patternImageUrl={porchPatternUrl}
 						splashAlignment={splashAlignment}
 						useFullCover={true}
 						data-flx="invite.invite-page-preview-modal.background"

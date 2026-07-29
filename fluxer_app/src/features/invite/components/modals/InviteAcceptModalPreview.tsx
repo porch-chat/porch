@@ -10,7 +10,7 @@ import Presence from '@app/features/presence/state/Presence';
 import {Button} from '@app/features/ui/button/Button';
 import * as ModalCommands from '@app/features/ui/commands/ModalCommands';
 import * as AvatarUtils from '@app/features/user/utils/AvatarUtils';
-import foodPatternUrl from '@app/media/images/i-like-food.svg';
+import porchPatternUrl from '@app/media/images/porch-pattern.svg';
 import {msg} from '@lingui/core/macro';
 import {useLingui} from '@lingui/react/macro';
 import {observer} from 'mobx-react-lite';
@@ -89,7 +89,7 @@ export const InviteAcceptModalPreview = observer(function InviteAcceptModalPrevi
 				) : (
 					<div
 						className={styles.patternImage}
-						style={{backgroundImage: `url(${foodPatternUrl})`}}
+						style={{backgroundImage: `url(${porchPatternUrl})`}}
 						data-flx="invite.invite-accept-modal-preview.pattern-image"
 					/>
 				)}

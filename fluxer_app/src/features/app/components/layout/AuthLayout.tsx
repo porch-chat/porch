@@ -18,7 +18,7 @@ import {Scroller, type ScrollerHandle} from '@app/features/ui/components/Scrolle
 import {isMobileExperienceEnabled} from '@app/features/ui/utils/MobileExperience';
 import {hasUnavailableElectronNativeContext} from '@app/features/ui/utils/NativeUtils';
 import {useNativeTitleBar} from '@app/features/window/hooks/useNativeTitleBar';
-import foodPatternUrl from '@app/media/images/i-like-food.svg';
+import porchPatternUrl from '@app/media/images/porch-pattern.svg';
 import type {GuildSplashCardAlignmentValue} from '@fluxer/constants/src/GuildConstants';
 import {GuildSplashCardAlignment} from '@fluxer/constants/src/GuildConstants';
 import {I18nProvider} from '@lingui/react';
@@ -41,7 +41,7 @@ const AuthLayoutContent = observer(function AuthLayoutContent({children}: {child
 	const registerFormDraftsRef = useRef<Map<string, AuthRegisterFormDraft>>(new Map());
 	const scrollerRef = useRef<ScrollerHandle>(null);
 	const location = useLocation();
-	const {patternReady, splashLoaded, splashDimensions} = useAuthBackground(splashUrl, foodPatternUrl);
+	const {patternReady, splashLoaded, splashDimensions} = useAuthBackground(splashUrl, porchPatternUrl);
 	const handleSetSplashUrl = useCallback(
 		(url: string | null) => {
 			if (splashUrlRef.current === url) return;
@@ -200,7 +200,7 @@ const AuthLayoutContent = observer(function AuthLayoutContent({children}: {child
 								splashDimensions={splashDimensions}
 								splashScale={splashScale}
 								patternReady={patternReady}
-								patternImageUrl={foodPatternUrl}
+								patternImageUrl={porchPatternUrl}
 								splashAlignment={splashAlignment}
 								useFullCover={false}
 								data-flx="app.auth-layout.auth-layout-content.auth-background"

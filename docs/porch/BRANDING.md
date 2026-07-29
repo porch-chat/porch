@@ -20,6 +20,11 @@ component names for merge compatibility, but their compile-time fallbacks are
 Porch assets. Runtime self-host branding URLs may override them; empty URLs
 must never reveal upstream artwork.
 
+The compile-time brand palette uses Porch teal (`#14B8A6`) and the auth and
+invite fallbacks use `porch-pattern.svg`. The upstream purple palette,
+food-pattern artwork, and `fluxer.app` instance example are user-visible
+branding leaks and are rejected by the branding guard.
+
 macOS packaging consumes the generated Porch `icon.png` and lets
 electron-builder create the platform icon. It must not consume the historical
 precompiled upstream `.icns`.

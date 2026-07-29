@@ -1,0 +1,22 @@
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<svg xmlns="http://www.w3.org/2000/svg" width="260" height="260" viewBox="0 0 260 260" fill="none">
+  <g stroke="#000" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <g transform="translate(18 18) scale(.32)">
+      <path d="M31 97V51l33-24 33 24v46"/>
+      <path d="M42 76h44c9 0 16 6 16 14s-7 14-16 14H68l-15 12c-4 3-9 0-9-5v-7h-2c-9 0-16-6-16-14s7-14 16-14Z"/>
+    </g>
+    <g transform="translate(132 20) scale(.5)">
+      <path d="M31 97V51l33-24 33 24v46"/>
+      <path d="M42 76h44c9 0 16 6 16 14s-7 14-16 14H68l-15 12c-4 3-9 0-9-5v-7h-2c-9 0-16-6-16-14s7-14 16-14Z"/>
+    </g>
+    <g transform="translate(48 128) scale(.58)">
+      <path d="M31 97V51l33-24 33 24v46"/>
+      <path d="M42 76h44c9 0 16 6 16 14s-7 14-16 14H68l-15 12c-4 3-9 0-9-5v-7h-2c-9 0-16-6-16-14s7-14 16-14Z"/>
+    </g>
+    <g transform="translate(194 158) scale(.34)">
+      <path d="M31 97V51l33-24 33 24v46"/>
+      <path d="M42 76h44c9 0 16 6 16 14s-7 14-16 14H68l-15 12c-4 3-9 0-9-5v-7h-2c-9 0-16-6-16-14s7-14 16-14Z"/>
+    </g>
+    <path d="M16 113h22m-11-11v22M205 110h34m-17-17v34M145 219h22"/>
+  </g>
+</svg>

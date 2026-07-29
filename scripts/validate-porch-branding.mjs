@@ -63,6 +63,28 @@ forbidText('fluxer_app/scripts/build/rspack/static-files.mjs', '#4641D9');
 
 requireText('fluxer_app/src/features/app/state/RuntimeConfig.ts', "product_name: 'Porch'");
 requireText('fluxer_app/src/features/app/config/ProductConstants.ts', "return 'Porch'");
+requireText('fluxer_app/scripts/GenerateColorSystem.ts', 'brand: {hue: 174, saturation: 72');
+forbidText('fluxer_app/scripts/GenerateColorSystem.ts', 'brand: {hue: 242, saturation: 70');
+requireText(
+	'fluxer_app/src/features/theme/variables/ThemeVariableManifest.ts',
+	'"--brand-primary": "hsl(174, calc(72% * var(--saturation-factor)), 40%)"',
+);
+forbidText(
+	'fluxer_app/src/features/theme/variables/ThemeVariableManifest.ts',
+	'"--brand-primary": "hsl(242, calc(70% * var(--saturation-factor)), 55%)"',
+);
+requireText('fluxer_app/src/media/images/porch-pattern.svg', 'M31 97V51l33-24 33 24v46');
+for (const relativePath of [
+	'fluxer_app/src/features/app/components/layout/AuthLayout.tsx',
+	'fluxer_app/src/features/invite/components/modals/InvitePagePreviewModal.tsx',
+	'fluxer_app/src/features/invite/components/modals/InviteAcceptModalPreview.tsx',
+	'fluxer_app/src/features/invite/components/modals/InviteAcceptModal.tsx',
+]) {
+	requireText(relativePath, 'porch-pattern.svg');
+	forbidText(relativePath, 'i-like-food.svg');
+}
+requireText('fluxer_app/src/features/app/config/I18nDisplayConstants.ts', "EXAMPLE_INSTANCE_DOMAIN = 'api.porch.chat'");
+forbidText('fluxer_app/src/features/app/config/I18nDisplayConstants.ts', "EXAMPLE_INSTANCE_DOMAIN = 'fluxer.app'");
 
 for (const component of ['FluxerIcon.tsx', 'FluxerLogo.tsx']) {
 	const relativePath = `fluxer_app/src/features/ui/components/icons/${component}`;
