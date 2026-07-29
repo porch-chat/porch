@@ -59,3 +59,4 @@ jobs:
       finalise-release: ${{ inputs['finalise-release'] != false }}
       extra-build-args: |
         FLUXER_APP_PROXY_TIME_FREEZE_ENABLED=false
+    secrets: inherit

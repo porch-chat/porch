@@ -43,3 +43,4 @@ jobs:
       build-version: ${{ inputs['build-version'] }}
       moving-tags: canary
       finalise-release: false
+    secrets: inherit
