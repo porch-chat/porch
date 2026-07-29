@@ -39,3 +39,14 @@ those releases, but Porch changes are not contributed back: no Porch pull
 requests, issues, discussions, comments, branches, tags, or pushes go to
 Fluxer. Keeping Git ancestry and the `upstream` remote exists only to make
 auditable update intake practical.
+
+After cloning, configure the fetch-only upstream guard:
+
+```sh
+pnpm porch:upstream:configure
+pnpm porch:upstream:check
+```
+
+The first command adds the canonical Fluxer fetch remote when necessary and
+sets an intentionally unsupported push URL. The second command fails unless
+the fetch URL is exact and every upstream push is structurally blocked.

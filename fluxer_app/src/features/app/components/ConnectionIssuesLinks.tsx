@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import styles from '@app/features/app/components/ConnectionIssuesLinks.module.css';
+import {Button} from '@app/features/ui/button/Button';
 import type {StatusPageIncident} from '@app/features/user/state/StatusPage';
 import {ExternalUrls} from '@fluxer/constants/src/ExternalUrls';
 import {Trans} from '@lingui/react/macro';
@@ -8,11 +9,13 @@ import {Trans} from '@lingui/react/macro';
 interface ConnectionIssuesLinksProps {
 	incident: StatusPageIncident | null;
 	className?: string;
+	onReload?: () => void;
+	onSignOut?: () => void;
 }
 
 const STATUS_HISTORY_URL = `${ExternalUrls.SERVICE_STATUS}/history`;
 
-export function ConnectionIssuesLinks({incident, className}: ConnectionIssuesLinksProps) {
+export function ConnectionIssuesLinks({incident, className, onReload, onSignOut}: ConnectionIssuesLinksProps) {
 	const containerClassName = className != null ? `${styles.container} ${className}` : styles.container;
 	const incidentUrl = incident?.url ?? STATUS_HISTORY_URL;
 	return (
@@ -43,6 +46,20 @@ export function ConnectionIssuesLinks({incident, className}: ConnectionIssuesLin
 					{incident ? <Trans>Read incident</Trans> : <Trans>Incident history</Trans>}
 				</a>
 			</p>
+			{(onReload || onSignOut) && (
+				<div className={styles.actions} data-flx="app.connection-issues-links.actions">
+					{onReload && (
+						<Button variant="secondary" onClick={onReload} data-flx="app.connection-issues-links.button.reload">
+							<Trans>Reload</Trans>
+						</Button>
+					)}
+					{onSignOut && (
+						<Button variant="secondary" onClick={onSignOut} data-flx="app.connection-issues-links.button.sign-out">
+							<Trans>Sign out</Trans>
+						</Button>
+					)}
+				</div>
+			)}
 		</div>
 	);
 }

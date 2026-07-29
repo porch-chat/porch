@@ -8,6 +8,10 @@ import {
 import {shouldDeleteWorkerCache, WORKER_CACHE_PREFIX} from '@app/features/platform/service_worker/WorkerCacheCleanup';
 import {getWorkerFetchRoute} from '@app/features/platform/service_worker/WorkerFetchRouting';
 import {
+	createNavigationNetworkRequest,
+	NAVIGATION_NETWORK_TIMEOUT_MS,
+} from '@app/features/platform/service_worker/WorkerNavigationPolicy';
+import {
 	getBadgeCount,
 	getPushNotificationClientState,
 	isNotificationClearPayload,
@@ -42,7 +46,6 @@ const PRECACHE_CACHE = `${WORKER_CACHE_PREFIX}-precache-${SERVICE_WORKER_VERSION
 const ASSET_CACHE = `${WORKER_CACHE_PREFIX}-assets-${SERVICE_WORKER_VERSION}`;
 const NAVIGATION_CACHE = `${WORKER_CACHE_PREFIX}-navigation-${SERVICE_WORKER_VERSION}`;
 const EXPECTED_CACHES = new Set([PRECACHE_CACHE, ASSET_CACHE, NAVIGATION_CACHE]);
-const NAVIGATION_NETWORK_TIMEOUT_MS = 650;
 const serviceWorkerCaches = self.caches;
 const isNativeDesktopUserAgent = (userAgent: string): boolean => /\bElectron\/\d+(?:\.\d+)*/.test(userAgent);
 
@@ -143,7 +146,8 @@ const fetchNavigation = async (request: Request): Promise<Response> => {
 	const timeout = new Promise<Response | undefined>((resolve) => {
 		setTimeout(() => resolve(undefined), NAVIGATION_NETWORK_TIMEOUT_MS);
 	});
-	const network = fetch(request).then(async (response) => {
+	const networkRequest = createNavigationNetworkRequest(request);
+	const network = fetch(networkRequest).then(async (response) => {
 		await cacheRequest(NAVIGATION_CACHE, '/index.html', response);
 		return response;
 	});

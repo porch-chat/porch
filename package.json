@@ -42,6 +42,8 @@
 		"knip": "cargo run -p fluxer-dev -- knip",
 		"openapi:generate": "pnpm --filter @fluxer/openapi generate",
 		"openapi:validate": "pnpm --filter @fluxer/openapi validate",
+		"porch:upstream:configure": "node .porch/configure-readonly-upstream.mjs",
+		"porch:upstream:check": "node .porch/configure-readonly-upstream.mjs --check",
 		"remote": "node scripts/remote.mjs",
 		"test": "cargo run -p fluxer-dev -- test",
 		"test:integration": "pnpm --filter @fluxer/integration test",

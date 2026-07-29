@@ -28,6 +28,7 @@ import EventEmitter from 'eventemitter3';
 const GATEWAY_TIMEOUTS = {
 	HeartbeatAck: 15000,
 	ResumeResponse: 15000,
+	ReadyResponse: 30000,
 	ResumeWindow: 180000,
 	MinReconnect: 1000,
 	MaxReconnect: 60000,
@@ -171,6 +172,7 @@ export class GatewaySocket extends EventEmitter<GatewaySocketEvents> {
 	private lastHeartbeatSentAt: number | null = null;
 	private lastGatewayMessageAt: number | null = null;
 	private helloTimeoutId: number | null = null;
+	private readyTimeoutId: number | null = null;
 	private resumeTimeoutId: number | null = null;
 	private reconnectTimeoutId: number | null = null;
 	private invalidSessionTimeoutId: number | null = null;
@@ -224,6 +226,7 @@ export class GatewaySocket extends EventEmitter<GatewaySocketEvents> {
 		this.log.info(`Disconnect requested: [${code}] ${reason}, resumable=${resumable}`);
 		this.isUserInitiatedDisconnect = !resumable;
 		this.clearHelloTimeout();
+		this.clearReadyTimeout();
 		this.clearResumeTimeout();
 		if (this.reconnectTimeoutId != null) {
 			clearTimeout(this.reconnectTimeoutId);
@@ -694,6 +697,7 @@ export class GatewaySocket extends EventEmitter<GatewaySocketEvents> {
 		if (!this.isCurrentSocketEvent(event)) return;
 		this.log.warn(`WebSocket closed [${event.code}] ${event.reason || ''}`);
 		this.clearHelloTimeout();
+		this.clearReadyTimeout();
 		this.stopHeartbeat();
 		if (this.invalidSessionTimeoutId != null) {
 			clearTimeout(this.invalidSessionTimeoutId);
@@ -774,6 +778,7 @@ export class GatewaySocket extends EventEmitter<GatewaySocketEvents> {
 				const data = payload.d as {
 					session_id: string;
 				};
+				this.clearReadyTimeout();
 				this.activeSessionId = data.session_id;
 				this.resetHeartbeatHistory();
 				this.resetBackoffInternal();
@@ -822,6 +827,7 @@ export class GatewaySocket extends EventEmitter<GatewaySocketEvents> {
 			this.sendResume();
 		} else {
 			this.sendIdentify();
+			this.startReadyTimeout();
 		}
 	}
 
@@ -874,6 +880,24 @@ export class GatewaySocket extends EventEmitter<GatewaySocketEvents> {
 			},
 		});
 		this.startResumeTimeout();
+	}
+
+	private startReadyTimeout(): void {
+		this.clearReadyTimeout();
+		this.readyTimeoutId = window.setTimeout(() => {
+			this.readyTimeoutId = null;
+			this.log.warn('Gateway READY timeout; reconnecting with a fresh IDENTIFY');
+			this.clearSession();
+			this.shouldReconnectImmediately = true;
+			this.disconnect(4000, 'Gateway READY timeout', true);
+		}, GATEWAY_TIMEOUTS.ReadyResponse);
+	}
+
+	private clearReadyTimeout(): void {
+		if (this.readyTimeoutId != null) {
+			clearTimeout(this.readyTimeoutId);
+			this.readyTimeoutId = null;
+		}
 	}
 
 	private startHeartbeat(intervalMs: number): void {

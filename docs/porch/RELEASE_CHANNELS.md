@@ -40,11 +40,20 @@ production data.
 Stable must never consume the Canary update feed, and promotion must not rebuild
 from a moving branch.
 
+## Read-only upstream intake
+
+Run `pnpm porch:upstream:configure` after cloning and
+`pnpm porch:upstream:check` before intake work. The canonical Fluxer URL remains
+available for fetches, while the configured push URL uses an intentionally
+unsupported protocol. Porch never pushes branches or tags, opens pull requests,
+or otherwise writes to Fluxer.
+
 ## Public hostnames
 
 - `porch.chat`: landing page, downloads, status links, documentation, and
   corresponding-source disclosure.
 - `app.porch.chat`: Stable web client.
 - `canary.porch.chat`: Canary web client.
-- `fluxer.porch.chat`: temporary evaluation hostname; retire or redirect after
-  Canary migration.
+- `releases.porch.chat`: isolated Stable and Canary desktop feeds.
+
+The temporary `fluxer.porch.chat` evaluation hostname is retired.

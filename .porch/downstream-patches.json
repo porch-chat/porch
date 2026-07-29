@@ -1,70 +1,106 @@
 {
-  "schema_version": 1,
-  "upstream_base": "21a898e602bb263d98acf472a8b484a6785e3e39",
-  "patches": [
-    {
-      "id": "porch-governance-0001",
-      "title": "Porch downstream governance and AI disclosure",
-      "status": "active",
-      "category": "governance",
-      "reason": "Identify the public Porch distribution, preserve upstream policy, and make all future divergence auditable.",
-      "paths": [
-        ".github/pull_request_template.md",
-        ".porch/downstream-patches.json",
-        ".porch/upstream-lock.json",
-        "AGENTS.md",
-        "PORCH.md",
-        "docs/porch/RELEASE_CHANNELS.md"
-      ],
-      "tests": [
-        "JSON manifests parse",
-        "git diff --check",
-        "remote and ancestry verification"
-      ],
-      "conflict_risk": "low",
-      "upstream_status": "permanently-downstream",
-      "removal_condition": "Remove only if Porch ceases to be a downstream distribution."
-    },
-    {
-      "id": "porch-desktop-distribution-0002",
-      "title": "Porch Stable and Canary desktop distribution identities",
-      "status": "active",
-      "category": "desktop-distribution",
-      "reason": "Ship independently installable Porch clients with Porch-owned origins, branding, update feeds, and release automation while preserving Fluxer runtime behavior.",
-      "paths": [
-        ".github/upstream-workflows/build-desktop.yaml",
-        ".github/workflows/build-porch-desktop.yaml",
-        "docs/porch/DESKTOP_DISTRIBUTION.md",
-        "fluxer_desktop/build_resources/entitlements.mac.canary.plist",
-        "fluxer_desktop/build_resources/entitlements.mac.stable.plist",
-        "fluxer_desktop/build_resources/icons-canary",
-        "fluxer_desktop/build_resources/icons-stable",
-        "fluxer_desktop/build_resources/porch",
-        "fluxer_desktop/electron-builder.config.cjs",
-        "fluxer_desktop/package.json",
-        "fluxer_desktop/porch-product.json",
-        "fluxer_desktop/scripts/generate-porch-icons.ps1",
-        "fluxer_desktop/scripts/validate-porch-product.mjs",
-        "fluxer_desktop/scripts/validate-porch-workflow.mjs",
-        "fluxer_desktop/src/common",
-        "fluxer_desktop/src/main/ChromiumRuntime.ts",
-        "fluxer_desktop/src/main/DesktopTray.ts",
-        "fluxer_desktop/src/main/FluxerAudioIdentity.ts",
-        "fluxer_desktop/src/main/Menu.ts",
-        "fluxer_desktop/src/main/Updater.ts",
-        "tools/ci/src/desktop.rs"
-      ],
-      "tests": [
-        "Porch product contract validation",
-        "active workflow isolation validation",
-        "desktop TypeScript typecheck",
-        "desktop CI helper Rust tests",
-        "Windows x64 Canary package build",
-        "channel identity and default-origin smoke tests"
-      ],
-      "conflict_risk": "medium",
-      "upstream_status": "permanently-downstream",
-      "removal_condition": "Remove only if Porch stops distributing branded desktop clients."
-    }
-  ]
+	"schema_version": 1,
+	"upstream_base": "21a898e602bb263d98acf472a8b484a6785e3e39",
+	"patches": [
+		{
+			"id": "porch-governance-0001",
+			"title": "Porch downstream governance and AI disclosure",
+			"status": "active",
+			"category": "governance",
+			"reason": "Identify the public Porch distribution, preserve upstream policy, and make all future divergence auditable.",
+			"paths": [
+				".github/pull_request_template.md",
+				".porch/configure-readonly-upstream.mjs",
+				".porch/downstream-patches.json",
+				".porch/upstream-lock.json",
+				"AGENTS.md",
+				"PORCH.md",
+				"docs/porch/RELEASE_CHANNELS.md",
+				"package.json"
+			],
+			"tests": [
+				"JSON manifests parse",
+				"git diff --check",
+				"remote and ancestry verification",
+				"pnpm porch:upstream:check"
+			],
+			"conflict_risk": "low",
+			"upstream_status": "permanently-downstream",
+			"removal_condition": "Remove only if Porch ceases to be a downstream distribution."
+		},
+		{
+			"id": "porch-desktop-distribution-0002",
+			"title": "Porch Stable and Canary desktop distribution identities",
+			"status": "active",
+			"category": "desktop-distribution",
+			"reason": "Ship independently installable Porch clients with Porch-owned origins, branding, update feeds, and release automation while preserving Fluxer runtime behavior.",
+			"paths": [
+				".github/upstream-workflows/build-desktop.yaml",
+				".github/workflows/build-porch-desktop.yaml",
+				"docs/porch/DESKTOP_DISTRIBUTION.md",
+				"fluxer_desktop/build_resources/entitlements.mac.canary.plist",
+				"fluxer_desktop/build_resources/entitlements.mac.stable.plist",
+				"fluxer_desktop/build_resources/icons-canary",
+				"fluxer_desktop/build_resources/icons-stable",
+				"fluxer_desktop/build_resources/porch",
+				"fluxer_desktop/electron-builder.config.cjs",
+				"fluxer_desktop/package.json",
+				"fluxer_desktop/porch-product.json",
+				"fluxer_desktop/scripts/generate-porch-icons.ps1",
+				"fluxer_desktop/scripts/validate-porch-product.mjs",
+				"fluxer_desktop/scripts/validate-porch-workflow.mjs",
+				"fluxer_desktop/src/common",
+				"fluxer_desktop/src/main/ChromiumRuntime.ts",
+				"fluxer_desktop/src/main/DesktopTray.ts",
+				"fluxer_desktop/src/main/FluxerAudioIdentity.ts",
+				"fluxer_desktop/src/main/Menu.ts",
+				"fluxer_desktop/src/main/Updater.ts",
+				"fluxer_app/src/features/auth/flow/BrowserLoginHandoffModal.tsx",
+				"fluxer_app/src/features/auth/flow/BrowserLoginHandoffUrl.test.ts",
+				"fluxer_app/src/features/auth/flow/BrowserLoginHandoffUrl.ts",
+				"tools/ci/src/desktop.rs"
+			],
+			"tests": [
+				"Porch product contract validation",
+				"active workflow isolation validation",
+				"desktop TypeScript typecheck",
+				"desktop CI helper Rust tests",
+				"Windows x64 Canary package build",
+				"channel identity and default-origin smoke tests",
+				"browser login handoff channel tests"
+			],
+			"conflict_risk": "medium",
+			"upstream_status": "permanently-downstream",
+			"removal_condition": "Remove only if Porch stops distributing branded desktop clients."
+		},
+		{
+			"id": "porch-client-resilience-0003",
+			"title": "Porch authenticated bootstrap recovery",
+			"status": "active",
+			"category": "client-resilience",
+			"reason": "Prevent stale runtime configuration and an unanswered gateway IDENTIFY from leaving authenticated web, PWA, or desktop clients on an indefinite splash screen.",
+			"paths": [
+				"docs/porch/CLIENT_RESILIENCE.md",
+				"fluxer_app/src/features/app/components/ConnectionIssuesLinks.module.css",
+				"fluxer_app/src/features/app/components/ConnectionIssuesLinks.tsx",
+				"fluxer_app/src/features/app/components/layout/SplashScreen.tsx",
+				"fluxer_app/src/features/gateway/transport/GatewaySocket.test.ts",
+				"fluxer_app/src/features/gateway/transport/GatewaySocket.ts",
+				"fluxer_app/src/features/platform/service_worker/Worker.ts",
+				"fluxer_app/src/features/platform/service_worker/WorkerNavigationPolicy.test.ts",
+				"fluxer_app/src/features/platform/service_worker/WorkerNavigationPolicy.ts",
+				"fluxer_app/package.json"
+			],
+			"tests": [
+				"gateway READY watchdog unit test",
+				"service-worker routing tests",
+				"app TypeScript typecheck",
+				"scoped Biome check",
+				"Porch production public smoke suite"
+			],
+			"conflict_risk": "medium",
+			"upstream_status": "permanently-downstream",
+			"removal_condition": "Remove after upstream independently ships equivalent READY timeout, stale-shell protection, and user-visible bootstrap recovery."
+		}
+	]
 }

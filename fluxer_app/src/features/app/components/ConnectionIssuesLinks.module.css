@@ -43,3 +43,12 @@
 	color: var(--text-tertiary);
 	user-select: none;
 }
+
+.actions {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-wrap: wrap;
+	gap: var(--spacing-2);
+	margin-top: var(--spacing-1);
+}

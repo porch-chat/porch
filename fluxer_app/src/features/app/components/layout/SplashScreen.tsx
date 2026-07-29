@@ -6,6 +6,7 @@ import {NativeDragRegion} from '@app/features/app/components/layout/NativeDragRe
 import styles from '@app/features/app/components/layout/SplashScreen.module.css';
 import {useSplashScreenGuard} from '@app/features/app/hooks/useSplashScreenGuard';
 import Initialization from '@app/features/app/state/Initialization';
+import * as AuthenticationCommands from '@app/features/auth/commands/AuthenticationCommands';
 import DeveloperOptions from '@app/features/devtools/state/DeveloperOptions';
 import GatewayConnection from '@app/features/gateway/transport/GatewayConnection';
 import {FluxerIcon} from '@app/features/ui/components/icons/FluxerIcon';
@@ -90,6 +91,12 @@ const SplashScreenContent = observer(({mode}: SplashScreenContentProps) => {
 			clearTimeout(problemsTimerRef.current);
 			problemsTimerRef.current = null;
 		}
+	}, []);
+	const handleReload = useCallback(() => {
+		window.location.reload();
+	}, []);
+	const handleSignOut = useCallback(() => {
+		void AuthenticationCommands.logout();
 	}, []);
 	useEffect(() => {
 		if (isOutageMode) {
@@ -183,6 +190,8 @@ const SplashScreenContent = observer(({mode}: SplashScreenContentProps) => {
 					>
 						<ConnectionIssuesLinks
 							incident={incident}
+							onReload={handleReload}
+							onSignOut={handleSignOut}
 							data-flx="app.splash-screen.splash-screen-content.connection-issues-links"
 						/>
 					</div>
@@ -252,6 +261,8 @@ const SplashScreenContent = observer(({mode}: SplashScreenContentProps) => {
 					>
 						<ConnectionIssuesLinks
 							incident={incident}
+							onReload={handleReload}
+							onSignOut={handleSignOut}
 							data-flx="app.splash-screen.splash-screen-content.connection-issues-links--2"
 						/>
 					</motion.div>
