@@ -1,3 +1,4 @@
+# Porch client builds and static assets are validated by the same branding contract.
 name: build Porch desktop
 
 on:

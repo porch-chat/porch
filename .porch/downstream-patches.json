@@ -118,6 +118,7 @@
 			"paths": [
 				".github/workflows/build-porch-app-proxy.yaml",
 				".github/workflows/build-porch-desktop.yaml",
+				".github/workflows/build-porch-static.yaml",
 				"docs/porch/BRANDING.md",
 				"fluxer_app/index.html",
 				"fluxer_app/scripts/build/rspack/static-files.mjs",

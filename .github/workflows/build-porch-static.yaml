@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-# Porch client builds and static assets are validated by the same branding contract.
-name: build Porch app proxy
+name: build Porch static assets
 
 on:
   push:
@@ -8,18 +7,8 @@ on:
       - canary
     paths:
       - ".github/workflows/_build-image.yaml"
-      - ".github/workflows/build-porch-app-proxy.yaml"
-      - "fluxer_app/**"
-      - "fluxer_app_proxy/**"
-      - "fluxer_common/**"
-      - "fluxer_svc/**"
-      - "packages/**"
-      - "patches/**"
-      - "tools/ci/**"
-      - "Cargo.lock"
-      - "package.json"
-      - "pnpm-lock.yaml"
-      - "pnpm-workspace.yaml"
+      - ".github/workflows/build-porch-static.yaml"
+      - "fluxer_static/**"
   workflow_dispatch:
     inputs:
       build-version:
@@ -49,10 +38,8 @@ jobs:
     needs: validate-branding
     uses: ./.github/workflows/_build-image.yaml
     with:
-      image: fluxer-app-proxy-self-hosted
-      dockerfile: fluxer_app_proxy/Dockerfile
+      image: fluxer-static
+      dockerfile: fluxer_static/Dockerfile
       build-version: ${{ inputs['build-version'] }}
       moving-tags: canary
       finalise-release: false
-      extra-build-args: |
-        FLUXER_APP_PROXY_TIME_FREEZE_ENABLED=false
