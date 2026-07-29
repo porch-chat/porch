@@ -190,10 +190,7 @@ jobs:
         working-directory: ${{ env.WORKDIR }}/fluxer_desktop
         env:
           FLUXER_SKIP_BUILD_CHANNEL_SYNC: "true"
-        run: >-
-          cargo run --locked --quiet --manifest-path
-          ${{ github.workspace }}/_ci/tools/ci/Cargo.toml --
-          build-desktop --step build_electron_main
+        run: pnpm build
 
       - name: Set up .NET
         uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1
