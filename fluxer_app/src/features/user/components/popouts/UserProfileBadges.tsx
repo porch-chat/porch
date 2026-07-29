@@ -97,7 +97,7 @@ export const UserProfileBadges: React.FC<UserProfileBadgesProps> = observer(
 					key: 'staff',
 					iconUrl: cdnUrl('badges/staff.svg?v=2'),
 					tooltip: i18n._(STAFF_DESCRIPTOR, {productName: PRODUCT_NAME}),
-					url: Routes.careers(),
+					url: Routes.marketingHome(),
 				});
 			}
 			if (!selfHosted && user.flags & PublicUserFlags.CTP_MEMBER) {

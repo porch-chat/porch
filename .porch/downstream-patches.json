@@ -153,6 +153,38 @@
 			"conflict_risk": "medium",
 			"upstream_status": "permanently-downstream",
 			"removal_condition": "Remove only if Porch stops distributing branded clients or upstream provides an equivalent compile-time self-host branding contract."
+		},
+		{
+			"id": "porch-cors-origins-0005",
+			"title": "Independent API CORS client origins",
+			"status": "active",
+			"category": "deployment-configuration",
+			"reason": "Keep Stable and Canary authorized against one backend without misusing the public marketing endpoint as a hidden CORS slot.",
+			"paths": [
+				"fluxer_app/src/app/Routes.ts",
+				"fluxer_app/src/features/messaging/utils/MessagingUrlUtils.ts",
+				"fluxer_app/src/features/user/components/popouts/UserProfileBadges.tsx",
+				"fluxer_api/src/api/App.ts",
+				"fluxer_api/src/api/AppCorsOrigins.test.ts",
+				"fluxer_api/src/api/Config.ts",
+				"fluxer_api/src/api/config/APIConfig.ts",
+				"fluxer_api/src/api/config/CorsOrigins.ts",
+				"packages/config/src/ConfigLoader.ts",
+				"packages/config/src/MasterConfig.ts",
+				"packages/config/src/__tests__/EnvironmentOverrides.test.ts",
+				"packages/config/src/config_loader/EnvironmentOverrides.ts",
+				"scripts/validate-porch-branding.mjs"
+			],
+			"tests": [
+				"API CORS origin unit test",
+				"environment override unit test",
+				"API typecheck",
+				"Porch branding contract validation",
+				"production Stable and Canary CORS smoke"
+			],
+			"conflict_risk": "low",
+			"upstream_status": "downstream-until-configurable",
+			"removal_condition": "Remove after upstream exposes an independent additional API CORS origins setting."
 		}
 	]
 }

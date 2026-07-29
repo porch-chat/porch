@@ -12,6 +12,7 @@ import {createInitializer, createShutdown} from './app/APILifecycle';
 import {registerControllers} from './app/ControllerRegistry';
 import {configureMiddleware} from './app/MiddlewarePipeline';
 import type {APIConfig} from './config/APIConfig';
+import {resolveCorsOrigins} from './config/CorsOrigins';
 import type {ILogger} from './ILogger';
 import {recordHttpClientError} from './middleware/AbusiveIpAutoBanner';
 import type {HonoApp, HonoEnv} from './types/HonoEnv';
@@ -42,10 +43,11 @@ export async function createAPIApp(options: CreateAPIAppOptions): Promise<APIApp
 	const shutdownApiLifecycle = createShutdown(logger);
 	setIsDevelopment(config.nodeEnv === 'development');
 	const routes = new Hono<HonoEnv>({strict: true});
+	const corsOrigins = resolveCorsOrigins(config);
 	configureMiddleware(routes, {
 		logger,
 		nodeEnv: config.nodeEnv,
-		corsOrigins: [config.endpoints.webApp, config.endpoints.marketing],
+		corsOrigins,
 		trustClientIpHeader: config.proxy.trust_client_ip_header,
 		clientIpHeaderName: config.proxy.client_ip_header,
 	});

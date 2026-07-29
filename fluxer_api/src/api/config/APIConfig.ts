@@ -33,6 +33,7 @@ export type APIGeoipConfig = APIGeoipFilesystemConfig | APIGeoipS3Config;
 export interface APIConfig {
 	nodeEnv: 'development' | 'production';
 	port: number;
+	corsAllowedOrigins: Array<string>;
 	ipBanExemptIps: Array<string>;
 	cassandra: {
 		hosts: string;

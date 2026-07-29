@@ -48,7 +48,9 @@ export function webhookUrl(webhookId: string, token: string): string {
 }
 
 export function marketingUrl(path: string): string {
-	return `${RuntimeConfig.marketingEndpoint}/${path}`;
+	const normalizedBase = RuntimeConfig.marketingEndpoint.replace(/\/+$/, '');
+	const normalizedPath = path.replace(/^\/+/, '');
+	return normalizedPath ? `${normalizedBase}/${normalizedPath}` : normalizedBase;
 }
 
 export function adminUrl(path: string): string {

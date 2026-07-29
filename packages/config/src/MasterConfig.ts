@@ -82,6 +82,7 @@ export interface MasterConfig {
 	services: {
 		api: {
 			port: number;
+			cors_allowed_origins?: Array<string>;
 			ip_ban_exempt_ips: Array<string>;
 			presigned_attachment_uploads_enabled: boolean;
 			unfurl_ignored_hosts: Array<string>;

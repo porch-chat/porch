@@ -33,6 +33,7 @@ export const Routes = {
 	CONNECTION_CALLBACK: '/connection-callback',
 	USER_PROFILE: '/users/:userId',
 	THEME_STUDIO: '/theme-studio',
+	marketingHome: () => marketingUrl(''),
 	terms: () => marketingUrl('terms'),
 	privacy: () => marketingUrl('privacy'),
 	guidelines: () => marketingUrl('guidelines'),

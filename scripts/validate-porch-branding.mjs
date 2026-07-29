@@ -100,6 +100,8 @@ for (const relativePath of [
 ]) {
 	forbidText(relativePath, 'AuthInstanceSelectorControl');
 }
+requireText('fluxer_app/src/features/user/components/popouts/UserProfileBadges.tsx', 'url: Routes.marketingHome()');
+forbidText('fluxer_app/src/features/user/components/popouts/UserProfileBadges.tsx', 'url: Routes.careers()');
 
 for (const component of ['FluxerIcon.tsx', 'FluxerLogo.tsx']) {
 	const relativePath = `fluxer_app/src/features/ui/components/icons/${component}`;
