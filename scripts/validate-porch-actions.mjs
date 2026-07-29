@@ -19,7 +19,14 @@ const requiredWorkflows = new Map([
 	['build-porch-static.yaml', ['name: build Porch static assets', 'image: fluxer-static', 'moving-tags: canary']],
 	[
 		'check-upstream-intake.yaml',
-		['name: Check Fluxer upstream intake', 'schedule:', 'permissions:', 'contents: read', 'pnpm porch:upstream:intake'],
+		[
+			'name: Check Fluxer upstream intake',
+			'schedule:',
+			'permissions:',
+			'contents: read',
+			'node .porch/configure-readonly-upstream.mjs',
+			'node .porch/check-upstream-intake.mjs',
+		],
 	],
 	['validate-porch-automation.yaml', ['name: Validate Porch automation isolation']],
 ]);
