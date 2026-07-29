@@ -7,6 +7,7 @@ import {
 	getDesktopTroubleshootingSettings,
 	getDesktopWindowBehaviorSettings,
 } from '@electron/common/DesktopConfig';
+import {DESKTOP_APP_NAME} from '@electron/common/DesktopIdentity';
 import type {DesktopInfo, DesktopTroubleshootingSettings, DesktopWindowBehaviorSettings} from '@electron/common/Types';
 import {isPortableMode} from '@electron/common/UserDataPath';
 import {hasEnabledBlinkFeature, MIDDLE_CLICK_AUTOSCROLL_BLINK_FEATURE} from '@electron/main/ChromiumRuntime';
@@ -336,7 +337,7 @@ function formatWindowBehavior(settings: DesktopWindowBehaviorSettings): string {
 
 export function formatDesktopDebugInfo(info: DesktopDebugInfo): string {
 	return [
-		'Fluxer desktop debug info',
+		`${DESKTOP_APP_NAME} desktop debug info`,
 		info.clientInfo,
 		`App URL: ${info.appUrl}`,
 		`Custom app URL: ${info.customAppUrl ?? '(none)'}`,

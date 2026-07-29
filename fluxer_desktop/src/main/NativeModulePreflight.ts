@@ -5,6 +5,7 @@ import {createHash} from 'node:crypto';
 import {existsSync, mkdirSync, readFileSync, writeFileSync} from 'node:fs';
 import {createRequire} from 'node:module';
 import path from 'node:path';
+import {DESKTOP_APP_NAME} from '@electron/common/DesktopIdentity';
 import {app} from 'electron';
 import log from 'electron-log';
 
@@ -375,5 +376,7 @@ export function runNativeModulePreflight(): void {
 	}
 	clearPreflightMarker();
 	const details = failures.map(formatNativeModulePreflightFailure).join('\n');
-	throw new Error(`Fluxer native module preflight failed on ${process.platform}/${process.arch}.\n${details}`);
+	throw new Error(
+		`${DESKTOP_APP_NAME} native module preflight failed on ${process.platform}/${process.arch}.\n${details}`,
+	);
 }

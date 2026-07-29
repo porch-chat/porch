@@ -2,6 +2,7 @@
 
 import {randomUUID} from 'node:crypto';
 import {createRequire} from 'node:module';
+import {DESKTOP_APP_NAME} from '@electron/common/DesktopIdentity';
 import {createChildLogger} from '@electron/common/Logger';
 import type {
 	NativeAudioApplication,
@@ -680,7 +681,7 @@ async function startNativeAudioCapture(
 		isValidTargetPid(targetPid) &&
 		isKnownFluxerAudioProcessPid(targetPid)
 	) {
-		throw new Error('Refusing to capture native audio from Fluxer process');
+		throw new Error(`Refusing to capture native audio from ${DESKTOP_APP_NAME} process`);
 	}
 	const availability = await getNativeAudioAvailability();
 	if (!availability.available) {
@@ -701,7 +702,9 @@ async function startNativeAudioCapture(
 		);
 	}
 	if (requestedScope === 'system' && availability.capabilities?.systemExcludesSelf !== true) {
-		throw new Error(`Native ${loadResult.platform} system audio capture does not guarantee Fluxer self-exclusion`);
+		throw new Error(
+			`Native ${loadResult.platform} system audio capture does not guarantee ${DESKTOP_APP_NAME} self-exclusion`,
+		);
 	}
 	const effectiveWinCaptureScope =
 		loadResult.platform === 'win32' &&

@@ -8,6 +8,7 @@ import {
 	setCustomAppUrl,
 	setDesktopWindowBehaviorSettings,
 } from '@electron/common/DesktopConfig';
+import {DESKTOP_APP_NAME} from '@electron/common/DesktopIdentity';
 import type {
 	ClipboardWriteFileResult,
 	DownloadFileResult,
@@ -211,7 +212,7 @@ async function assertValidFluxerInstance(instanceOrigin: string): Promise<void> 
 		}
 	} catch (error) {
 		const message = error instanceof Error ? error.message : String(error);
-		throw new Error(`Not a valid Fluxer instance (${message})`);
+		throw new Error(`Not a valid ${DESKTOP_APP_NAME} instance (${message})`);
 	} finally {
 		clearTimeout(timeout);
 	}

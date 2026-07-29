@@ -47,6 +47,10 @@ the Stable identity from the accepted immutable source revision—not copying a
 Canary package and not rebuilding from a moving branch. Stable must never
 consume the Canary update feed.
 
+Every platform artifact within one channel build must consume the same version,
+publication timestamp, and source SHA generated before the operating-system
+matrix fans out. Runner start times are not release versions.
+
 ## Read-only upstream intake
 
 Run `pnpm porch:upstream:configure` after cloning and

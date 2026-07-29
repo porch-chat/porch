@@ -12,6 +12,7 @@ import {
 	STABLE_APP_URL,
 } from '@electron/common/Constants';
 import {getAppUrl, getCustomAppUrl, getDesktopWindowBehaviorSettings} from '@electron/common/DesktopConfig';
+import {DESKTOP_APP_NAME} from '@electron/common/DesktopIdentity';
 import {createChildLogger} from '@electron/common/Logger';
 import type {DesktopWindowBehaviorSettings} from '@electron/common/Types';
 import {
@@ -44,7 +45,7 @@ const ACTIVE_USE_NATIVE_TITLEBAR_RENDERER_ARG = '--fluxer-active-use-native-titl
 const INSECURE_ORIGIN_RENDERER_ARG_PREFIX = '--unsafely-treat-insecure-origin-as-secure=';
 const THEME_STUDIO_POPOUT_WINDOW_NAME = 'fluxer_theme_studio';
 const THEME_STUDIO_POPOUT_PATHNAME = '/theme-studio';
-const THEME_STUDIO_POPOUT_TITLE = 'Fluxer | Theme Studio';
+const THEME_STUDIO_POPOUT_TITLE = `${DESKTOP_APP_NAME} | Theme Studio`;
 const THEME_STUDIO_POPOUT_MIN_WIDTH = 900;
 const THEME_STUDIO_POPOUT_MIN_HEIGHT = 620;
 export const THEME_STUDIO_POPOUT_KEY = THEME_STUDIO_POPOUT_WINDOW_NAME;
