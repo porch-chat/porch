@@ -21,5 +21,18 @@ for (const forbidden of [
 
 assert.ok(workflow.includes('actions/upload-artifact@'), 'Porch workflow must retain artifacts for acceptance');
 assert.ok(workflow.includes('permissions:\n  contents: read'), 'Porch workflow must remain read-only by default');
+assert.ok(!workflow.includes('cargo run --locked --quiet'), 'Porch workflow must invoke the cached CI helper directly');
+for (const required of [
+	'Cache Cargo registries',
+	'Cache Porch CI helper',
+	'Cache native desktop builds',
+	'FLUXER_CI_BIN',
+	'node --test scripts/ci-helper-command.test.mjs',
+]) {
+	assert.ok(workflow.includes(required), `Active Porch workflow must include ${required}`);
+}
+const nativeCacheKey = workflow.split(/\r?\n/).find((line) => line.includes('key: windows-x64-porch-native-v2-'));
+assert.ok(nativeCacheKey, 'Porch workflow must define an independently keyed native cache');
+assert.ok(!nativeCacheKey.includes('_ci/'), 'Native cache key must not depend on CI helper sources');
 
 console.log('Active Porch desktop workflow is isolated from Fluxer release infrastructure.');

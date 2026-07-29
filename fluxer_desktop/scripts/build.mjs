@@ -5,6 +5,7 @@ import * as fs from 'node:fs';
 import {createRequire} from 'node:module';
 import * as path from 'node:path';
 import * as esbuild from 'esbuild';
+import {resolveNativeBuildCommand} from './ci-helper-command.mjs';
 
 const ROOT_DIR = path.resolve(import.meta.dirname, '..');
 const SRC_DIR = path.join(ROOT_DIR, 'src');
@@ -365,8 +366,8 @@ function verifyInstalledNativeArtifacts() {
 }
 
 function runNativeCommand(packageDir, command) {
-	const [bin, ...args] = command;
-	console.log(`  $ ${command.join(' ')}`);
+	const {bin, args, shell} = resolveNativeBuildCommand(command);
+	console.log(`  $ ${[bin, ...args].join(' ')}`);
 	const env = {
 		...process.env,
 		PATH: `${ROOT_BIN_DIR}${path.delimiter}${process.env.PATH || ''}`,
@@ -379,7 +380,7 @@ function runNativeCommand(packageDir, command) {
 		cwd: packageDir,
 		stdio: 'inherit',
 		env,
-		shell: process.platform === 'win32',
+		shell,
 	});
 }
 

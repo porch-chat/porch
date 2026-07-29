@@ -47,6 +47,10 @@ jobs:
         working-directory: fluxer_desktop
         run: node scripts/validate-porch-product.mjs
 
+      - name: Test desktop build orchestration
+        working-directory: fluxer_desktop
+        run: node --test scripts/ci-helper-command.test.mjs
+
       - name: Test desktop release helpers
         run: cargo test --locked --manifest-path tools/ci/Cargo.toml desktop::tests
 
@@ -101,15 +105,49 @@ jobs:
         with:
           toolchain: "1.93.0"
 
-      - name: Cache Rust and native desktop builds
+      - name: Cache Cargo registries
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            C:\porch-cargo-target
-          key: windows-x64-porch-cargo-v1-${{ hashFiles('_ci/tools/ci/Cargo.lock', '_ci/tools/ci/**/*.rs', 'source/fluxer_desktop/native/**/Cargo.lock', 'source/fluxer_desktop/native/**/Cargo.toml', 'source/fluxer_desktop/native/**/*.rs') }}
-          restore-keys: windows-x64-porch-cargo-v1-
+          key: windows-x64-porch-cargo-registry-v2-${{ hashFiles('_ci/tools/ci/Cargo.lock', 'source/fluxer_desktop/native/**/Cargo.lock') }}
+          restore-keys: windows-x64-porch-cargo-registry-v2-
+
+      - name: Cache Porch CI helper
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: C:\porch-ci-helper
+          key: windows-x64-porch-ci-helper-v2-rust-1.93.0-${{ hashFiles('_ci/tools/ci/Cargo.lock', '_ci/tools/ci/Cargo.toml', '_ci/tools/ci/**/*.rs') }}
+
+      - name: Cache native desktop builds
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: C:\porch-cargo-target
+          key: windows-x64-porch-native-v2-rust-1.93.0-${{ hashFiles('source/fluxer_desktop/native/**/Cargo.lock', 'source/fluxer_desktop/native/**/Cargo.toml', 'source/fluxer_desktop/native/**/*.rs') }}
+          restore-keys: |
+            windows-x64-porch-native-v2-rust-1.93.0-
+            windows-x64-porch-cargo-v1-
+
+      - name: Prepare Porch CI helper
+        shell: pwsh
+        env:
+          CARGO_TARGET_DIR: C:\porch-helper-target
+        run: |
+          $helperDir = "C:\porch-ci-helper"
+          $helper = Join-Path $helperDir "fluxer-ci.exe"
+          if (-not (Test-Path -LiteralPath $helper)) {
+            cargo build --locked --release --manifest-path "$env:GITHUB_WORKSPACE\_ci\tools\ci\Cargo.toml"
+            if ($LASTEXITCODE -ne 0) {
+              throw "Failed to build Porch CI helper"
+            }
+            New-Item -ItemType Directory -Path $helperDir -Force | Out-Null
+            Copy-Item -LiteralPath "$env:CARGO_TARGET_DIR\release\fluxer-ci.exe" -Destination $helper
+          }
+          if (-not (Test-Path -LiteralPath $helper)) {
+            throw "Porch CI helper is missing at $helper"
+          }
+          "FLUXER_CI_BIN=$helper" >> $env:GITHUB_ENV
 
       - name: Set up Python
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
@@ -117,18 +155,12 @@ jobs:
           python-version: "3.13"
 
       - name: Ensure python3 command
-        run: >-
-          cargo run --locked --quiet --manifest-path
-          ${{ github.workspace }}/_ci/tools/ci/Cargo.toml --
-          build-desktop --step ensure_python3_windows
+        run: '& $env:FLUXER_CI_BIN build-desktop --step ensure_python3_windows'
 
       - name: Shorten paths
         env:
           SUBST_TARGET: ${{ github.workspace }}/source
-        run: >-
-          cargo run --locked --quiet --manifest-path
-          ${{ github.workspace }}/_ci/tools/ci/Cargo.toml --
-          build-desktop --step windows_paths
+        run: '& $env:FLUXER_CI_BIN build-desktop --step windows_paths'
 
       - name: Set up Node.js
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
@@ -136,16 +168,10 @@ jobs:
           node-version: 24
 
       - name: Set up pnpm
-        run: >-
-          cargo run --locked --quiet --manifest-path
-          ${{ github.workspace }}/_ci/tools/ci/Cargo.toml --
-          build-desktop --step setup_pnpm_corepack
+        run: '& $env:FLUXER_CI_BIN build-desktop --step setup_pnpm_corepack'
 
       - name: Resolve pnpm store
-        run: >-
-          cargo run --locked --quiet --manifest-path
-          ${{ github.workspace }}/_ci/tools/ci/Cargo.toml --
-          build-desktop --step resolve_pnpm_store_windows
+        run: '& $env:FLUXER_CI_BIN build-desktop --step resolve_pnpm_store_windows'
 
       - name: Cache pnpm store
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
@@ -160,31 +186,19 @@ jobs:
           arch: amd64
 
       - name: Install Rust Windows targets
-        run: >-
-          cargo run --locked --quiet --manifest-path
-          ${{ github.workspace }}/_ci/tools/ci/Cargo.toml --
-          build-desktop --step install_rust_windows_targets
+        run: '& $env:FLUXER_CI_BIN build-desktop --step install_rust_windows_targets'
 
       - name: Install dependencies
         working-directory: ${{ env.WORKDIR }}/fluxer_desktop
-        run: >-
-          cargo run --locked --quiet --manifest-path
-          ${{ github.workspace }}/_ci/tools/ci/Cargo.toml --
-          build-desktop --step install_dependencies
+        run: '& $env:FLUXER_CI_BIN build-desktop --step install_dependencies'
 
       - name: Update package version
         working-directory: ${{ env.WORKDIR }}/fluxer_desktop
-        run: >-
-          cargo run --locked --quiet --manifest-path
-          ${{ github.workspace }}/_ci/tools/ci/Cargo.toml --
-          build-desktop --step update_version
+        run: '& $env:FLUXER_CI_BIN build-desktop --step update_version'
 
       - name: Set release channel
         working-directory: ${{ env.WORKDIR }}/fluxer_desktop
-        run: >-
-          cargo run --locked --quiet --manifest-path
-          ${{ github.workspace }}/_ci/tools/ci/Cargo.toml --
-          build-desktop --step set_build_channel
+        run: '& $env:FLUXER_CI_BIN build-desktop --step set_build_channel'
 
       - name: Build Electron runtime
         working-directory: ${{ env.WORKDIR }}/fluxer_desktop
@@ -199,10 +213,7 @@ jobs:
 
       - name: Install Velopack
         working-directory: ${{ env.WORKDIR }}/fluxer_desktop
-        run: >-
-          cargo run --locked --quiet --manifest-path
-          ${{ github.workspace }}/_ci/tools/ci/Cargo.toml --
-          build-desktop --step install_velopack_cli
+        run: '& $env:FLUXER_CI_BIN build-desktop --step install_velopack_cli'
 
       - name: Build unpacked application
         working-directory: ${{ env.WORKDIR }}/fluxer_desktop
@@ -210,48 +221,30 @@ jobs:
           TEMP: C:\t
           TMP: C:\t
           ELECTRON_BUILDER_CACHE: C:\ebcache
-        run: >-
-          cargo run --locked --quiet --manifest-path
-          ${{ github.workspace }}/_ci/tools/ci/Cargo.toml --
-          build-desktop --step build_app_windows
+        run: '& $env:FLUXER_CI_BIN build-desktop --step build_app_windows'
 
       - name: Package Velopack installer
         working-directory: ${{ env.WORKDIR }}/fluxer_desktop
-        run: >-
-          cargo run --locked --quiet --manifest-path
-          ${{ github.workspace }}/_ci/tools/ci/Cargo.toml --
-          build-desktop --step package_app_windows_velopack
+        run: '& $env:FLUXER_CI_BIN build-desktop --step package_app_windows_velopack'
 
       - name: Check Windows path budget
         working-directory: ${{ env.WORKDIR }}/fluxer_desktop
         env:
           MAX_WINDOWS_PATH_LEN: "260"
           PATH_HEADROOM: "10"
-        run: >-
-          cargo run --locked --quiet --manifest-path
-          ${{ github.workspace }}/_ci/tools/ci/Cargo.toml --
-          build-desktop --step analyse_velopack_paths
+        run: '& $env:FLUXER_CI_BIN build-desktop --step analyse_velopack_paths'
 
       - name: Create portable archive
         working-directory: ${{ env.WORKDIR }}/fluxer_desktop
-        run: >-
-          cargo run --locked --quiet --manifest-path
-          ${{ github.workspace }}/_ci/tools/ci/Cargo.toml --
-          build-desktop --step create_portable_zip_windows
+        run: '& $env:FLUXER_CI_BIN build-desktop --step create_portable_zip_windows'
 
       - name: Stage release files
         working-directory: ${{ env.WORKDIR }}/fluxer_desktop
-        run: >-
-          cargo run --locked --quiet --manifest-path
-          ${{ github.workspace }}/_ci/tools/ci/Cargo.toml --
-          build-desktop --step prepare_artifacts_windows
+        run: '& $env:FLUXER_CI_BIN build-desktop --step prepare_artifacts_windows'
 
       - name: Generate checksums
         working-directory: ${{ env.WORKDIR }}/fluxer_desktop
-        run: >-
-          cargo run --locked --quiet --manifest-path
-          ${{ github.workspace }}/_ci/tools/ci/Cargo.toml --
-          build-desktop --step generate_checksums_windows
+        run: '& $env:FLUXER_CI_BIN build-desktop --step generate_checksums_windows'
 
       - name: Upload unsigned Porch artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
