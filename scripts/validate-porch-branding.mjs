@@ -85,6 +85,12 @@ for (const relativePath of [
 }
 requireText('fluxer_app/src/features/app/config/I18nDisplayConstants.ts', "EXAMPLE_INSTANCE_DOMAIN = 'api.porch.chat'");
 forbidText('fluxer_app/src/features/app/config/I18nDisplayConstants.ts', "EXAMPLE_INSTANCE_DOMAIN = 'fluxer.app'");
+for (const relativePath of [
+	'fluxer_app/src/features/auth/flow/AuthLoginLayout.tsx',
+	'fluxer_app/src/features/auth/flow/AuthSsoPanel.tsx',
+]) {
+	forbidText(relativePath, 'AuthInstanceSelectorControl');
+}
 
 for (const component of ['FluxerIcon.tsx', 'FluxerLogo.tsx']) {
 	const relativePath = `fluxer_app/src/features/ui/components/icons/${component}`;
