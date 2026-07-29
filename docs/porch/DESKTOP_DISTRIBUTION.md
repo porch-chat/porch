@@ -79,18 +79,24 @@ indexes. All payloads have SHA-256 sidecars.
 
 ## Promotion
 
-1. Build from the recorded Porch source revision.
-2. Publish the exact artifact to Canary.
+1. Build Canary from the recorded immutable Porch source revision.
+2. Publish the immutable Canary artifact to the Canary feed.
 3. Verify install, launch origin, protocol registration, update check,
    notifications, permissions, media, and uninstall.
 4. Soak the candidate.
-5. Copy the exact accepted artifact bytes and digest into Stable.
-6. Generate Stable indexes over those same bytes. Do not rebuild.
-7. Retain the prior Stable index and payload for rollback.
+5. Build the distinct Stable identity from that exact accepted source revision,
+   changing only declared channel parameters and signing inputs.
+6. Repeat Stable install/update acceptance, then atomically publish its own
+   immutable artifacts and indexes.
+7. Record both channel-specific digests and retain the prior Stable index and
+   payload for rollback.
 
-Promotion is a controlled copy, not a branch merge or moving-tag rebuild.
-Downgrade protection remains Velopack's responsibility; rollback publishes a
-newer package version containing the last accepted application bytes.
+Promotion is a source-revision lock plus two channel-specific builds. It is not
+a branch merge, a moving-tag rebuild, or a byte copy: side-by-side Stable and
+Canary packages necessarily differ in their application, installer, protocol,
+storage, notification, and update-feed identities. Downgrade protection remains
+Velopack's responsibility; rollback publishes a newer Stable package version
+containing the last accepted Stable application bytes.
 
 ## Brand assets
 
