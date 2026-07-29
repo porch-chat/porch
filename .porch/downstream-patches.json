@@ -298,6 +298,7 @@
 			"tests": [
 				"registration policy API tests",
 				"member registration invite API tests",
+				"member registration invite timestamp regression test",
 				"instance registration repository tests",
 				"app and API TypeScript typechecks",
 				"OpenAPI generation and validation",

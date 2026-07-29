@@ -13,6 +13,7 @@ import {Spinner} from '@app/features/ui/components/Spinner';
 import type {MemberRegistrationInvite} from '@app/features/user/commands/MemberRegistrationInviteCommands';
 import * as MemberRegistrationInviteCommands from '@app/features/user/commands/MemberRegistrationInviteCommands';
 import styles from '@app/features/user/components/member_registration_invites/MemberRegistrationInvitesPanel.module.css';
+import {formatMemberRegistrationInviteTimestamp} from '@app/features/user/components/member_registration_invites/MemberRegistrationInviteTimestamp';
 import {msg} from '@lingui/core/macro';
 import {Trans, useLingui} from '@lingui/react/macro';
 import {ClockIcon, LinkSimpleIcon, ShieldCheckIcon, TrashIcon, UserPlusIcon} from '@phosphor-icons/react';
@@ -172,7 +173,7 @@ export function MemberRegistrationInvitesPanel({showHistory = true}: MemberRegis
 					<div className={styles.metaRow}>
 						<span>
 							<ClockIcon aria-hidden />
-							<Trans>Expires {formatDate(activeInvite.expires_at)}</Trans>
+							{formatMemberRegistrationInviteTimestamp(i18n._(msg`Expires`), formatDate(activeInvite.expires_at))}
 						</span>
 						<span>
 							<UserPlusIcon aria-hidden />
@@ -259,7 +260,7 @@ export function MemberRegistrationInvitesPanel({showHistory = true}: MemberRegis
 											{invite.label || <Trans>Friend registration link</Trans>}
 										</span>
 										<span className={styles.historyDate}>
-											<Trans>Created {formatDate(invite.created_at)}</Trans>
+											{formatMemberRegistrationInviteTimestamp(i18n._(msg`Created`), formatDate(invite.created_at))}
 										</span>
 									</div>
 									<span className={styles.statusBadge} data-status={status}>
