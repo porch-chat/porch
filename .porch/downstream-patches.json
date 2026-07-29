@@ -308,6 +308,29 @@
 			"conflict_risk": "medium",
 			"upstream_status": "permanently-downstream",
 			"removal_condition": "Remove only if Porch stops using invite-only registration or upstream independently separates member registration links from community and group-DM membership invites."
+		},
+		{
+			"id": "porch-actions-isolation-0010",
+			"title": "Isolate Porch automation from Fluxer and legacy infrastructure",
+			"status": "active",
+			"category": "automation",
+			"reason": "Prevent this detached fork from dispatching to or mutating Fluxer-owned systems, remove obsolete deployment and moderation workflows, and automatically publish the shared Porch API image from Canary.",
+			"paths": [
+				".github/workflows",
+				"AGENTS.md",
+				"docs/porch/ACTIONS_POLICY.md",
+				"scripts/validate-porch-actions.mjs"
+			],
+			"tests": [
+				"Porch automation isolation validation",
+				"Porch branding contract validation",
+				"workflow YAML parsing",
+				"GitHub Actions Canary API image build",
+				"git diff --check"
+			],
+			"conflict_risk": "medium",
+			"upstream_status": "permanently-downstream",
+			"removal_condition": "Remove only if Porch ceases to be a detached distribution or all inherited automation becomes destination-safe, Porch-owned, and compatible with the Porch deployment model."
 		}
 	]
 }

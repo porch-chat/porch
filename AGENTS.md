@@ -24,3 +24,7 @@ This fork is the public source for the privately operated Porch service.
   visible to users.
 - Stable and Canary are separate client/update channels over one Porch
   production backend and data universe.
+- GitHub Actions must not authenticate to, dispatch, mutate, deploy, or
+  moderate Fluxer-owned repositories, organizations, infrastructure, or
+  storage. Porch image publishing is limited to Porch-owned GHCR packages;
+  production deployment belongs in the private `porch-deploy` repository.

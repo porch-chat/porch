@@ -1,0 +1,63 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Porch API and worker use the same immutable image over one production backend.
+name: build Porch API
+
+on:
+  push:
+    branches:
+      - canary
+    paths:
+      - ".github/workflows/_build-image.yaml"
+      - ".github/workflows/build-porch-api.yaml"
+      - "fluxer_api/**"
+      - "fluxer_common/**"
+      - "fluxer_svc/**"
+      - "packages/**"
+      - "patches/**"
+      - "tools/ci/**"
+      - "Cargo.lock"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+  workflow_dispatch:
+    inputs:
+      build-version:
+        description: "Optional explicit Porch CalVer build version"
+        type: string
+        required: false
+        default: ""
+
+permissions:
+  actions: read
+  contents: write
+  packages: write
+
+concurrency:
+  group: porch-api-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-branding:
+    name: Validate Porch contracts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout Porch source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+      - name: Validate Porch branding
+        run: node scripts/validate-porch-branding.mjs
+
+      - name: Validate Porch automation isolation
+        run: node scripts/validate-porch-actions.mjs
+
+  build:
+    needs: validate-branding
+    uses: ./.github/workflows/_build-image.yaml
+    with:
+      image: fluxer-api
+      dockerfile: fluxer_api/Dockerfile
+      build-version: ${{ inputs['build-version'] }}
+      moving-tags: canary
+      finalise-release: false
+    secrets: inherit
