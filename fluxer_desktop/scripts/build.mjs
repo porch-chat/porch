@@ -10,6 +10,8 @@ const ROOT_DIR = path.resolve(import.meta.dirname, '..');
 const SRC_DIR = path.join(ROOT_DIR, 'src');
 const DIST_DIR = path.join(ROOT_DIR, 'dist');
 const NATIVE_DIR = path.join(ROOT_DIR, 'native');
+const CI_MANIFEST_PATH =
+	process.env.FLUXER_CI_MANIFEST_PATH || path.join(ROOT_DIR, '..', 'tools', 'ci', 'Cargo.toml');
 const requireModule = createRequire(import.meta.url);
 const isProduction =
 	process.env.NODE_ENV === 'production' ||
@@ -642,7 +644,7 @@ function ensureBuildChannelFile() {
 		[
 			'run',
 			'--manifest-path',
-			path.join(ROOT_DIR, '..', 'tools', 'ci', 'Cargo.toml'),
+			CI_MANIFEST_PATH,
 			'--',
 			'build-desktop',
 			'--step',

@@ -72,6 +72,7 @@ jobs:
       DESKTOP_VARIANT: default
       FLUXER_DESKTOP_BUILD_VARIANT: default
       FLUXER_WINDOWS_GAME_CAPTURE_MODULE_ENABLED: "false"
+      FLUXER_CI_MANIFEST_PATH: ${{ github.workspace }}\_ci\tools\ci\Cargo.toml
       CARGO_TARGET_DIR: C:\porch-cargo-target
     steps:
       - name: Checkout Porch CI helpers
