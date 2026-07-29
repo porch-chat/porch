@@ -38,10 +38,9 @@ on:
         required: false
         default: true
 
-permissions:
-  actions: read
-  contents: write
-  packages: write
+# Permissions are inherited from the caller. Porch image-only callers grant
+# read-only repository contents, while upstream release callers grant the
+# contents write permission needed by the optional finalise job.
 
 defaults:
   run:
