@@ -96,7 +96,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.PORCH_GHCR_TOKEN }}
       - uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf
         with:
           context: ${{ inputs.context }}
@@ -132,7 +132,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.PORCH_GHCR_TOKEN }}
       - name: create and push multi-arch manifest
         env:
           IMAGE: ghcr.io/${{ env.GHCR_OWNER }}/${{ inputs.image }}

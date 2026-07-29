@@ -8,7 +8,7 @@ ARG BUILD_VERSION=""
 LABEL org.opencontainers.image.title="fluxer-static"
 LABEL org.opencontainers.image.description="Self-hostable static asset bundle for Fluxer"
 LABEL org.opencontainers.image.licenses="AGPL-3.0-or-later"
-LABEL org.opencontainers.image.source="https://github.com/fluxerapp/fluxer/tree/main/fluxer_static"
+LABEL org.opencontainers.image.source="https://github.com/porch-chat/porch"
 LABEL org.opencontainers.image.version="${BUILD_VERSION}"
 LABEL app.fluxer.build-version="${BUILD_VERSION}"
 
