@@ -1,11 +1,18 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import {APIErrorCodes} from '@fluxer/constants/src/ApiErrorCodes';
+import type {GuildResponse} from '@fluxer/schema/src/domains/guild/GuildResponseSchemas';
 import {afterAll, beforeAll, beforeEach, describe, expect, it} from 'vitest';
 import {getInstanceConfigRepository} from '../../middleware/ServiceSingletons';
 import type {ApiTestHarness} from '../../test/ApiTestHarness';
-import {createBuilderWithoutAuth} from '../../test/TestRequestBuilder';
-import {createAuthHarness, createUniqueEmail, createUniqueUsername} from './AuthTestUtils';
+import {createBuilder, createBuilderWithoutAuth} from '../../test/TestRequestBuilder';
+import {
+	createAuthHarness,
+	createTestAccount,
+	createUniqueEmail,
+	createUniqueUsername,
+	loginAccount,
+} from './AuthTestUtils';
 
 interface PendingRegistrationResponse {
 	registration_pending_approval: true;
@@ -26,6 +33,28 @@ function registrationBody(prefix: string): Record<string, unknown> {
 		date_of_birth: '2000-01-01',
 		consent: true,
 	};
+}
+
+async function createGuildInvite(harness: ApiTestHarness): Promise<string> {
+	let owner = await createTestAccount(harness);
+	owner = await loginAccount(harness, owner);
+	const guild = await createBuilder<GuildResponse>(harness, owner.token)
+		.post('/guilds')
+		.body({name: `RegistrationInvite-${Date.now()}`})
+		.execute();
+	if (!guild.system_channel_id) {
+		throw new Error('Guild creation did not return a system_channel_id');
+	}
+	const invite = await createBuilder<{code: string}>(harness, owner.token)
+		.post(`/channels/${guild.system_channel_id}/invites`)
+		.body({
+			max_uses: 1,
+			max_age: 3600,
+			unique: true,
+			temporary: false,
+		})
+		.execute();
+	return invite.code;
 }
 
 describe('Auth registration policy', () => {
@@ -72,6 +101,26 @@ describe('Auth registration policy', () => {
 			.post('/auth/register')
 			.body({...registrationBody('closedlinkreuse'), registration_url_code: code})
 			.expect(400, APIErrorCodes.REGISTRATION_URL_INVALID)
+			.execute();
+	});
+
+	it('allows a valid member-created guild invite while public registration is closed', async () => {
+		const inviteCode = await createGuildInvite(harness);
+		await getInstanceConfigRepository().setRegistrationConfig({mode: 'closed'});
+		const registration = await createBuilderWithoutAuth<RegistrationTokenResponse>(harness)
+			.post('/auth/register')
+			.body({...registrationBody('closedinvite'), invite_code: inviteCode})
+			.execute();
+		expect(registration.token.length).toBeGreaterThan(0);
+		expect(registration.user_id.length).toBeGreaterThan(0);
+	});
+
+	it('does not allow an invalid member invite while public registration is closed', async () => {
+		await getInstanceConfigRepository().setRegistrationConfig({mode: 'closed'});
+		await createBuilderWithoutAuth(harness)
+			.post('/auth/register')
+			.body({...registrationBody('closedinvalidinvite'), invite_code: 'not-a-real-invite'})
+			.expect(403, APIErrorCodes.REGISTRATION_CLOSED)
 			.execute();
 	});
 

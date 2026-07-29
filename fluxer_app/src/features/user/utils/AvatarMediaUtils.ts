@@ -2,7 +2,7 @@
 
 import type {MediaProxyImageSize} from '@fluxer/constants/src/MediaProxyImageSizes';
 
-const DEFAULT_AVATAR_PRIMARY_COLORS = [0x4641d9, 0xf0b100, 0x00bba7, 0x2b7fff, 0xad46ff, 0x6a7282];
+const DEFAULT_AVATAR_PRIMARY_COLORS = [0x14b8a6, 0x2563eb, 0x7c3aed, 0xf97352, 0xf59e0b, 0x64748b];
 export const DEFAULT_AVATAR_COUNT = BigInt(DEFAULT_AVATAR_PRIMARY_COLORS.length);
 export const normalizeEndpoint = (endpoint: string): string => endpoint.replace(/\/$/, '');
 export const parseAvatarHash = (value: string) => {

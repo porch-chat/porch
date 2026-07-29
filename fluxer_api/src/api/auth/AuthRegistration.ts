@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import {AdminACLs} from '@fluxer/constants/src/AdminACLs';
+import {InviteTypes} from '@fluxer/constants/src/ChannelConstants';
 import {ProfileFieldPrivacyFlags, UserFlags} from '@fluxer/constants/src/UserConstants';
 import {ValidationErrorCodes} from '@fluxer/constants/src/ValidationErrorCodes';
 import {RegistrationClosedError} from '@fluxer/errors/src/domains/auth/RegistrationClosedError';
@@ -142,7 +143,12 @@ export async function register(
 		throw InputValidationError.fromCode('consent', ValidationErrorCodes.MUST_AGREE_TO_TOS_AND_PRIVACY_POLICY);
 	}
 	const now = new Date();
-	const registrationAccess = await resolveRegistrationAccess(instanceConfigRepository, data.registration_url_code);
+	const registrationAccess = await resolveRegistrationAccess({
+		instanceConfigRepository,
+		inviteService,
+		registrationUrlCode: data.registration_url_code,
+		inviteCode: data.invite_code,
+	});
 	const clientIp = requireClientIp(request, {
 		trustClientIpHeader: config.proxy.trust_client_ip_header,
 		clientIpHeaderName: config.proxy.client_ip_header,
@@ -470,10 +476,17 @@ function shouldAttemptBootstrapAdminGrant(
 	);
 }
 
-async function resolveRegistrationAccess(
-	instanceConfigRepository: InstanceConfigRepository,
-	registrationUrlCode: string | null | undefined,
-): Promise<{pendingApproval: boolean; registrationUrl: InstanceRegistrationUrl | null}> {
+async function resolveRegistrationAccess({
+	instanceConfigRepository,
+	inviteService,
+	registrationUrlCode,
+	inviteCode,
+}: {
+	instanceConfigRepository: InstanceConfigRepository;
+	inviteService: InviteService | null;
+	registrationUrlCode: string | null | undefined;
+	inviteCode: string | null | undefined;
+}): Promise<{pendingApproval: boolean; registrationUrl: InstanceRegistrationUrl | null}> {
 	const registrationConfig = await instanceConfigRepository.getRegistrationConfig();
 	const normalizedCode = registrationUrlCode?.trim();
 	let registrationUrl: InstanceRegistrationUrl | null = null;
@@ -486,13 +499,33 @@ async function resolveRegistrationAccess(
 			throw new RegistrationUrlInvalidError();
 		}
 	}
-	if (!registrationUrl && registrationConfig.mode === 'closed') {
+	const inviteGrantsAccess =
+		!registrationUrl && registrationConfig.mode === 'closed'
+			? await isUsableRegistrationInvite(inviteService, inviteCode)
+			: false;
+	if (!registrationUrl && registrationConfig.mode === 'closed' && !inviteGrantsAccess) {
 		throw new RegistrationClosedError();
 	}
 	return {
 		pendingApproval: registrationUrl ? registrationUrl.approval_required : registrationConfig.mode === 'approval',
 		registrationUrl,
 	};
+}
+
+async function isUsableRegistrationInvite(
+	inviteService: InviteService | null,
+	inviteCode: string | null | undefined,
+): Promise<boolean> {
+	const normalizedInviteCode = inviteCode?.trim();
+	if (!inviteService || !normalizedInviteCode) return false;
+	try {
+		const invite = await inviteService.getInvite(createInviteCode(normalizedInviteCode));
+		const isSocialInvite = invite.type === InviteTypes.GUILD || invite.type === InviteTypes.GROUP_DM;
+		const hasRemainingUses = invite.maxUses === 0 || invite.uses < invite.maxUses;
+		return isSocialInvite && hasRemainingUses;
+	} catch {
+		return false;
+	}
 }
 
 async function maybeIndexUser(user: User): Promise<void> {

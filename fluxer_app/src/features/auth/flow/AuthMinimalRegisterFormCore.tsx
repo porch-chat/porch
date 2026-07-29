@@ -61,7 +61,8 @@ export const AuthMinimalRegisterFormCore = observer(function AuthMinimalRegister
 		const value = new URLSearchParams(location.search).get('registration_url')?.trim();
 		return value || undefined;
 	}, [location.search]);
-	const isPublicRegistrationClosed = RuntimeConfig.registration.mode === 'closed' && !registrationUrlCode;
+	const isPublicRegistrationClosed =
+		RuntimeConfig.registration.mode === 'closed' && !registrationUrlCode && !inviteCode;
 	const collectDateOfBirth = RuntimeConfig.collectDateOfBirthOnRegistration;
 	const {getRegisterFormDraft, setRegisterFormDraft, clearRegisterFormDraft} = useAuthRegisterDraftContext();
 	const globalNameId = useId();

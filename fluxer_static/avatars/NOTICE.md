@@ -1,5 +1,5 @@
 # Avatar asset notice
 
-The avatar images in this directory are Fluxer-owned static assets. They are
-covered by the root `LICENSE` notice unless a specific file later carries a
-more specific license notice.
+The default avatars in this directory are Porch-branded assets derived from
+`fluxer_desktop/build_resources/porch/porch-macos-glyph.svg`. They are covered
+by the root `LICENSE` notice.

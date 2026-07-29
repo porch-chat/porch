@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import {createHash} from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
@@ -45,6 +46,14 @@ function requireSameBytes(leftPath, rightPath) {
 	const right = fs.readFileSync(path.join(root, rightPath));
 	if (!left.equals(right)) {
 		failures.push(`${leftPath} does not match ${rightPath}`);
+	}
+}
+
+function requireSha256(relativePath, expected) {
+	const bytes = fs.readFileSync(path.join(root, relativePath));
+	const actual = createHash('sha256').update(bytes).digest('hex');
+	if (actual !== expected) {
+		failures.push(`${relativePath} has SHA-256 ${actual}; expected Porch asset ${expected}`);
 	}
 }
 
@@ -128,6 +137,24 @@ for (const [name, width, height] of [
 ]) {
 	requirePng(`fluxer_static/web/${name}`, width, height);
 }
+
+for (const [name, sha256] of [
+	['0.png', '15a26943b61d4ae4f592de40988cf6d95e83caf303e424db1171b35ad32877a5'],
+	['1.png', 'ffb179ebbebef22a41c0bd0412b63aa286bb90becaaddf1f1c858f3e27276cc0'],
+	['2.png', '0662f7cb01eb39a4b6e9a41d5ee0dd97068b2af70d0d32c5510ae15def326ce6'],
+	['3.png', 'b78e22ae7ac6cd13812c33c72e48c1a2b60a947496ece73244638dcde6cdb49b'],
+	['4.png', 'fd35dbb6320402366949074b105b021a4d87360aafed6c3e4d6cdf98f8e7968b'],
+	['5.png', '909f71fd6b07f267b2d414080f36404428a6b4722489fe6ad08b5eb4942875c6'],
+]) {
+	requirePng(`fluxer_static/avatars/${name}`, 512, 512);
+	requireSha256(`fluxer_static/avatars/${name}`, sha256);
+}
+requireText('fluxer_static/avatars/NOTICE.md', 'Porch-branded assets');
+requireText(
+	'fluxer_app/src/features/user/utils/AvatarMediaUtils.ts',
+	'0x14b8a6, 0x2563eb, 0x7c3aed, 0xf97352, 0xf59e0b, 0x64748b',
+);
+forbidText('fluxer_app/src/features/user/utils/AvatarMediaUtils.ts', '0x4641d9');
 
 requireText('fluxer_desktop/electron-builder.config.cjs', `icon: \`build_resources/\${iconDir}/icon.png\``);
 forbidText(
