@@ -1709,8 +1709,12 @@ fn validate_velopack_output(
         })?;
     let desired_setup_name = format!("{}-{version}-win-{arch}.exe", config.pack_title);
     if file_name_string(&setup_exe)? != desired_setup_name {
-        fs::rename(&setup_exe, config.output_dir.join(desired_setup_name))
-            .with_context(|| format!("Failed to rename {}", setup_exe.display()))?;
+        fs::copy(&setup_exe, config.output_dir.join(desired_setup_name)).with_context(|| {
+            format!(
+                "Failed to create installer alias for {}",
+                setup_exe.display()
+            )
+        })?;
     }
     Ok(())
 }
