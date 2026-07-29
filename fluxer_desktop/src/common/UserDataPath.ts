@@ -3,6 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {BUILD_CHANNEL, type BuildChannel} from '@electron/common/BuildChannel';
+import {getPortableMarkerLocations} from '@electron/common/PortableModePath';
 import {PORCH_DESKTOP_PRODUCT} from '@electron/common/PorchProduct';
 import {app} from 'electron';
 
@@ -42,16 +43,11 @@ function detectPortableMode(): boolean {
 	if (process.argv.includes('--fluxer-portable')) return true;
 	const envValue = process.env.FLUXER_PORTABLE;
 	if (envValue && ['1', 'true', 'yes', 'on'].includes(envValue.trim().toLowerCase())) return true;
-	const markerLocations = [path.join(path.dirname(process.execPath), '.portable')];
-	if (process.platform === 'darwin') {
-		const match = process.execPath.match(/^(.+?)\.app\//);
-		if (match) {
-			markerLocations.push(path.join(path.dirname(`${match[1]}.app`), '.portable'));
-		}
-	}
-	if (process.env.APPIMAGE) {
-		markerLocations.push(path.join(path.dirname(process.env.APPIMAGE), '.portable'));
-	}
+	const markerLocations = getPortableMarkerLocations({
+		appImage: process.env.APPIMAGE,
+		execPath: process.execPath,
+		platform: process.platform,
+	});
 	return markerLocations.some((location) => {
 		try {
 			return fs.existsSync(location);

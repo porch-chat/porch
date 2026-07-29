@@ -194,7 +194,7 @@ jobs:
 
       - name: Test portable protocol ownership
         working-directory: ${{ env.WORKDIR }}/fluxer_desktop
-        run: node --test src/main/DeepLinkRegistrationPolicy.test.mjs
+        run: node --test src/common/PortableModePath.test.mjs src/main/DeepLinkRegistrationPolicy.test.mjs
 
       - name: Test Velopack under packaged Electron Node
         working-directory: ${{ env.WORKDIR }}/fluxer_desktop
@@ -424,7 +424,7 @@ jobs:
 
       - name: Test portable protocol ownership
         working-directory: ${{ env.WORKDIR }}/fluxer_desktop
-        run: node --test src/main/DeepLinkRegistrationPolicy.test.mjs
+        run: node --test src/common/PortableModePath.test.mjs src/main/DeepLinkRegistrationPolicy.test.mjs
 
       - name: Update package version
         working-directory: ${{ env.WORKDIR }}/fluxer_desktop
