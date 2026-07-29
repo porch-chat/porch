@@ -1,0 +1,45 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+name: build Porch app proxy
+
+on:
+  push:
+    branches:
+      - canary
+    paths:
+      - ".github/workflows/_build-image.yaml"
+      - ".github/workflows/build-porch-app-proxy.yaml"
+      - "fluxer_app/**"
+      - "fluxer_app_proxy/**"
+      - "fluxer_common/**"
+      - "fluxer_svc/**"
+      - "packages/**"
+      - "patches/**"
+      - "tools/ci/**"
+      - "Cargo.lock"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+  workflow_dispatch:
+    inputs:
+      build-version:
+        description: "Optional explicit Porch CalVer build version"
+        type: string
+        required: false
+        default: ""
+
+permissions:
+  actions: read
+  contents: write
+  packages: write
+
+jobs:
+  build:
+    uses: ./.github/workflows/_build-image.yaml
+    with:
+      image: fluxer-app-proxy-self-hosted
+      dockerfile: fluxer_app_proxy/Dockerfile
+      build-version: ${{ inputs['build-version'] }}
+      moving-tags: canary
+      finalise-release: false
+      extra-build-args: |
+        FLUXER_APP_PROXY_TIME_FREEZE_ENABLED=false

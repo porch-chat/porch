@@ -80,6 +80,7 @@
 			"category": "client-resilience",
 			"reason": "Prevent stale runtime configuration and an unanswered gateway IDENTIFY from leaving authenticated web, PWA, or desktop clients on an indefinite splash screen.",
 			"paths": [
+				".github/workflows/build-porch-app-proxy.yaml",
 				"docs/porch/CLIENT_RESILIENCE.md",
 				"fluxer_app/src/features/app/components/ConnectionIssuesLinks.module.css",
 				"fluxer_app/src/features/app/components/ConnectionIssuesLinks.tsx",

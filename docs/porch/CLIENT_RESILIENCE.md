@@ -33,3 +33,8 @@ suite validates Stable and Canary discovery, semantic same-origin login and
 protected API responses, CORS compatibility, the gateway `HELLO`, exact
 LiveKit routing and token boundary, passkey configuration, service state, and
 immutable images.
+
+Pushes to `canary` that touch the web client or app proxy build a Porch-owned
+multi-architecture image tagged `canary`. Production deployment must still pin
+the resolved manifest digest; moving tags are never accepted in the operations
+lock file.
