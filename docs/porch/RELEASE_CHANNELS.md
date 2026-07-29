@@ -59,6 +59,12 @@ available for fetches, while the configured push URL uses an intentionally
 unsupported protocol. Porch never pushes branches or tags, opens pull requests,
 or otherwise writes to Fluxer.
 
+GitHub Actions also runs `pnpm porch:upstream:intake` every day and on demand.
+The check only reads Fluxer's public `main` reference and compares it with
+`.porch/upstream-lock.json`; it never opens a pull request, changes the lock, or
+writes to the upstream repository. A moved upstream head makes the workflow
+fail so intake remains an explicit reviewed operation.
+
 ## Public hostnames
 
 - `porch.chat`: landing page, downloads, status links, documentation, and

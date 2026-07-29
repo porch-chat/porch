@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+name: Check Fluxer upstream intake
+
+on:
+  schedule:
+    - cron: "17 13 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: porch-upstream-intake
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Compare recorded and current upstream
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout Porch source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+      - name: Configure fetch-only Fluxer remote
+        run: pnpm porch:upstream:configure
+
+      - name: Check upstream intake
+        run: pnpm porch:upstream:intake

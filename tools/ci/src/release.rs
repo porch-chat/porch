@@ -69,6 +69,8 @@ pub struct PublishImageArgs {
     moving_tags: String,
     #[arg(long)]
     source_sha: Option<String>,
+    #[arg(long, action = ArgAction::SetTrue)]
+    skip_release: bool,
 }
 
 #[derive(Debug, Args, Clone)]
@@ -165,7 +167,9 @@ async fn publish_image(args: PublishImageArgs) -> Result<()> {
         &fragment_filename(&format!("image-{}", sanitize_asset_segment(&args.image))),
         &fragment,
     )?;
-    publish_fragment(&version, &source_sha, false, true, &[])?;
+    if !args.skip_release {
+        publish_fragment(&version, &source_sha, false, true, &[])?;
+    }
     println!("Wrote release fragment: {}", fragment_path.display());
     Ok(())
 }
@@ -203,7 +207,9 @@ async fn publish_app_proxy(args: PublishAppProxyArgs) -> Result<()> {
         "workflow": workflow_payload(),
     });
     let fragment_path = write_fragment(&fragment_filename("app-proxy"), &fragment)?;
-    publish_fragment(&version, &source_sha, false, true, &[])?;
+    if !args.image.skip_release {
+        publish_fragment(&version, &source_sha, false, true, &[])?;
+    }
     println!("Wrote release fragment: {}", fragment_path.display());
     Ok(())
 }

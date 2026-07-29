@@ -318,13 +318,19 @@
 			"reason": "Prevent this detached fork from dispatching to or mutating Fluxer-owned systems, remove obsolete deployment and moderation workflows, and automatically publish the shared Porch API image from Canary.",
 			"paths": [
 				".github/workflows",
+				".porch/check-upstream-intake.mjs",
 				"AGENTS.md",
 				"docs/porch/ACTIONS_POLICY.md",
-				"scripts/validate-porch-actions.mjs"
+				"docs/porch/RELEASE_CHANNELS.md",
+				"package.json",
+				"scripts/validate-porch-actions.mjs",
+				"tools/ci/src/release.rs"
 			],
 			"tests": [
 				"Porch automation isolation validation",
 				"Porch branding contract validation",
+				"read-only upstream intake check",
+				"image fragment staging without draft GitHub releases",
 				"workflow YAML parsing",
 				"GitHub Actions Canary API image build",
 				"git diff --check"

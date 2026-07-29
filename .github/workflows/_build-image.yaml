@@ -33,7 +33,7 @@ on:
         required: false
         default: ""
       finalise-release:
-        description: "Publish the GitHub Release after this image fragment is uploaded. Set false when an orchestrator will finalise the release."
+        description: "Publish the GitHub Release after this image fragment is uploaded. Set false to keep the fragment as a workflow artifact without creating a draft release."
         type: boolean
         required: false
         default: true
@@ -157,13 +157,20 @@ jobs:
           IMAGE_REF: ghcr.io/${{ env.GHCR_OWNER }}/${{ inputs.image }}:${{ needs.meta.outputs.build_version }}
           VERSION: ${{ needs.meta.outputs.build_version }}
           MOVING_TAGS: ${{ inputs.moving-tags }}
-        run: >-
-          cargo run --locked --quiet --manifest-path tools/ci/Cargo.toml -- release
-          publish-image
-          --build-version "${VERSION}"
-          --image "${{ inputs.image }}"
-          --image-ref "${IMAGE_REF}"
-          --moving-tags "${MOVING_TAGS}"
+          FINALISE_RELEASE: ${{ inputs['finalise-release'] }}
+        run: |
+          set -euo pipefail
+          release_args=(
+            publish-image
+            --build-version "${VERSION}"
+            --image "${{ inputs.image }}"
+            --image-ref "${IMAGE_REF}"
+            --moving-tags "${MOVING_TAGS}"
+          )
+          if [[ "${FINALISE_RELEASE}" != "true" ]]; then
+            release_args+=(--skip-release)
+          fi
+          cargo run --locked --quiet --manifest-path tools/ci/Cargo.toml -- release "${release_args[@]}"
       - name: Upload GitHub release fragment
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:

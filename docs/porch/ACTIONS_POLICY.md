@@ -12,6 +12,12 @@ moderate Fluxer-owned repositories, organizations, infrastructure, or storage.
 - **Build Porch static assets** publishes Porch-owned static files from
   `canary`.
 - **Build Porch desktop** keeps Stable and Canary desktop identities separate.
+- Image-only builds retain their release fragment as a short-lived workflow
+  artifact and do not create draft GitHub releases. A release is created only
+  when a workflow explicitly finalises one.
+- **Check Fluxer upstream intake** runs daily and on demand with read-only
+  repository permissions. It fails visibly when Fluxer's `main` moves beyond
+  the exact commit recorded in `.porch/upstream-lock.json`.
 - Pull-request validation checks source, tests, OpenAPI drift, and conventional
   titles.
 - **Validate Porch automation isolation** rejects known upstream credentials,
