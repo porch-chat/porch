@@ -18,6 +18,7 @@ const isProduction =
 	process.env.FLUXER_DESKTOP_PRODUCTION === 'true' ||
 	process.env.GITHUB_ACTIONS === 'true';
 const skipNative = process.env.FLUXER_SKIP_NATIVE === 'true';
+const skipBuildChannelSync = process.env.FLUXER_SKIP_BUILD_CHANNEL_SYNC === 'true';
 const embeddedBuildVersion = process.env.PUBLIC_BUILD_VERSION || process.env.BUILD_VERSION || '';
 const embeddedReleaseChannel = process.env.PUBLIC_RELEASE_CHANNEL || process.env.RELEASE_CHANNEL || '';
 const requestedDesktopBuildVariant = process.env.FLUXER_DESKTOP_BUILD_VARIANT || process.env.DESKTOP_VARIANT || '';
@@ -659,7 +660,9 @@ function ensureBuildChannelFile() {
 
 async function build() {
 	console.log(`Building Electron app (${isProduction ? 'production' : 'development'})...`);
-	ensureBuildChannelFile();
+	if (!skipBuildChannelSync) {
+		ensureBuildChannelFile();
+	}
 	if (fs.existsSync(DIST_DIR)) {
 		fs.rmSync(DIST_DIR, {recursive: true});
 	}

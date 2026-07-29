@@ -188,6 +188,8 @@ jobs:
 
       - name: Build Electron runtime
         working-directory: ${{ env.WORKDIR }}/fluxer_desktop
+        env:
+          FLUXER_SKIP_BUILD_CHANNEL_SYNC: "true"
         run: >-
           cargo run --locked --quiet --manifest-path
           ${{ github.workspace }}/_ci/tools/ci/Cargo.toml --
