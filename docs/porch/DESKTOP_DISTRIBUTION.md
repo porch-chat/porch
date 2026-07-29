@@ -21,6 +21,12 @@ The different package, protocol, storage, notification, and application IDs are
 intentional. Installing Canary never replaces Stable and neither channel reads
 the other channel's update feed.
 
+Portable builds keep their user data beside the executable and deliberately do
+not register themselves as the operating system's protocol handler. This
+prevents a temporary extraction or removable drive from replacing an installed
+Stable or Canary handler with a path that later disappears. Portable builds
+still accept a matching deep link when one is passed to them explicitly.
+
 ## Build
 
 The active GitHub workflow is `.github/workflows/build-porch-desktop.yaml`.

@@ -192,6 +192,10 @@ jobs:
         working-directory: ${{ env.WORKDIR }}/fluxer_desktop
         run: '& $env:FLUXER_CI_BIN build-desktop --step install_dependencies'
 
+      - name: Test portable protocol ownership
+        working-directory: ${{ env.WORKDIR }}/fluxer_desktop
+        run: node --test src/main/DeepLinkRegistrationPolicy.test.mjs
+
       - name: Update package version
         working-directory: ${{ env.WORKDIR }}/fluxer_desktop
         run: '& $env:FLUXER_CI_BIN build-desktop --step update_version'
@@ -410,6 +414,10 @@ jobs:
       - name: Install dependencies
         working-directory: ${{ env.WORKDIR }}/fluxer_desktop
         run: '"$FLUXER_CI_BIN" build-desktop --step install_dependencies'
+
+      - name: Test portable protocol ownership
+        working-directory: ${{ env.WORKDIR }}/fluxer_desktop
+        run: node --test src/main/DeepLinkRegistrationPolicy.test.mjs
 
       - name: Update package version
         working-directory: ${{ env.WORKDIR }}/fluxer_desktop

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import {APP_PROTOCOL} from '@electron/common/Constants';
+import {isPortableMode} from '@electron/common/UserDataPath';
+import {shouldRegisterDeepLinkProtocol} from '@electron/main/DeepLinkRegistrationPolicy';
 import {parseJumpListTaskFromArgv} from '@electron/main/JumpList';
 import {ensureLinuxProtocolDesktopEntry} from '@electron/main/LinuxDesktopEntry';
 import {recordRecentDeepLink} from '@electron/main/RecentDocuments';
@@ -62,6 +64,10 @@ function normalizeDeepLinkForRenderer(rawUrl: string): string | null {
 }
 
 export function initializeDeepLinks(): void {
+	if (!shouldRegisterDeepLinkProtocol({portable: isPortableMode()})) {
+		registerInitialDeepLinkHandler();
+		return;
+	}
 	ensureLinuxProtocolDesktopEntry();
 	if (process.platform === 'linux') {
 		registerInitialDeepLinkHandler();

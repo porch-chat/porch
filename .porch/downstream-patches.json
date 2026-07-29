@@ -51,6 +51,9 @@
 				"fluxer_desktop/scripts/validate-porch-workflow.mjs",
 				"fluxer_desktop/src/common",
 				"fluxer_desktop/src/main/ChromiumRuntime.ts",
+				"fluxer_desktop/src/main/DeepLinkRegistrationPolicy.test.mjs",
+				"fluxer_desktop/src/main/DeepLinkRegistrationPolicy.ts",
+				"fluxer_desktop/src/main/DeepLinks.ts",
 				"fluxer_desktop/src/main/DesktopTray.ts",
 				"fluxer_desktop/src/main/FluxerAudioIdentity.ts",
 				"fluxer_desktop/src/main/Menu.ts",
@@ -67,6 +70,7 @@
 				"desktop CI helper Rust tests",
 				"Windows x64 Canary package build",
 				"channel identity and default-origin smoke tests",
+				"portable deep-link registration policy tests",
 				"browser login handoff channel tests"
 			],
 			"conflict_risk": "medium",
