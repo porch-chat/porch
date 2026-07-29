@@ -42,12 +42,19 @@ describe('portable marker locations', () => {
 	});
 
 	test('finds the marker above Velopack canonical current directories', () => {
-		const {getPortableMarkerLocations} = loadPolicy('win32');
+		const {getPortableDataBase, getPortableMarkerLocations} = loadPolicy('win32');
 		const locations = getPortableMarkerLocations({
 			execPath: 'T:\\Porch\\current\\Porch Canary.exe',
 			platform: 'win32',
 		});
 		assert.ok(locations.includes('T:\\Porch\\.portable'));
+		assert.equal(
+			getPortableDataBase(
+				{execPath: 'T:\\Porch\\current\\Porch Canary.exe', platform: 'win32'},
+				'T:\\Porch\\.portable',
+			),
+			'T:\\Porch\\data',
+		);
 	});
 
 	test('does not treat an unrelated ancestor marker as portable', () => {
@@ -58,5 +65,26 @@ describe('portable marker locations', () => {
 		});
 		assert.equal(locations.length, 1);
 		assert.equal(locations[0], 'T:\\Porch\\nested\\.portable');
+	});
+
+	test('uses AppImage location for Linux markers and data', () => {
+		const {getPortableDataBase, getPortableMarkerLocations} = loadPolicy('linux');
+		const context = {
+			appImage: '/opt/porch/Porch.AppImage',
+			execPath: '/tmp/.mount_porch/porch',
+			platform: 'linux',
+		};
+		assert.ok(getPortableMarkerLocations(context).includes('/opt/porch/.portable'));
+		assert.equal(getPortableDataBase(context, '/opt/porch/.portable'), '/opt/porch/data');
+	});
+
+	test('uses the macOS app bundle parent for markers and data', () => {
+		const {getPortableDataBase, getPortableMarkerLocations} = loadPolicy('darwin');
+		const context = {
+			execPath: '/Applications/Porch/Porch.app/Contents/MacOS/Porch',
+			platform: 'darwin',
+		};
+		assert.ok(getPortableMarkerLocations(context).includes('/Applications/Porch/.portable'));
+		assert.equal(getPortableDataBase(context, '/Applications/Porch/.portable'), '/Applications/Porch/data');
 	});
 });

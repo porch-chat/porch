@@ -3,8 +3,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {BUILD_CHANNEL, type BuildChannel} from '@electron/common/BuildChannel';
-import {getPortableMarkerLocations} from '@electron/common/PortableModePath';
 import {PORCH_DESKTOP_PRODUCT} from '@electron/common/PorchProduct';
+import {getPortableDataBase, getPortableMarkerLocations} from '@electron/common/PortableModePath';
 import {app} from 'electron';
 
 interface UserDataPaths {
@@ -26,29 +26,20 @@ const channelStorageDirectoryMap: ChannelStorageDirectoryMap = {
 
 let portableMode = false;
 
-function getPortableBasePath(): string {
-	let appDir: string;
-	if (process.platform === 'darwin') {
-		const match = process.execPath.match(/^(.+?)\.app\//);
-		appDir = match ? path.dirname(`${match[1]}.app`) : path.dirname(process.execPath);
-	} else if (process.env.APPIMAGE) {
-		appDir = path.dirname(process.env.APPIMAGE);
-	} else {
-		appDir = path.dirname(process.execPath);
-	}
-	return path.join(appDir, 'data');
-}
-
-function detectPortableMode(): boolean {
-	if (process.argv.includes('--fluxer-portable')) return true;
+function getPortableMarkerLocation(): string | undefined {
 	const envValue = process.env.FLUXER_PORTABLE;
-	if (envValue && ['1', 'true', 'yes', 'on'].includes(envValue.trim().toLowerCase())) return true;
+	if (
+		process.argv.includes('--fluxer-portable') ||
+		(envValue && ['1', 'true', 'yes', 'on'].includes(envValue.trim().toLowerCase()))
+	) {
+		return '';
+	}
 	const markerLocations = getPortableMarkerLocations({
 		appImage: process.env.APPIMAGE,
 		execPath: process.execPath,
 		platform: process.platform,
 	});
-	return markerLocations.some((location) => {
+	return markerLocations.find((location) => {
 		try {
 			return fs.existsSync(location);
 		} catch {
@@ -63,10 +54,19 @@ function resolveUserDataPaths(channel: BuildChannel): {
 	portable: boolean;
 } {
 	const directoryName = channelStorageDirectoryMap[channel];
-	const portable = detectPortableMode();
+	const markerLocation = getPortableMarkerLocation();
+	const portable = markerLocation !== undefined;
 	portableMode = portable;
 	if (portable) {
-		const base = path.join(getPortableBasePath(), directoryName);
+		const portableDataBase = getPortableDataBase(
+			{
+				appImage: process.env.APPIMAGE,
+				execPath: process.execPath,
+				platform: process.platform,
+			},
+			markerLocation || undefined,
+		);
+		const base = path.join(portableDataBase, directoryName);
 		fs.mkdirSync(base, {recursive: true});
 		return {directoryName, base, portable};
 	}
