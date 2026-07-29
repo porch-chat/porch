@@ -5,6 +5,7 @@ import {EXAMPLE_DOMAIN, EXAMPLE_URL, PRODUCT_NAME} from '@app/features/app/confi
 import RuntimeConfig from '@app/features/app/state/RuntimeConfig';
 import * as AuthenticationCommands from '@app/features/auth/commands/AuthenticationCommands';
 import styles from '@app/features/auth/flow/BrowserLoginHandoffModal.module.css';
+import {resolveBrowserHandoffWebAppUrl} from '@app/features/auth/flow/BrowserLoginHandoffUrl';
 import {HandoffCodeDisplay} from '@app/features/auth/flow/HandoffCodeDisplay';
 import type {LoginSuccessPayload} from '@app/features/auth/state/AuthFlow';
 import {Button} from '@app/features/ui/button/Button';
@@ -65,8 +66,13 @@ const BrowserLoginHandoffModal = observer(
 		const electronApi = getElectronAPI();
 		const switchInstanceUrl = electronApi?.switchInstanceUrl;
 		const canSwitchInstanceUrl = typeof switchInstanceUrl === 'function';
-		const currentWebAppUrl = RuntimeConfig.webAppBaseUrl;
-		const [instanceUrl, setInstanceUrl] = useState(() => targetWebAppUrl ?? currentWebAppUrl);
+		const currentWebAppUrl = resolveBrowserHandoffWebAppUrl({
+			canSwitchInstanceUrl,
+			currentOrigin: window.location.origin,
+			runtimeWebAppBaseUrl: RuntimeConfig.webAppBaseUrl,
+			targetWebAppUrl,
+		});
+		const [instanceUrl, setInstanceUrl] = useState(() => currentWebAppUrl);
 		const [instanceUrlError, setInstanceUrlError] = useState<string | null>(null);
 		const [handoffCode, setHandoffCode] = useState<string | null>(null);
 		const [handoffExpiresAt, setHandoffExpiresAt] = useState<string | null>(null);
