@@ -42,6 +42,12 @@ Windows signing is a release gate, but is not claimed until Porch-owned
 credentials are installed. The first unsigned Canary package is for local
 acceptance only.
 
+The Windows runtime and packaging CLI are pinned together to stable Velopack
+1.2.0. CI executes the native Velopack installed-mode path under Electron's
+bundled Node runtime before packaging. This gate prevents an updater native
+module whose declared Node range excludes the Electron runtime from producing
+an installer that passes static inspection but crashes on launch.
+
 ## Feed layout
 
 Velopack artifacts are served without filename rewriting:

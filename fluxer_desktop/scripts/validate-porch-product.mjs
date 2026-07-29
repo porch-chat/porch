@@ -7,6 +7,8 @@ import {fileURLToPath} from 'node:url';
 
 const desktopDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const product = JSON.parse(fs.readFileSync(path.join(desktopDir, 'porch-product.json'), 'utf8'));
+const desktopPackage = JSON.parse(fs.readFileSync(path.join(desktopDir, 'package.json'), 'utf8'));
+const desktopCiSource = fs.readFileSync(path.join(desktopDir, '..', 'tools', 'ci', 'src', 'desktop.rs'), 'utf8');
 const {stable, canary} = product.channels;
 
 assert.equal(product.schemaVersion, 1);
@@ -51,6 +53,12 @@ assert.equal(stable.defaultAppUrl, 'https://app.porch.chat');
 assert.equal(canary.defaultAppUrl, 'https://canary.porch.chat');
 assert.equal(new URL(product.updateBaseUrl).hostname, 'releases.porch.chat');
 assert.equal(new URL(product.downloadPageUrl).hostname, 'porch.chat');
+assert.equal(desktopPackage.dependencies.velopack, '1.2.0');
+assert.match(
+	desktopCiSource,
+	/\"vpk\",\s*\"--version\",\s*\"1\.2\.0\"/s,
+	'Velopack runtime and packaging CLI versions must remain aligned.',
+);
 
 const serialized = JSON.stringify(product).toLowerCase();
 assert.ok(!serialized.includes('fluxer.app'), 'Porch product contract must not target Fluxer services');

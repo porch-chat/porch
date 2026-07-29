@@ -49,6 +49,7 @@
 				"fluxer_desktop/scripts/generate-porch-icons.ps1",
 				"fluxer_desktop/scripts/validate-porch-product.mjs",
 				"fluxer_desktop/scripts/validate-porch-workflow.mjs",
+				"fluxer_desktop/scripts/velopack-node-runtime-smoke.mjs",
 				"fluxer_desktop/src/common",
 				"fluxer_desktop/src/main/ChromiumRuntime.ts",
 				"fluxer_desktop/src/main/DeepLinkRegistrationPolicy.test.mjs",
@@ -71,6 +72,7 @@
 				"Windows x64 Canary package build",
 				"channel identity and default-origin smoke tests",
 				"portable deep-link registration policy tests",
+				"Velopack installed-mode smoke under packaged Electron Node",
 				"browser login handoff channel tests"
 			],
 			"conflict_risk": "medium",

@@ -26,7 +26,7 @@
 		"franc-min": "6.2.0",
 		"hunspell-asm": "4.0.2",
 		"update-electron-app": "3.1.2",
-		"velopack": "0.0.1298"
+		"velopack": "1.2.0"
 	},
 	"devDependencies": {
 		"@types/node": "24.10.9",

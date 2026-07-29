@@ -1239,7 +1239,7 @@ fn install_velopack_cli_step() -> Result<()> {
         tool_dir.to_string_lossy().as_ref(),
         "vpk",
         "--version",
-        "0.0.1298",
+        "1.2.0",
     ]))
 }
 

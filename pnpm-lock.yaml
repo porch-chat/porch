@@ -1640,8 +1640,8 @@ importers:
         specifier: 3.1.2
         version: 3.1.2
       velopack:
-        specifier: 0.0.1298
-        version: 0.0.1298
+        specifier: 1.2.0
+        version: 1.2.0
     devDependencies:
       '@types/node':
         specifier: 24.10.9
@@ -5082,8 +5082,8 @@ packages:
   '@napi-rs/wasm-runtime@1.1.1':
     resolution: {integrity: sha512-p64ah1M1ld8xjWv3qbvFwHiFVWrq1yFvV4f7w+mzaqiR4IlSgkqhcRdHwsGgomwzBH51sRY4NEowLxnaBjcW/A==}
 
-  '@neon-rs/load@0.1.82':
-    resolution: {integrity: sha512-H4Gu2o5kPp+JOEhRrOQCnJnf7X6sv9FBLttM/wSbb4efsgFWeHzfU/ItZ01E5qqEk+U6QGdeVO7lxXIAtYHr5A==}
+  '@neon-rs/load@0.2.6':
+    resolution: {integrity: sha512-7p8j+guEhGTJNJISgmHO0homqGYAc0SDfmgGZfluMcQnimcceMY87b4hdqufp+7YmsOVC4W/JvT3/Tpi3/gy+Q==}
 
   '@nodelib/fs.scandir@2.1.5':
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
@@ -10526,6 +10526,7 @@ packages:
   tsconfck@3.1.6:
     resolution: {integrity: sha512-ks6Vjr/jEw0P1gmOVwutM3B7fWxoWBL2KRDb1JfqGVawBmO5UsvmWOQFGHBPl5yxYz4eERr19E6L7NMv+Fej4w==}
     engines: {node: ^18 || >=20}
+    deprecated: unmaintained
     hasBin: true
     peerDependencies:
       typescript: ^5.0.0
@@ -10712,6 +10713,7 @@ packages:
 
   uuid@8.3.2:
     resolution: {integrity: sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==}
+    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
   valibot@1.2.0:
@@ -10730,9 +10732,9 @@ packages:
     resolution: {integrity: sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg==}
     engines: {node: '>= 0.8'}
 
-  velopack@0.0.1298:
-    resolution: {integrity: sha512-rG1pdRLpl5B/FeV2NS9Ewp4qpo3TzxN0rmwp5e284Ee/hhDITUn15eNeoCUp2hUi8DSf6JEMpbx2I3vuRitafg==}
-    engines: {node: '>=18.0.0 <=22.16.0'}
+  velopack@1.2.0:
+    resolution: {integrity: sha512-rWX8G9h5gv2AgrjiADhvyrrv7LpCCcFeepw+jBx80/jm1FIXW7BgmSEQtJVXt3jqC2YnCKiBD6E1i/DBWnpIyw==}
+    engines: {node: '>=20.0.0 <26.0.0'}
 
   verror@1.10.1:
     resolution: {integrity: sha512-veufcmxri4e3XSrT0xwfUR7kguIkaxBeosDg00yDWhk49wdwkSUrvvsm7nc75e1PUyvIeZj6nS8VQRYz2/S4Xg==}
@@ -14256,7 +14258,7 @@ snapshots:
       '@tybys/wasm-util': 0.10.1
     optional: true
 
-  '@neon-rs/load@0.1.82': {}
+  '@neon-rs/load@0.2.6': {}
 
   '@nodelib/fs.scandir@2.1.5':
     dependencies:
@@ -20844,9 +20846,9 @@ snapshots:
 
   vary@1.1.2: {}
 
-  velopack@0.0.1298:
+  velopack@1.2.0:
     dependencies:
-      '@neon-rs/load': 0.1.82
+      '@neon-rs/load': 0.2.6
 
   verror@1.10.1:
     dependencies:

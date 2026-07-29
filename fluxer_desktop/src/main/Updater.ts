@@ -11,7 +11,7 @@ import {isFlatpakRuntime} from '@electron/main/LinuxSandbox';
 import {setQuitting} from '@electron/main/Window';
 import {app, autoUpdater, type BrowserWindow, ipcMain} from 'electron';
 import log from 'electron-log';
-import type {UpdateInfo} from 'velopack';
+import type {UpdateInfo, VelopackAsset} from 'velopack';
 
 type UpdaterContext = 'user' | 'background' | 'focus';
 type UpdaterDownloadOption = {
@@ -79,7 +79,9 @@ const UPDATE_BASE_URL = `${PORCH_DESKTOP_PRODUCT.updateBaseUrl}/${BUILD_CHANNEL}
 const DOWNLOAD_PAGE_URL = `${PORCH_DESKTOP_PRODUCT.downloadPageUrl}?channel=${BUILD_CHANNEL}`;
 
 let lastContext: UpdaterContext = 'background';
-let pendingVelopackUpdate: UpdateInfo | null = null;
+type VelopackUpdate = UpdateInfo | VelopackAsset;
+
+let pendingVelopackUpdate: VelopackUpdate | null = null;
 let velopackCheckPromise: Promise<void> | null = null;
 let velopackDownloadPromise: Promise<void> | null = null;
 let velopackInstallStarted = false;
@@ -122,12 +124,16 @@ function backoffDelay(attempt: number): number {
 	return Math.round(capped * (0.5 + Math.random() * 0.5));
 }
 
-function getVelopackUpdateVersion(update: UpdateInfo): string | null {
-	return update.TargetFullRelease?.Version ?? null;
+function getVelopackTargetAsset(update: VelopackUpdate): VelopackAsset {
+	return 'TargetFullRelease' in update ? update.TargetFullRelease : update;
 }
 
-function getVelopackUpdateSize(update: UpdateInfo): number | null {
-	const raw = update.TargetFullRelease?.Size;
+function getVelopackUpdateVersion(update: VelopackUpdate): string | null {
+	return getVelopackTargetAsset(update).Version ?? null;
+}
+
+function getVelopackUpdateSize(update: VelopackUpdate): number | null {
+	const raw = getVelopackTargetAsset(update).Size;
 	if (raw == null) return null;
 	if (typeof raw === 'bigint') {
 		return Number(raw);
@@ -215,6 +221,14 @@ async function downloadVelopackUpdate(
 			context,
 			phase: 'download',
 			message: 'No update available to download. Please check for updates first.',
+		});
+		return;
+	}
+	if (!('TargetFullRelease' in update)) {
+		send(getMainWindow(), {
+			type: 'downloaded',
+			context,
+			version: getVelopackUpdateVersion(update),
 		});
 		return;
 	}
