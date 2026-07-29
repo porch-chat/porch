@@ -2,6 +2,7 @@
 	"schemaVersion": 1,
 	"brandName": "Porch",
 	"companyName": "Porch",
+	"companyEmail": "admin@porch.chat",
 	"homepageUrl": "https://porch.chat",
 	"repositoryUrl": "https://github.com/porch-chat/porch",
 	"issuesUrl": "https://github.com/porch-chat/porch/issues",

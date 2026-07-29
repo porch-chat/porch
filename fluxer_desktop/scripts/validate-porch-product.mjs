@@ -11,6 +11,7 @@ const {stable, canary} = product.channels;
 
 assert.equal(product.schemaVersion, 1);
 assert.equal(product.brandName, 'Porch');
+assert.equal(product.companyEmail, 'admin@porch.chat');
 assert.deepEqual(Object.keys(product.channels).sort(), ['canary', 'stable']);
 
 for (const [channel, config] of Object.entries(product.channels)) {

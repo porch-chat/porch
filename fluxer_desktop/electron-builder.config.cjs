@@ -1076,8 +1076,11 @@ module.exports = {
 		main: 'dist/main/index.js',
 		name: metadataName,
 		homepage: product.homepageUrl,
-		author: product.companyName,
-		...(Boolean(process.env.VERSION) ? {version: process.env.VERSION} : {}),
+		author: {
+			name: product.companyName,
+			email: product.companyEmail,
+		},
+		...(process.env.VERSION ? {version: process.env.VERSION} : {}),
 		...(targetPlatform === 'linux' ? {desktopName: `${linuxPackageName}.desktop`} : {}),
 	},
 	extraResources: [
