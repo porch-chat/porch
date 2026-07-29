@@ -47,5 +47,9 @@ export function getPortableDataBase(context: PortableMarkerContext, markerLocati
 	if (context.appImage) {
 		return pathApi.join(pathApi.dirname(context.appImage), 'data');
 	}
-	return pathApi.join(pathApi.dirname(context.execPath), 'data');
+	const executableDir = pathApi.dirname(context.execPath);
+	if (pathApi.basename(executableDir).toLowerCase() === 'current') {
+		return pathApi.join(pathApi.dirname(executableDir), 'data');
+	}
+	return pathApi.join(executableDir, 'data');
 }

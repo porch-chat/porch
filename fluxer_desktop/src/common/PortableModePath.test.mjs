@@ -57,6 +57,17 @@ describe('portable marker locations', () => {
 		);
 	});
 
+	test('anchors explicit portable mode above Velopack canonical current directories', () => {
+		const {getPortableDataBase} = loadPolicy('win32');
+		assert.equal(
+			getPortableDataBase({
+				execPath: 'T:\\Porch\\current\\Porch Canary.exe',
+				platform: 'win32',
+			}),
+			'T:\\Porch\\data',
+		);
+	});
+
 	test('does not treat an unrelated ancestor marker as portable', () => {
 		const {getPortableMarkerLocations} = loadPolicy('win32');
 		const locations = getPortableMarkerLocations({
