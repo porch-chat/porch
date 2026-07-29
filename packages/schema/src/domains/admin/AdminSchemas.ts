@@ -427,6 +427,7 @@ const InstanceRegistrationConfigResponse = z.object({
 const RegistrationUrlResponse = z.object({
 	id: createStringType(1, 128),
 	label: z.string().nullable(),
+	issuer_type: z.enum(['admin', 'member']),
 	created_by_user_id: SnowflakeStringType,
 	created_at: z.iso.datetime(),
 	expires_at: z.iso.datetime().nullable(),

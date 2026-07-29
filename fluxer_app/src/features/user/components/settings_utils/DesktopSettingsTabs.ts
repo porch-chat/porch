@@ -14,6 +14,7 @@ import GiftInventoryTab from '@app/features/user/components/modals/tabs/GiftInve
 import KeybindsTab from '@app/features/user/components/modals/tabs/KeybindsTab';
 import LanguageTab from '@app/features/user/components/modals/tabs/LanguageTab';
 import LinkedAccountsTab from '@app/features/user/components/modals/tabs/LinkedAccountsTab';
+import MemberRegistrationInvitesTab from '@app/features/user/components/modals/tabs/MemberRegistrationInvitesTab';
 import MyProfileTab from '@app/features/user/components/modals/tabs/MyProfileTab';
 import NotificationsTab from '@app/features/user/components/modals/tabs/NotificationsTab';
 import PlutoniumTab from '@app/features/user/components/modals/tabs/PlutoniumTab';
@@ -24,6 +25,7 @@ import type React from 'react';
 
 const DESKTOP_TAB_COMPONENTS: Partial<Record<UserSettingsTabType, React.ComponentType<Record<string, unknown>>>> = {
 	my_profile: MyProfileTab,
+	registration_invites: MemberRegistrationInvitesTab,
 	account_security: AccountSecurityTab,
 	plutonium: PlutoniumTab,
 	gift_inventory: GiftInventoryTab,

@@ -757,3 +757,21 @@ export const VoiceActivitySharingUpdateRequest = z
 	);
 
 export type VoiceActivitySharingUpdateRequest = z.infer<typeof VoiceActivitySharingUpdateRequest>;
+
+export const CreateMemberRegistrationInviteRequest = z.object({
+	label: z
+		.string()
+		.trim()
+		.min(1)
+		.max(80)
+		.nullish()
+		.describe('Optional private label to remember who this one-person registration link is for'),
+});
+
+export type CreateMemberRegistrationInviteRequest = z.infer<typeof CreateMemberRegistrationInviteRequest>;
+
+export const MemberRegistrationInviteIdParam = z.object({
+	registration_invite_id: createStringType(1, 128),
+});
+
+export type MemberRegistrationInviteIdParam = z.infer<typeof MemberRegistrationInviteIdParam>;

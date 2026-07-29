@@ -108,6 +108,18 @@ export const UserRateLimitConfigs = {
 		bucket: 'user:settings:update',
 		config: {limit: 20, windowMs: ms('10 seconds')},
 	} as RouteRateLimitConfig,
+	USER_REGISTRATION_INVITES_GET: {
+		bucket: 'user:registration_invites:get',
+		config: {limit: 20, windowMs: ms('10 seconds')},
+	} as RouteRateLimitConfig,
+	USER_REGISTRATION_INVITES_CREATE: {
+		bucket: 'user:registration_invites:create',
+		config: {limit: 5, windowMs: ms('24 hours'), exemptFromGlobal: true},
+	} as RouteRateLimitConfig,
+	USER_REGISTRATION_INVITES_REVOKE: {
+		bucket: 'user:registration_invites:revoke',
+		config: {limit: 10, windowMs: ms('1 hour')},
+	} as RouteRateLimitConfig,
 	USER_GUILD_SETTINGS_UPDATE: {
 		bucket: 'user:guild_settings:update',
 		config: {limit: 30, windowMs: ms('10 seconds')},

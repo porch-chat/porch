@@ -16,6 +16,7 @@ import {GuildFolderItem} from '@app/features/app/components/layout/sidebar_nav/G
 import {DMListItem} from '@app/features/app/components/layout/sidebar_nav/GuildListDMItem';
 import {GuildListItem} from '@app/features/app/components/layout/sidebar_nav/GuildListItem';
 import {HelpButton} from '@app/features/app/components/layout/sidebar_nav/HelpButton';
+import {MemberRegistrationInviteButton} from '@app/features/app/components/layout/sidebar_nav/MemberRegistrationInviteButton';
 import {DND_TYPES, type GuildDragItem, type GuildDropResult} from '@app/features/app/components/layout/types/DndTypes';
 import {UserArea} from '@app/features/app/components/layout/UserArea';
 import {WHATS_NEW_ENTRIES} from '@app/features/app/components/whats_new/WhatsNewEntries';
@@ -818,6 +819,7 @@ const GuildList = observer(() => {
 						)}
 						<DiscoveryButton data-flx="app.guilds-layout.guild-list.discovery-button" />
 						<AddGuildButton data-flx="app.guilds-layout.guild-list.add-guild-button" />
+						<MemberRegistrationInviteButton data-flx="app.guilds-layout.guild-list.member-registration-invite-button" />
 						{!Platform.isElectron && !Platform.isPWA && (
 							<DownloadButton data-flx="app.guilds-layout.guild-list.download-button" />
 						)}

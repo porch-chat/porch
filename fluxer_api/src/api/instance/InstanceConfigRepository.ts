@@ -21,6 +21,10 @@ import {normalizeSsoAllowedEmailDomains} from './SsoConfigValidation';
 const GATEWAY_ROLLOUT_CONFIG_KEY = 'gateway_rollout_config';
 const REGISTRATION_CONFIG_KEY = 'registration_config';
 const REGISTRATION_URLS_KEY = 'registration_urls';
+const REGISTRATION_URLS_MUTATION_LOCK_KEY = 'instance_config:registration_urls:mutation';
+const REGISTRATION_URLS_MUTATION_LOCK_TTL_SECONDS = 30;
+const REGISTRATION_URLS_MUTATION_LOCK_WAIT_MS = 10_000;
+const REGISTRATION_URLS_MUTATION_LOCK_RETRY_MS = 50;
 const REGISTRATION_PENDING_APPROVALS_KEY = 'registration_pending_approvals';
 const APP_PUBLIC_CONFIG_KEY = 'app_public_config';
 const ADMIN_BOOTSTRAP_KEY = 'admin_bootstrapped';
@@ -274,6 +278,7 @@ export interface InstanceRegistrationUrl {
 	id: string;
 	label: string | null;
 	code_hash: string;
+	issuer_type: 'admin' | 'member';
 	created_by_user_id: string;
 	created_at: string;
 	expires_at: string | null;
@@ -285,7 +290,7 @@ export interface InstanceRegistrationUrl {
 	last_used_by_user_id: string | null;
 }
 
-type InstanceRegistrationUrlPublic = Omit<InstanceRegistrationUrl, 'code_hash'>;
+export type InstanceRegistrationUrlPublic = Omit<InstanceRegistrationUrl, 'code_hash'>;
 
 interface InstancePendingRegistration {
 	user_id: string;
@@ -688,6 +693,7 @@ function normalizeRegistrationUrl(value: unknown): InstanceRegistrationUrl | nul
 		id: value.id,
 		label: normalizeNullableString(value.label),
 		code_hash: value.code_hash,
+		issuer_type: value.issuer_type === 'member' ? 'member' : 'admin',
 		created_by_user_id: value.created_by_user_id,
 		created_at: createdAt,
 		expires_at: normalizeIsoDateString(value.expires_at),
@@ -780,6 +786,7 @@ export class InstanceConfigRepository {
 	private subscriberInitialized = false;
 	private subscriberInitializationPromise: Promise<boolean> | null = null;
 	private messageHandler: ((channel: string, message: string) => void) | null = null;
+	private registrationUrlsMutationTail: Promise<void> = Promise.resolve();
 
 	constructor(kvClient: IKVProvider | null = null) {
 		this.kvClient = kvClient;
@@ -1424,44 +1431,100 @@ export class InstanceConfigRepository {
 			.map(redactRegistrationUrl);
 	}
 
+	async getRegistrationUrlsForMember(userId: string): Promise<Array<InstanceRegistrationUrlPublic>> {
+		return (await this.getRegistrationUrls())
+			.filter(
+				(registrationUrl) => registrationUrl.issuer_type === 'member' && registrationUrl.created_by_user_id === userId,
+			)
+			.toSorted((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at))
+			.map(redactRegistrationUrl);
+	}
+
 	async createRegistrationUrl(params: {
 		label: string | null;
 		createdByUserId: string;
 		expiresAt: Date | null;
 		maxUses: number | null;
 		approvalRequired: boolean;
+		issuerType?: 'admin' | 'member';
 	}): Promise<{registrationUrl: InstanceRegistrationUrlPublic; code: string}> {
-		const id = crypto.randomUUID();
-		const code = id;
-		const registrationUrl: InstanceRegistrationUrl = {
-			id,
-			label: params.label,
-			code_hash: this.hashRegistrationUrlCode(code),
-			created_by_user_id: params.createdByUserId,
-			created_at: new Date().toISOString(),
-			expires_at: params.expiresAt?.toISOString() ?? null,
-			max_uses: params.maxUses,
-			use_count: 0,
-			revoked_at: null,
-			approval_required: params.approvalRequired,
-			last_used_at: null,
-			last_used_by_user_id: null,
-		};
-		const registrationUrls = await this.getRegistrationUrls();
-		await this.setRegistrationUrls([registrationUrl, ...registrationUrls]);
-		return {registrationUrl: redactRegistrationUrl(registrationUrl), code};
+		return this.withRegistrationUrlsMutationLock(async () => {
+			const id = crypto.randomUUID();
+			const code = id;
+			const registrationUrl = this.buildRegistrationUrl({...params, id, code});
+			const registrationUrls = await this.getRegistrationUrlsFromDatabase();
+			await this.setRegistrationUrls([registrationUrl, ...registrationUrls]);
+			return {registrationUrl: redactRegistrationUrl(registrationUrl), code};
+		});
+	}
+
+	async getOrCreateMemberRegistrationUrl(params: {
+		label: string | null;
+		createdByUserId: string;
+		expiresAt: Date;
+	}): Promise<InstanceRegistrationUrlPublic> {
+		return this.withRegistrationUrlsMutationLock(async () => {
+			const registrationUrls = await this.getRegistrationUrlsFromDatabase();
+			const existing = registrationUrls.find(
+				(registrationUrl) =>
+					registrationUrl.issuer_type === 'member' &&
+					registrationUrl.created_by_user_id === params.createdByUserId &&
+					isRegistrationUrlUsable(registrationUrl, new Date()),
+			);
+			if (existing) {
+				return redactRegistrationUrl(existing);
+			}
+			const id = crypto.randomUUID();
+			const registrationUrl = this.buildRegistrationUrl({
+				id,
+				code: id,
+				label: params.label,
+				createdByUserId: params.createdByUserId,
+				expiresAt: params.expiresAt,
+				maxUses: 1,
+				approvalRequired: false,
+				issuerType: 'member',
+			});
+			await this.setRegistrationUrls([registrationUrl, ...registrationUrls]);
+			return redactRegistrationUrl(registrationUrl);
+		});
 	}
 
 	async revokeRegistrationUrl(id: string): Promise<void> {
-		const now = new Date().toISOString();
-		const registrationUrls = await this.getRegistrationUrls();
-		await this.setRegistrationUrls(
-			registrationUrls.map((registrationUrl) =>
-				registrationUrl.id === id && !registrationUrl.revoked_at
-					? {...registrationUrl, revoked_at: now}
-					: registrationUrl,
-			),
-		);
+		await this.withRegistrationUrlsMutationLock(async () => {
+			const now = new Date().toISOString();
+			const registrationUrls = await this.getRegistrationUrlsFromDatabase();
+			await this.setRegistrationUrls(
+				registrationUrls.map((registrationUrl) =>
+					registrationUrl.id === id && !registrationUrl.revoked_at
+						? {...registrationUrl, revoked_at: now}
+						: registrationUrl,
+				),
+			);
+		});
+	}
+
+	async revokeRegistrationUrlForMember(id: string, userId: string): Promise<boolean> {
+		return this.withRegistrationUrlsMutationLock(async () => {
+			const now = new Date().toISOString();
+			const registrationUrls = await this.getRegistrationUrlsFromDatabase();
+			let revoked = false;
+			await this.setRegistrationUrls(
+				registrationUrls.map((registrationUrl) => {
+					if (
+						registrationUrl.id !== id ||
+						registrationUrl.issuer_type !== 'member' ||
+						registrationUrl.created_by_user_id !== userId ||
+						registrationUrl.revoked_at
+					) {
+						return registrationUrl;
+					}
+					revoked = true;
+					return {...registrationUrl, revoked_at: now};
+				}),
+			);
+			return revoked;
+		});
 	}
 
 	async resolveRegistrationUrlCode(code: string): Promise<InstanceRegistrationUrl | null> {
@@ -1480,20 +1543,22 @@ export class InstanceConfigRepository {
 	}
 
 	async recordRegistrationUrlUse(id: string, userId: string): Promise<void> {
-		const now = new Date().toISOString();
-		const registrationUrls = await this.getRegistrationUrls();
-		await this.setRegistrationUrls(
-			registrationUrls.map((registrationUrl) =>
-				registrationUrl.id === id
-					? {
-							...registrationUrl,
-							use_count: registrationUrl.use_count + 1,
-							last_used_at: now,
-							last_used_by_user_id: userId,
-						}
-					: registrationUrl,
-			),
-		);
+		await this.withRegistrationUrlsMutationLock(async () => {
+			const now = new Date().toISOString();
+			const registrationUrls = await this.getRegistrationUrlsFromDatabase();
+			await this.setRegistrationUrls(
+				registrationUrls.map((registrationUrl) =>
+					registrationUrl.id === id
+						? {
+								...registrationUrl,
+								use_count: registrationUrl.use_count + 1,
+								last_used_at: now,
+								last_used_by_user_id: userId,
+							}
+						: registrationUrl,
+				),
+			);
+		});
 	}
 
 	async getPendingRegistrations(): Promise<Array<InstancePendingRegistration>> {
@@ -1621,6 +1686,86 @@ export class InstanceConfigRepository {
 
 	private async setRegistrationUrls(registrationUrls: Array<InstanceRegistrationUrl>): Promise<void> {
 		await this.setConfig(REGISTRATION_URLS_KEY, JSON.stringify(registrationUrls));
+	}
+
+	private buildRegistrationUrl(params: {
+		id: string;
+		code: string;
+		label: string | null;
+		createdByUserId: string;
+		expiresAt: Date | null;
+		maxUses: number | null;
+		approvalRequired: boolean;
+		issuerType?: 'admin' | 'member';
+	}): InstanceRegistrationUrl {
+		return {
+			id: params.id,
+			label: params.label,
+			code_hash: this.hashRegistrationUrlCode(params.code),
+			issuer_type: params.issuerType ?? 'admin',
+			created_by_user_id: params.createdByUserId,
+			created_at: new Date().toISOString(),
+			expires_at: params.expiresAt?.toISOString() ?? null,
+			max_uses: params.maxUses,
+			use_count: 0,
+			revoked_at: null,
+			approval_required: params.approvalRequired,
+			last_used_at: null,
+			last_used_by_user_id: null,
+		};
+	}
+
+	private async getRegistrationUrlsFromDatabase(): Promise<Array<InstanceRegistrationUrl>> {
+		const raw = await this.fetchConfigFromDatabase(REGISTRATION_URLS_KEY);
+		if (!raw) return [];
+		const parsed = parseJsonArray(raw);
+		if (!parsed) {
+			Logger.warn('Invalid registration URL config JSON, returning empty list');
+			return [];
+		}
+		return parsed.flatMap((entry) => {
+			const normalized = normalizeRegistrationUrl(entry);
+			return normalized ? [normalized] : [];
+		});
+	}
+
+	private async withRegistrationUrlsMutationLock<T>(action: () => Promise<T>): Promise<T> {
+		if (!this.kvClient) {
+			const previous = this.registrationUrlsMutationTail;
+			let release: () => void = () => {};
+			this.registrationUrlsMutationTail = new Promise<void>((resolve) => {
+				release = resolve;
+			});
+			await previous;
+			try {
+				return await action();
+			} finally {
+				release();
+			}
+		}
+		const token = crypto.randomUUID();
+		const waitUntil = Date.now() + REGISTRATION_URLS_MUTATION_LOCK_WAIT_MS;
+		let acquired = false;
+		while (!acquired && Date.now() < waitUntil) {
+			acquired = await this.kvClient.acquireLock(
+				REGISTRATION_URLS_MUTATION_LOCK_KEY,
+				token,
+				REGISTRATION_URLS_MUTATION_LOCK_TTL_SECONDS,
+			);
+			if (!acquired) {
+				await new Promise((resolve) => setTimeout(resolve, REGISTRATION_URLS_MUTATION_LOCK_RETRY_MS));
+			}
+		}
+		if (!acquired) {
+			throw new Error('Timed out waiting to update registration links');
+		}
+		try {
+			return await action();
+		} finally {
+			await this.kvClient.releaseLock(REGISTRATION_URLS_MUTATION_LOCK_KEY, token).catch((error) => {
+				Logger.warn({error}, 'Failed to release registration URL mutation lock');
+			});
+		}
 	}
 
 	private hashRegistrationUrlCode(code: string): string {

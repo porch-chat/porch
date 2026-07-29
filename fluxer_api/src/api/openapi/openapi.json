@@ -22012,6 +22012,224 @@
 				]
 			}
 		},
+		"/users/@me/registration-invites": {
+			"get": {
+				"operationId": "list_current_user_registration_invites",
+				"summary": "List registration links created by the current member",
+				"tags": ["Users"],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"content": {
+							"application/json": {"schema": {"$ref": "#/components/schemas/MemberRegistrationInvitesResponse"}}
+						}
+					},
+					"400": {
+						"description": "Bad Request - The request was malformed or contained invalid data",
+						"content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+					},
+					"401": {
+						"description": "Unauthorized - Authentication is required or the token is invalid",
+						"content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+					},
+					"403": {
+						"description": "Forbidden - You do not have permission to perform this action",
+						"content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+					},
+					"429": {
+						"description": "Too Many Requests - You are being rate limited",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"code": {"type": "string", "enum": ["RATE_LIMITED"]},
+										"message": {"type": "string"},
+										"retry_after": {"type": "number", "description": "Seconds to wait before retrying"},
+										"global": {"type": "boolean", "description": "Whether this is a global rate limit"}
+									},
+									"required": ["code", "message", "retry_after"]
+								}
+							}
+						},
+						"headers": {
+							"Retry-After": {
+								"description": "Number of seconds to wait before retrying (only on 429)",
+								"schema": {"type": "integer"}
+							},
+							"X-RateLimit-Limit": {
+								"description": "The number of requests that can be made in the current window",
+								"schema": {"type": "integer"}
+							},
+							"X-RateLimit-Remaining": {
+								"description": "The number of remaining requests that can be made",
+								"schema": {"type": "integer"}
+							},
+							"X-RateLimit-Reset": {
+								"description": "Unix timestamp when the rate limit resets",
+								"schema": {"type": "integer"}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal Server Error - An unexpected error occurred",
+						"content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+					}
+				},
+				"x-mint": {"metadata": {"title": "List registration links created by the current member"}},
+				"description": "Lists standalone Porch account registration links created by the current member. These links never join a community or group DM.",
+				"security": [{"sessionToken": []}]
+			},
+			"post": {
+				"operationId": "create_current_user_registration_invite",
+				"summary": "Create a one-person Porch registration link",
+				"tags": ["Users"],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"content": {
+							"application/json": {"schema": {"$ref": "#/components/schemas/MemberRegistrationInviteResponse"}}
+						}
+					},
+					"400": {
+						"description": "Bad Request - The request was malformed or contained invalid data",
+						"content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+					},
+					"401": {
+						"description": "Unauthorized - Authentication is required or the token is invalid",
+						"content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+					},
+					"403": {
+						"description": "Forbidden - You do not have permission to perform this action",
+						"content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+					},
+					"429": {
+						"description": "Too Many Requests - You are being rate limited",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"code": {"type": "string", "enum": ["RATE_LIMITED"]},
+										"message": {"type": "string"},
+										"retry_after": {"type": "number", "description": "Seconds to wait before retrying"},
+										"global": {"type": "boolean", "description": "Whether this is a global rate limit"}
+									},
+									"required": ["code", "message", "retry_after"]
+								}
+							}
+						},
+						"headers": {
+							"Retry-After": {
+								"description": "Number of seconds to wait before retrying (only on 429)",
+								"schema": {"type": "integer"}
+							},
+							"X-RateLimit-Limit": {
+								"description": "The number of requests that can be made in the current window",
+								"schema": {"type": "integer"}
+							},
+							"X-RateLimit-Remaining": {
+								"description": "The number of remaining requests that can be made",
+								"schema": {"type": "integer"}
+							},
+							"X-RateLimit-Reset": {
+								"description": "Unix timestamp when the rate limit resets",
+								"schema": {"type": "integer"}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal Server Error - An unexpected error occurred",
+						"content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+					}
+				},
+				"x-mint": {"metadata": {"title": "Create a one-person Porch registration link"}},
+				"description": "Creates a seven-day, one-use account registration link. If the member already has an active link, that link is returned instead. The link does not grant community or group DM membership.",
+				"security": [{"sessionToken": []}],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {"schema": {"$ref": "#/components/schemas/CreateMemberRegistrationInviteRequest"}}
+					}
+				}
+			}
+		},
+		"/users/@me/registration-invites/{registration_invite_id}": {
+			"delete": {
+				"operationId": "revoke_current_user_registration_invite",
+				"summary": "Revoke a registration link created by the current member",
+				"tags": ["Users"],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"content": {"application/json": {"schema": {"$ref": "#/components/schemas/SuccessResponse"}}}
+					},
+					"400": {
+						"description": "Bad Request - The request was malformed or contained invalid data",
+						"content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+					},
+					"401": {
+						"description": "Unauthorized - Authentication is required or the token is invalid",
+						"content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+					},
+					"403": {
+						"description": "Forbidden - You do not have permission to perform this action",
+						"content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+					},
+					"429": {
+						"description": "Too Many Requests - You are being rate limited",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"code": {"type": "string", "enum": ["RATE_LIMITED"]},
+										"message": {"type": "string"},
+										"retry_after": {"type": "number", "description": "Seconds to wait before retrying"},
+										"global": {"type": "boolean", "description": "Whether this is a global rate limit"}
+									},
+									"required": ["code", "message", "retry_after"]
+								}
+							}
+						},
+						"headers": {
+							"Retry-After": {
+								"description": "Number of seconds to wait before retrying (only on 429)",
+								"schema": {"type": "integer"}
+							},
+							"X-RateLimit-Limit": {
+								"description": "The number of requests that can be made in the current window",
+								"schema": {"type": "integer"}
+							},
+							"X-RateLimit-Remaining": {
+								"description": "The number of remaining requests that can be made",
+								"schema": {"type": "integer"}
+							},
+							"X-RateLimit-Reset": {
+								"description": "Unix timestamp when the rate limit resets",
+								"schema": {"type": "integer"}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal Server Error - An unexpected error occurred",
+						"content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+					}
+				},
+				"x-mint": {"metadata": {"title": "Revoke a registration link created by the current member"}},
+				"description": "Revokes one of the current member’s standalone account registration links. Links owned by other members cannot be revoked.",
+				"security": [{"sessionToken": []}],
+				"parameters": [
+					{
+						"name": "registration_invite_id",
+						"in": "path",
+						"required": true,
+						"schema": {"type": "string"},
+						"description": "The registration invite id"
+					}
+				]
+			}
+		},
 		"/users/@me/relationships": {
 			"get": {
 				"operationId": "list_user_relationships",
@@ -36440,6 +36658,49 @@
 					}
 				},
 				"required": ["subscriptions"]
+			},
+			"MemberRegistrationInvitesResponse": {
+				"type": "object",
+				"properties": {
+					"invites": {"type": "array", "items": {"$ref": "#/components/schemas/MemberRegistrationInviteResponse"}}
+				},
+				"required": ["invites"]
+			},
+			"MemberRegistrationInviteResponse": {
+				"type": "object",
+				"properties": {
+					"id": {"type": "string"},
+					"label": {"anyOf": [{"type": "string"}, {"type": "null"}]},
+					"created_at": {"type": "string", "format": "date-time"},
+					"expires_at": {"type": "string", "format": "date-time"},
+					"max_uses": {"type": "integer", "enum": [1]},
+					"use_count": {"type": "integer", "minimum": 0, "maximum": 9007199254740991, "format": "int53"},
+					"revoked_at": {"anyOf": [{"type": "string", "format": "date-time"}, {"type": "null"}]},
+					"last_used_at": {"anyOf": [{"type": "string", "format": "date-time"}, {"type": "null"}]},
+					"active": {"type": "boolean"},
+					"url": {"type": "string"}
+				},
+				"required": [
+					"id",
+					"label",
+					"created_at",
+					"expires_at",
+					"max_uses",
+					"use_count",
+					"revoked_at",
+					"last_used_at",
+					"active",
+					"url"
+				]
+			},
+			"CreateMemberRegistrationInviteRequest": {
+				"type": "object",
+				"properties": {
+					"label": {
+						"anyOf": [{"type": "string", "minLength": 1, "maxLength": 80}, {"type": "null"}],
+						"description": "Optional private label to remember who this one-person registration link is for"
+					}
+				}
 			},
 			"RelationshipResponse": {
 				"type": "object",

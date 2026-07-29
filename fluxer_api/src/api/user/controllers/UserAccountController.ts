@@ -12,6 +12,7 @@ import {
 } from '@fluxer/schema/src/domains/common/CommonParamSchemas';
 import {
 	BulkDeleteSelfMessagesRequest,
+	CreateMemberRegistrationInviteRequest,
 	DeviceIdParam,
 	EmailChangeApplyRequest,
 	EmailChangeBouncedRequestNewRequest,
@@ -21,6 +22,7 @@ import {
 	EmailChangeVerifyNewRequest,
 	EmailChangeVerifyOriginalRequest,
 	EmptyBodyRequest,
+	MemberRegistrationInviteIdParam,
 	PasswordChangeCompleteRequest,
 	PasswordChangeTicketRequest,
 	PasswordChangeVerifyRequest,
@@ -42,6 +44,8 @@ import {
 	EmailChangeStartResponse,
 	EmailChangeVerifyOriginalResponse,
 	EmailTokenResponse,
+	MemberRegistrationInviteResponse,
+	MemberRegistrationInvitesResponse,
 	MobileDevicesListResponse,
 	PasswordChangeCompleteResponse,
 	PasswordChangeStartResponse,
@@ -63,6 +67,8 @@ import {uint8ArrayToBase64} from 'uint8array-extras';
 import * as AuthSession from '../../auth/AuthSession';
 import {requireSudoMode} from '../../auth/services/SudoVerificationService';
 import {createGuildID, createUserID} from '../../BrandedTypes';
+import {Config} from '../../Config';
+import type {InstanceRegistrationUrlPublic} from '../../instance/InstanceConfigRepository';
 import {DefaultUserOnly, LoginRequired, LoginRequiredAllowSuspicious} from '../../middleware/AuthMiddleware';
 import {requireOAuth2ScopeForBearer} from '../../middleware/OAuth2ScopeMiddleware';
 import {RateLimitMiddleware} from '../../middleware/RateLimitMiddleware';
@@ -75,6 +81,33 @@ import type {UserUpdateWithVerificationRequestData} from '../services/UserAccoun
 import {getCachedUserPartialResponse} from '../UserCacheHelpers';
 import {mapUserGuildSettingsToResponse, mapUserSettingsToResponse, mapUserToPrivateResponse} from '../UserMappers';
 import {UserSettingsUpdateRequest} from '../UserModel';
+
+const MEMBER_REGISTRATION_INVITE_LIFETIME_MS = 7 * 24 * 60 * 60 * 1000;
+
+function isMemberRegistrationInviteActive(invite: InstanceRegistrationUrlPublic, now = Date.now()): boolean {
+	return (
+		invite.issuer_type === 'member' &&
+		invite.revoked_at === null &&
+		(invite.expires_at === null || Date.parse(invite.expires_at) > now) &&
+		(invite.max_uses === null || invite.use_count < invite.max_uses)
+	);
+}
+
+function mapMemberRegistrationInvite(invite: InstanceRegistrationUrlPublic) {
+	const baseUrl = Config.endpoints.webApp.replace(/\/$/, '');
+	return {
+		id: invite.id,
+		label: invite.label,
+		created_at: invite.created_at,
+		expires_at: invite.expires_at!,
+		max_uses: 1 as const,
+		use_count: invite.use_count,
+		revoked_at: invite.revoked_at,
+		last_used_at: invite.last_used_at,
+		active: isMemberRegistrationInviteActive(invite),
+		url: `${baseUrl}/register?registration_url=${encodeURIComponent(invite.id)}`,
+	};
+}
 
 export function UserAccountController(app: HonoApp) {
 	app.get(
@@ -622,6 +655,86 @@ export function UserAccountController(app: HonoApp) {
 				flags: user.flags,
 			});
 			return ctx.json(mapUserSettingsToResponse({settings: updatedSettings}));
+		},
+	);
+	app.get(
+		'/users/@me/registration-invites',
+		RateLimitMiddleware(RateLimitConfigs.USER_REGISTRATION_INVITES_GET),
+		LoginRequired,
+		DefaultUserOnly,
+		OpenAPI({
+			operationId: 'list_current_user_registration_invites',
+			summary: 'List registration links created by the current member',
+			responseSchema: MemberRegistrationInvitesResponse,
+			statusCode: 200,
+			security: ['bearerToken', 'sessionToken'],
+			tags: ['Users'],
+			description:
+				'Lists standalone Porch account registration links created by the current member. These links never join a community or group DM.',
+		}),
+		async (ctx) => {
+			const invites = await ctx
+				.get('instanceConfigRepository')
+				.getRegistrationUrlsForMember(ctx.get('user').id.toString());
+			return ctx.json({invites: invites.map(mapMemberRegistrationInvite)});
+		},
+	);
+	app.post(
+		'/users/@me/registration-invites',
+		RateLimitMiddleware(RateLimitConfigs.USER_REGISTRATION_INVITES_CREATE),
+		LoginRequired,
+		DefaultUserOnly,
+		Validator('json', CreateMemberRegistrationInviteRequest),
+		OpenAPI({
+			operationId: 'create_current_user_registration_invite',
+			summary: 'Create a one-person Porch registration link',
+			responseSchema: MemberRegistrationInviteResponse,
+			statusCode: 200,
+			security: ['bearerToken', 'sessionToken'],
+			tags: ['Users'],
+			description:
+				'Creates a seven-day, one-use account registration link. If the member already has an active link, that link is returned instead. The link does not grant community or group DM membership.',
+		}),
+		async (ctx) => {
+			const repository = ctx.get('instanceConfigRepository');
+			const registrationConfig = await repository.getRegistrationConfig();
+			if (!registrationConfig.admin_registration_urls_enabled) {
+				throw new MissingAccessError();
+			}
+			const userId = ctx.get('user').id.toString();
+			const data = ctx.req.valid('json');
+			const registrationInvite = await repository.getOrCreateMemberRegistrationUrl({
+				label: data.label?.trim() || null,
+				createdByUserId: userId,
+				expiresAt: new Date(Date.now() + MEMBER_REGISTRATION_INVITE_LIFETIME_MS),
+			});
+			return ctx.json(mapMemberRegistrationInvite(registrationInvite));
+		},
+	);
+	app.delete(
+		'/users/@me/registration-invites/:registration_invite_id',
+		RateLimitMiddleware(RateLimitConfigs.USER_REGISTRATION_INVITES_REVOKE),
+		LoginRequired,
+		DefaultUserOnly,
+		Validator('param', MemberRegistrationInviteIdParam),
+		OpenAPI({
+			operationId: 'revoke_current_user_registration_invite',
+			summary: 'Revoke a registration link created by the current member',
+			responseSchema: SuccessResponse,
+			statusCode: 200,
+			security: ['bearerToken', 'sessionToken'],
+			tags: ['Users'],
+			description:
+				'Revokes one of the current member’s standalone account registration links. Links owned by other members cannot be revoked.',
+		}),
+		async (ctx) => {
+			const revoked = await ctx
+				.get('instanceConfigRepository')
+				.revokeRegistrationUrlForMember(ctx.req.valid('param').registration_invite_id, ctx.get('user').id.toString());
+			if (!revoked) {
+				throw new MissingAccessError();
+			}
+			return ctx.json({success: true});
 		},
 	);
 	app.put(

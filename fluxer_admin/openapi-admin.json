@@ -12431,6 +12431,7 @@
 									"properties": {
 										"id": {"type": "string"},
 										"label": {"nullable": true, "type": "string"},
+										"issuer_type": {"enum": ["admin", "member"], "type": "string"},
 										"created_by_user_id": {"$ref": "#/components/schemas/SnowflakeType"},
 										"created_at": {"type": "string", "format": "date-time"},
 										"expires_at": {"nullable": true, "type": "string", "format": "date-time"},
@@ -12453,6 +12454,7 @@
 									"required": [
 										"id",
 										"label",
+										"issuer_type",
 										"created_by_user_id",
 										"created_at",
 										"expires_at",
@@ -12863,6 +12865,7 @@
 						"properties": {
 							"id": {"type": "string"},
 							"label": {"nullable": true, "type": "string"},
+							"issuer_type": {"enum": ["admin", "member"], "type": "string"},
 							"created_by_user_id": {"$ref": "#/components/schemas/SnowflakeType"},
 							"created_at": {"type": "string", "format": "date-time"},
 							"expires_at": {"nullable": true, "type": "string", "format": "date-time"},
@@ -12882,6 +12885,7 @@
 						"required": [
 							"id",
 							"label",
+							"issuer_type",
 							"created_by_user_id",
 							"created_at",
 							"expires_at",

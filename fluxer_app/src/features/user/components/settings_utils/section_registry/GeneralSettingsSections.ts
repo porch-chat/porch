@@ -7,6 +7,10 @@ const PROFILE_CUSTOMIZATION_DESCRIPTOR = msg({
 	message: 'Profile customization',
 	comment: 'Settings section label for editing profile appearance and identity.',
 });
+const REGISTRATION_INVITES_DESCRIPTOR = msg({
+	message: 'Registration links',
+	comment: 'Settings section label for managing account registration links created for friends.',
+});
 const REDEEM_A_GIFT_DESCRIPTOR = msg({
 	message: 'Redeem a gift',
 	comment: 'Settings section label for redeeming a gift code.',
@@ -82,6 +86,13 @@ export const generalSettingsSections = [
 		tabType: 'my_profile',
 		label: PROFILE_CUSTOMIZATION_DESCRIPTOR,
 		keywords: [],
+		isAdvanced: false,
+	},
+	{
+		id: 'registration-invites',
+		tabType: 'registration_invites',
+		label: REGISTRATION_INVITES_DESCRIPTOR,
+		keywords: ['invite friends', 'registration links', 'invite codes'],
 		isAdvanced: false,
 	},
 	{id: 'redeem-gift', tabType: 'gift_inventory', label: REDEEM_A_GIFT_DESCRIPTOR, keywords: [], isAdvanced: false},

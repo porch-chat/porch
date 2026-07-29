@@ -671,3 +671,24 @@ export const BulkIgnoreFriendRequestsResponse = z.object({
 });
 
 export type BulkIgnoreFriendRequestsResponse = z.infer<typeof BulkIgnoreFriendRequestsResponse>;
+
+export const MemberRegistrationInviteResponse = z.object({
+	id: createStringType(1, 128),
+	label: z.string().nullable(),
+	created_at: z.iso.datetime(),
+	expires_at: z.iso.datetime(),
+	max_uses: z.literal(1),
+	use_count: z.number().int().min(0),
+	revoked_at: z.iso.datetime().nullable(),
+	last_used_at: z.iso.datetime().nullable(),
+	active: z.boolean(),
+	url: z.string(),
+});
+
+export type MemberRegistrationInviteResponse = z.infer<typeof MemberRegistrationInviteResponse>;
+
+export const MemberRegistrationInvitesResponse = z.object({
+	invites: z.array(MemberRegistrationInviteResponse),
+});
+
+export type MemberRegistrationInvitesResponse = z.infer<typeof MemberRegistrationInvitesResponse>;

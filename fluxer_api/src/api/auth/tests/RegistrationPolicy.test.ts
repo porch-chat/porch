@@ -104,15 +104,14 @@ describe('Auth registration policy', () => {
 			.execute();
 	});
 
-	it('allows a valid member-created guild invite while public registration is closed', async () => {
+	it('does not treat a valid community invite as an account registration link', async () => {
 		const inviteCode = await createGuildInvite(harness);
 		await getInstanceConfigRepository().setRegistrationConfig({mode: 'closed'});
-		const registration = await createBuilderWithoutAuth<RegistrationTokenResponse>(harness)
+		await createBuilderWithoutAuth(harness)
 			.post('/auth/register')
 			.body({...registrationBody('closedinvite'), invite_code: inviteCode})
+			.expect(403, APIErrorCodes.REGISTRATION_CLOSED)
 			.execute();
-		expect(registration.token.length).toBeGreaterThan(0);
-		expect(registration.user_id.length).toBeGreaterThan(0);
 	});
 
 	it('does not allow an invalid member invite while public registration is closed', async () => {

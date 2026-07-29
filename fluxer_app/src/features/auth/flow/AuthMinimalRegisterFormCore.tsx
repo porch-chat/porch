@@ -61,8 +61,7 @@ export const AuthMinimalRegisterFormCore = observer(function AuthMinimalRegister
 		const value = new URLSearchParams(location.search).get('registration_url')?.trim();
 		return value || undefined;
 	}, [location.search]);
-	const isPublicRegistrationClosed =
-		RuntimeConfig.registration.mode === 'closed' && !registrationUrlCode && !inviteCode;
+	const isPublicRegistrationClosed = RuntimeConfig.registration.mode === 'closed' && !registrationUrlCode;
 	const collectDateOfBirth = RuntimeConfig.collectDateOfBirthOnRegistration;
 	const {getRegisterFormDraft, setRegisterFormDraft, clearRegisterFormDraft} = useAuthRegisterDraftContext();
 	const globalNameId = useId();
@@ -209,7 +208,7 @@ export const AuthMinimalRegisterFormCore = observer(function AuthMinimalRegister
 					role="alert"
 					data-flx="auth.flow.auth-minimal-register-form-core.closed-notice"
 				>
-					<Trans>Registration is currently closed. Use a registration link from an admin to create an account.</Trans>
+					<Trans>Registration is currently closed. Ask a Porch member for an account registration link.</Trans>
 				</div>
 			) : null}
 			{pendingApprovalUserId ? (

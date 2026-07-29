@@ -309,7 +309,7 @@ export const AuthRegisterFormCore = observer(function AuthRegisterFormCore({
 					role="alert"
 					data-flx="auth.flow.auth-register-form-core.closed-notice"
 				>
-					<Trans>Registration is currently closed. Use a registration link from an admin to create an account.</Trans>
+					<Trans>Registration is currently closed. Ask a Porch member for an account registration link.</Trans>
 				</div>
 			) : null}
 			{pendingApprovalUserId ? (

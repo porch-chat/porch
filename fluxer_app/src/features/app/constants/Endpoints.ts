@@ -219,6 +219,8 @@ export const Endpoints = {
 	STREAM_PREVIEW: (streamKey: string) => `/streams/${streamKey}/preview`,
 	STREAM_PREVIEW_UPLOAD_URL: (streamKey: string) => `/streams/${streamKey}/preview/upload-url`,
 	USER_SETTINGS: '/users/@me/settings',
+	USER_REGISTRATION_INVITES: '/users/@me/registration-invites',
+	USER_REGISTRATION_INVITE: (registrationInviteId: string) => `/users/@me/registration-invites/${registrationInviteId}`,
 	USER_VOICE_ACTIVITY_SHARING: '/users/@me/settings/voice-activity-sharing',
 	USER_GUILD_SETTINGS_ME: '/users/@me/guilds/@me/settings',
 	USER_GUILD_SETTINGS: (guildId: string) => `/users/@me/guilds/${guildId}/settings`,

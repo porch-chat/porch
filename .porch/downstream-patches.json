@@ -266,6 +266,48 @@
 			"conflict_risk": "low",
 			"upstream_status": "downstream-until-configurable",
 			"removal_condition": "Remove after upstream includes Cloudflare Turnstile's required CSP origins whenever Turnstile support is enabled."
+		},
+		{
+			"id": "porch-member-registration-invites-0009",
+			"title": "Separate member account registration links from social invites",
+			"status": "active",
+			"category": "registration",
+			"reason": "Let existing Porch members invite one new person without allowing community or group-DM links to bypass closed registration or silently grant membership.",
+			"paths": [
+				"docs/porch/MEMBER_REGISTRATION_INVITES.md",
+				"fluxer_admin/openapi-admin.json",
+				"fluxer_api/src/api/auth/AuthRegistration.ts",
+				"fluxer_api/src/api/auth/tests/RegistrationPolicy.test.ts",
+				"fluxer_api/src/api/instance/InstanceConfigRepository.ts",
+				"fluxer_api/src/api/openapi/openapi.json",
+				"fluxer_api/src/api/rate_limit_configs/UserRateLimitConfig.ts",
+				"fluxer_api/src/api/user/controllers/UserAccountController.ts",
+				"fluxer_api/src/api/user/tests/MemberRegistrationInvites.test.ts",
+				"fluxer_app/src/features/app/components/layout/GuildsLayout.tsx",
+				"fluxer_app/src/features/app/components/layout/sidebar_nav/MemberRegistrationInviteButton.tsx",
+				"fluxer_app/src/features/app/constants/Endpoints.ts",
+				"fluxer_app/src/features/auth/flow",
+				"fluxer_app/src/features/user/commands/MemberRegistrationInviteCommands.ts",
+				"fluxer_app/src/features/user/components/member_registration_invites",
+				"fluxer_app/src/features/user/components/modals/MemberRegistrationInviteModal.tsx",
+				"fluxer_app/src/features/user/components/modals/tabs/MemberRegistrationInvitesTab.tsx",
+				"fluxer_app/src/features/user/components/settings_utils",
+				"packages/schema/src/domains/admin/AdminSchemas.ts",
+				"packages/schema/src/domains/user"
+			],
+			"tests": [
+				"registration policy API tests",
+				"member registration invite API tests",
+				"instance registration repository tests",
+				"app and API TypeScript typechecks",
+				"OpenAPI generation and validation",
+				"Porch branding contract validation",
+				"app production build",
+				"git diff --check"
+			],
+			"conflict_risk": "medium",
+			"upstream_status": "permanently-downstream",
+			"removal_condition": "Remove only if Porch stops using invite-only registration or upstream independently separates member registration links from community and group-DM membership invites."
 		}
 	]
 }

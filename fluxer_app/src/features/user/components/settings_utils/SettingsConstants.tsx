@@ -48,6 +48,7 @@ import {
 	TranslateIcon,
 	UserIcon,
 	UserListIcon,
+	UserPlusIcon,
 } from '@phosphor-icons/react';
 import type React from 'react';
 
@@ -91,6 +92,10 @@ const DESKTOP_SETTINGS_FALLBACK_DESCRIPTOR = msg({
 const PROFILE_DESCRIPTOR = msg({
 	message: 'Profile',
 	comment: 'User settings tab for editing the current user profile.',
+});
+const REGISTRATION_INVITES_DESCRIPTOR = msg({
+	message: 'Invites',
+	comment: 'User settings tab for creating standalone account registration links for friends.',
 });
 const ACCOUNT_SECURITY_DESCRIPTOR = msg({
 	message: 'Account',
@@ -218,6 +223,13 @@ const ALL_TABS_DESCRIPTORS: Array<SettingsTabDescriptor> = [
 		category: 'user_settings',
 		label: PROFILE_DESCRIPTOR,
 		icon: UserIcon,
+	},
+	{
+		type: 'registration_invites',
+		category: 'user_settings',
+		label: REGISTRATION_INVITES_DESCRIPTOR,
+		icon: UserPlusIcon,
+		iconWeight: 'bold',
 	},
 	{
 		type: 'account_security',

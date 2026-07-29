@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import crypto from 'node:crypto';
 import {AdminACLs} from '@fluxer/constants/src/AdminACLs';
-import {InviteTypes} from '@fluxer/constants/src/ChannelConstants';
 import {ProfileFieldPrivacyFlags, UserFlags} from '@fluxer/constants/src/UserConstants';
 import {ValidationErrorCodes} from '@fluxer/constants/src/ValidationErrorCodes';
 import {RegistrationClosedError} from '@fluxer/errors/src/domains/auth/RegistrationClosedError';
@@ -56,6 +56,9 @@ import {assertFlutterClientRegistrationAllowed} from './FlutterClientGate';
 import type {IRegistrationRiskEvaluator} from './services/IRegistrationRiskEvaluator';
 
 const DEFAULT_MINIMUM_AGE = 13;
+const REGISTRATION_URL_LOCK_TTL_SECONDS = 120;
+const REGISTRATION_URL_LOCK_WAIT_MS = 30_000;
+const REGISTRATION_URL_LOCK_RETRY_MS = 100;
 
 function getRetryAfterSeconds(result: RateLimitResult): number {
 	return result.retryAfter ?? Math.max(0, Math.ceil((result.resetTime.getTime() - Date.now()) / 1000));
@@ -117,6 +120,38 @@ function shouldRequireHostedLegalConsent(config: APIConfig): boolean {
 export async function register(
 	ctx: ApiContext,
 	deps: RegistrationDependencies,
+	params: RegisterParams,
+): Promise<RegisterResult> {
+	const registrationUrlCode = params.data.registration_url_code?.trim();
+	if (!registrationUrlCode) {
+		return registerWithResolvedAccess(ctx, deps, params);
+	}
+	const codeHash = crypto.createHash('sha256').update(registrationUrlCode).digest('hex');
+	const lockKey = `registration_url:consume:${codeHash}`;
+	const lockToken = crypto.randomUUID();
+	const waitUntil = Date.now() + REGISTRATION_URL_LOCK_WAIT_MS;
+	let acquired = false;
+	while (!acquired && Date.now() < waitUntil) {
+		acquired = await ctx.services.kv.acquireLock(lockKey, lockToken, REGISTRATION_URL_LOCK_TTL_SECONDS);
+		if (!acquired) {
+			await new Promise((resolve) => setTimeout(resolve, REGISTRATION_URL_LOCK_RETRY_MS));
+		}
+	}
+	if (!acquired) {
+		throw new RegistrationUrlInvalidError();
+	}
+	try {
+		return await registerWithResolvedAccess(ctx, deps, params);
+	} finally {
+		await ctx.services.kv.releaseLock(lockKey, lockToken).catch((error) => {
+			Logger.warn({lockKey, error}, '[AuthRegistration] Failed to release registration URL lock');
+		});
+	}
+}
+
+async function registerWithResolvedAccess(
+	ctx: ApiContext,
+	deps: RegistrationDependencies,
 	{data, request, requestCache}: RegisterParams,
 ): Promise<RegisterResult> {
 	const {users, snowflake, emailDnsValidation, config} = ctx.services;
@@ -145,9 +180,7 @@ export async function register(
 	const now = new Date();
 	const registrationAccess = await resolveRegistrationAccess({
 		instanceConfigRepository,
-		inviteService,
 		registrationUrlCode: data.registration_url_code,
-		inviteCode: data.invite_code,
 	});
 	const clientIp = requireClientIp(request, {
 		trustClientIpHeader: config.proxy.trust_client_ip_header,
@@ -430,7 +463,12 @@ export async function register(
 			user_id: user.id.toString(),
 		};
 	}
-	if (policyDecision.inviteAutoJoinEnabled) {
+	if (registrationAccess.registrationUrl) {
+		Logger.info(
+			{userId: userId.toString(), registrationUrlId: registrationAccess.registrationUrl.id},
+			'[AuthRegistration] Skipping invite auto-join for standalone account registration link',
+		);
+	} else if (policyDecision.inviteAutoJoinEnabled) {
 		await maybeAutoJoinInvite(inviteService, {
 			userId,
 			inviteCode: data.invite_code || config.instance.autoJoinInviteCode,
@@ -478,14 +516,10 @@ function shouldAttemptBootstrapAdminGrant(
 
 async function resolveRegistrationAccess({
 	instanceConfigRepository,
-	inviteService,
 	registrationUrlCode,
-	inviteCode,
 }: {
 	instanceConfigRepository: InstanceConfigRepository;
-	inviteService: InviteService | null;
 	registrationUrlCode: string | null | undefined;
-	inviteCode: string | null | undefined;
 }): Promise<{pendingApproval: boolean; registrationUrl: InstanceRegistrationUrl | null}> {
 	const registrationConfig = await instanceConfigRepository.getRegistrationConfig();
 	const normalizedCode = registrationUrlCode?.trim();
@@ -499,33 +533,13 @@ async function resolveRegistrationAccess({
 			throw new RegistrationUrlInvalidError();
 		}
 	}
-	const inviteGrantsAccess =
-		!registrationUrl && registrationConfig.mode === 'closed'
-			? await isUsableRegistrationInvite(inviteService, inviteCode)
-			: false;
-	if (!registrationUrl && registrationConfig.mode === 'closed' && !inviteGrantsAccess) {
+	if (!registrationUrl && registrationConfig.mode === 'closed') {
 		throw new RegistrationClosedError();
 	}
 	return {
 		pendingApproval: registrationUrl ? registrationUrl.approval_required : registrationConfig.mode === 'approval',
 		registrationUrl,
 	};
-}
-
-async function isUsableRegistrationInvite(
-	inviteService: InviteService | null,
-	inviteCode: string | null | undefined,
-): Promise<boolean> {
-	const normalizedInviteCode = inviteCode?.trim();
-	if (!inviteService || !normalizedInviteCode) return false;
-	try {
-		const invite = await inviteService.getInvite(createInviteCode(normalizedInviteCode));
-		const isSocialInvite = invite.type === InviteTypes.GUILD || invite.type === InviteTypes.GROUP_DM;
-		const hasRemainingUses = invite.maxUses === 0 || invite.uses < invite.maxUses;
-		return isSocialInvite && hasRemainingUses;
-	} catch {
-		return false;
-	}
 }
 
 async function maybeIndexUser(user: User): Promise<void> {
