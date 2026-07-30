@@ -7,6 +7,15 @@ import type {ScreenShareCaptureOptions} from 'livekit-client';
 
 export type StreamSettingsShareContext = 'app' | 'device' | 'display';
 
+export function resolveActiveStreamSettingsShareContext(
+	activeSourceId: string | null,
+	lastSource: LastScreenShareSource | null,
+): StreamSettingsShareContext {
+	if (activeSourceId?.startsWith('window:')) return 'app';
+	if (activeSourceId && lastSource?.kind === 'device' && lastSource.sourceId === activeSourceId) return 'device';
+	return 'display';
+}
+
 export interface StreamSettingsUpdatePolicyInput {
 	platform?: string | null;
 	shareContext: StreamSettingsShareContext;

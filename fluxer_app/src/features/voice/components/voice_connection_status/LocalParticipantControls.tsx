@@ -31,7 +31,9 @@ import type {LivekitParticipantSnapshot} from '@app/features/voice/engine/VoiceP
 import {useCameraUserCapBlocked} from '@app/features/voice/hooks/useCameraUserCapBlocked';
 import {useMediaDevices} from '@app/features/voice/hooks/useMediaDevices';
 import ActiveScreenShareSource from '@app/features/voice/state/ActiveScreenShareSource';
+import VoiceSettings from '@app/features/voice/state/VoiceSettings';
 import {resolveDisplayShareEnvironment} from '@app/features/voice/utils/ScreenShareEnvironment';
+import {resolveActiveStreamSettingsShareContext} from '@app/features/voice/utils/StreamSettingsUpdatePolicy';
 import {
 	VOICE_SHARE_SCREEN_DESCRIPTOR,
 	VOICE_TURN_ON_CAMERA_DESCRIPTOR,
@@ -189,7 +191,10 @@ export const LocalParticipantControls = observer(() => {
 					</MenuGroup>
 					<StreamSettingsMenuContent
 						displayShareEnvironment={displayShareEnvironment}
-						shareContext={ActiveScreenShareSource.getSourceId()?.startsWith('window:') ? 'app' : 'display'}
+						shareContext={resolveActiveStreamSettingsShareContext(
+							ActiveScreenShareSource.getSourceId(),
+							VoiceSettings.getLastScreenShareSource(),
+						)}
 						data-flx="voice.voice-connection-status.open-screen-share-menu.stream-settings-menu-content"
 					/>
 				</>

@@ -65,6 +65,7 @@ import LocalVoiceState from '@app/features/voice/state/LocalVoiceState';
 import VoiceCallLayout from '@app/features/voice/state/VoiceCallLayout';
 import VoiceSettings from '@app/features/voice/state/VoiceSettings';
 import {resolveDisplayShareEnvironment} from '@app/features/voice/utils/ScreenShareEnvironment';
+import {resolveActiveStreamSettingsShareContext} from '@app/features/voice/utils/StreamSettingsUpdatePolicy';
 import {
 	getVoiceDeafenedByModeratorsStatusLabel,
 	VOICE_CAMERA_SETTINGS_DESCRIPTOR,
@@ -399,7 +400,10 @@ const VoiceControlBarInner = observer(function VoiceControlBarInner() {
 				<StreamSettingsMenuContent
 					applyToLiveStream={isScreenShareEnabled}
 					displayShareEnvironment={displayShareEnvironment}
-					shareContext={ActiveScreenShareSource.getSourceId()?.startsWith('window:') ? 'app' : 'display'}
+					shareContext={resolveActiveStreamSettingsShareContext(
+						ActiveScreenShareSource.getSourceId(),
+						VoiceSettings.getLastScreenShareSource(),
+					)}
 					data-flx="voice.voice-control-bar.render-screen-share-menu.stream-settings-menu-content"
 				/>
 				<MenuGroup data-flx="voice.voice-control-bar.render-screen-share-menu.menu-group--2">

@@ -4,10 +4,28 @@ import {describe, expect, it} from 'vitest';
 import {
 	buildActiveDeviceScreenShareReplacement,
 	isLinuxDesktopAudioShare,
+	resolveActiveStreamSettingsShareContext,
 	shouldReconfigureLinuxAudioForActiveStreamSettings,
 } from './StreamSettingsUpdatePolicy';
 
 describe('StreamSettingsUpdatePolicy', () => {
+	it('classifies active app, capture-card, and display sources for live settings', () => {
+		const deviceSource = {
+			kind: 'device' as const,
+			sourceId: 'elgato-4k-x',
+			title: 'Elgato 4K X',
+			updatedAt: 1,
+			sourceWidth: 3440,
+			sourceHeight: 1440,
+			sourceFrameRate: 60,
+		};
+		expect(resolveActiveStreamSettingsShareContext('window:42:0', null)).toBe('app');
+		expect(resolveActiveStreamSettingsShareContext('elgato-4k-x', deviceSource)).toBe('device');
+		expect(resolveActiveStreamSettingsShareContext('screen:1:0', deviceSource)).toBe('display');
+		expect(resolveActiveStreamSettingsShareContext('another-device', deviceSource)).toBe('display');
+		expect(resolveActiveStreamSettingsShareContext(null, deviceSource)).toBe('display');
+	});
+
 	it('recognizes Linux app and display streams as desktop-audio shares', () => {
 		expect(isLinuxDesktopAudioShare({platform: 'linux', shareContext: 'display'})).toBe(true);
 		expect(isLinuxDesktopAudioShare({platform: 'linux', shareContext: 'app'})).toBe(true);
