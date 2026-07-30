@@ -401,6 +401,30 @@
 			"conflict_risk": "medium",
 			"upstream_status": "permanently-downstream",
 			"removal_condition": "Remove if upstream makes native outgoing capture independent from Chromium local-preview acquisition or replaces the duplicate preview capture with a reliable native preview path."
+		},
+		{
+			"id": "porch-windows-native-screen-capture-0013",
+			"title": "Ship Windows native screen capture and reuse sender frames for device previews",
+			"status": "active",
+			"category": "media-capture",
+			"reason": "Porch's unsigned Windows workflow omitted the native capture module, which made every display and window share fail with disabled-by-launch. Device shares also opened the selected capture card twice and LiveKit silently fell back to the webcam when the second open failed. Windows builds now include native capture, and local device previews consume the native sender's existing frames.",
+			"paths": [
+				".github/workflows/build-porch-desktop.yaml",
+				".porch/downstream-patches.json",
+				"fluxer_app/src/features/voice/engine/v2/VoiceEngineV2AppScreenSharePreviewTracking.test.ts",
+				"fluxer_app/src/features/voice/engine/v2/VoiceEngineV2AppScreenSharePreviewTracking.ts",
+				"fluxer_desktop/scripts/validate-porch-workflow.mjs"
+			],
+			"tests": [
+				"native device screen-share sender-preview regression tests",
+				"Porch desktop workflow validation",
+				"app TypeScript typecheck",
+				"Biome formatting and lint checks",
+				"git diff --check"
+			],
+			"conflict_risk": "medium",
+			"upstream_status": "permanently-downstream",
+			"removal_condition": "Remove if Porch stops shipping the Windows desktop client or upstream provides an unsigned-compatible native display capture build and renders local device-share previews from the active native sender."
 		}
 	]
 }

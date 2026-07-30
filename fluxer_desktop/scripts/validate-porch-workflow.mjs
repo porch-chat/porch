@@ -8,6 +8,7 @@ import {fileURLToPath} from 'node:url';
 const desktopDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const repositoryDir = path.resolve(desktopDir, '..');
 const workflow = fs.readFileSync(path.join(repositoryDir, '.github', 'workflows', 'build-porch-desktop.yaml'), 'utf8');
+const normalizedWorkflow = workflow.replace(/\r\n/g, '\n');
 
 for (const forbidden of [
 	'api.fluxer.app',
@@ -20,7 +21,7 @@ for (const forbidden of [
 }
 
 assert.ok(workflow.includes('actions/upload-artifact@'), 'Porch workflow must retain artifacts for acceptance');
-assert.ok(workflow.includes('permissions:\n  contents: read'), 'Porch workflow must remain read-only by default');
+assert.ok(normalizedWorkflow.includes('permissions:\n  contents: read'), 'Porch workflow must remain read-only by default');
 assert.ok(!workflow.includes('cargo run --locked --quiet'), 'Porch workflow must invoke the cached CI helper directly');
 assert.equal(
 	workflow.match(/- name: Set build metadata/g)?.length,

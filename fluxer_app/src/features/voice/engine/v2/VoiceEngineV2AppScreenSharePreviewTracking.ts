@@ -17,7 +17,6 @@ import {
 	logger,
 } from '@app/features/voice/engine/voice_screen_share_manager/shared';
 import {buildVoiceParticipantIdentity} from '@app/features/voice/utils/VoiceParticipantIdentity';
-import {createLocalVideoTrack, type LocalVideoTrack} from 'livekit-client';
 
 const NATIVE_SCREEN_SHARE_PREVIEW_RETRY_DELAY_MS = 250;
 const NATIVE_SCREEN_SHARE_PREVIEW_MAX_ATTEMPTS = 8;
@@ -59,14 +58,12 @@ export class VoiceEngineV2AppScreenSharePreviewTracking {
 	}
 
 	registerDevicePreview(
-		options: DeviceScreenShareCaptureOptions | undefined,
-		dimensions: {width: number; height: number; frameRate: number},
+		_options: DeviceScreenShareCaptureOptions | undefined,
+		_dimensions: {width: number; height: number; frameRate: number},
 	): void {
-		assert.ok(dimensions, 'dimensions required');
-		assert.ok(dimensions.width > 0, 'dimensions.width must be > 0');
 		this.clearPreview();
 		const token = this.adapter.nativeEngineScreenSharePreviewStartToken;
-		void this.attachDevicePreview(options, dimensions, token);
+		void this.attachDevicePreview(token);
 	}
 
 	clearPreview(): void {
@@ -183,79 +180,51 @@ export class VoiceEngineV2AppScreenSharePreviewTracking {
 		});
 	}
 
-	private async attachDevicePreview(
-		options: DeviceScreenShareCaptureOptions | undefined,
-		dimensions: {width: number; height: number; frameRate: number},
-		token: number,
-	): Promise<void> {
-		const localParticipant = await this.waitForLocalParticipant(token);
+	private async attachDevicePreview(token: number): Promise<void> {
+		const [localParticipant, trackSid] = await Promise.all([
+			this.waitForLocalParticipant(token),
+			this.waitForPublishedDeviceTrackSid(token),
+		]);
 		if (token !== this.adapter.nativeEngineScreenSharePreviewStartToken) return;
 		if (!localParticipant?.identity) {
 			logger.warn('Cannot attach native-engine device screen-share preview without local participant');
 			return;
 		}
-		const track = await this.createDevicePreviewTrack(options, dimensions, token);
-		if (!track) return;
-		try {
-			if (token !== this.adapter.nativeEngineScreenSharePreviewStartToken) {
-				track.stop();
-				return;
-			}
-			const settings = track.mediaStreamTrack.getSettings();
-			const trackSid = `native-local-device-screen:${localParticipant.identity}`;
-			this.adapter.nativeEngineScreenSharePreviewTrackSid = trackSid;
-			NativeVideoTileManager.registerLocalPreviewTrack({
+		if (!trackSid) {
+			logger.warn('Cannot attach native-engine device screen-share preview without published track SID');
+			return;
+		}
+		NativeVideoTileManager.registerTrack(
+			localParticipant.sid,
+			trackSid,
+			VoiceTrackSource.ScreenShare,
+			localParticipant.identity,
+		);
+		const registered = NativeVideoTileManager.tracks[trackSid];
+		if (!registered) {
+			logger.warn('Native-engine device screen-share preview registration was refused', {
 				participantSid: localParticipant.sid,
 				participantIdentity: localParticipant.identity,
 				trackSid,
-				source: VoiceTrackSource.ScreenShare,
-				width: settings.width ?? dimensions.width,
-				height: settings.height ?? dimensions.height,
-				stream: new MediaStream([track.mediaStreamTrack]),
-				cleanup: async () => {
-					track?.stop();
-				},
 			});
-		} catch (error) {
-			track.stop();
-			logger.warn('Failed to register native-engine device screen-share local preview', {
-				error,
-				videoDeviceId: options?.previewVideoDeviceId,
-			});
+			return;
 		}
+		this.adapter.nativeEngineScreenSharePreviewTrackSid = trackSid;
+		logger.info('Attached native-engine device screen-share preview to sender frames', {
+			participantSid: localParticipant.sid,
+			participantIdentity: localParticipant.identity,
+			trackSid,
+		});
 	}
 
-	private async createDevicePreviewTrack(
-		options: DeviceScreenShareCaptureOptions | undefined,
-		dimensions: {width: number; height: number; frameRate: number},
-		token: number,
-	): Promise<LocalVideoTrack | null> {
-		let lastError: unknown;
+	private async waitForPublishedDeviceTrackSid(token: number): Promise<string | null> {
 		for (let attempt = 1; attempt <= NATIVE_SCREEN_SHARE_PREVIEW_MAX_ATTEMPTS; attempt++) {
 			if (token !== this.adapter.nativeEngineScreenSharePreviewStartToken) return null;
-			try {
-				return await createLocalVideoTrack({
-					deviceId:
-						options?.previewVideoDeviceId && options.previewVideoDeviceId !== 'default'
-							? options.previewVideoDeviceId
-							: undefined,
-					resolution: {
-						width: dimensions.width,
-						height: dimensions.height,
-						frameRate: dimensions.frameRate,
-					},
-				});
-			} catch (error) {
-				lastError = error;
-				if (attempt >= NATIVE_SCREEN_SHARE_PREVIEW_MAX_ATTEMPTS) break;
-				await delay(NATIVE_SCREEN_SHARE_PREVIEW_RETRY_DELAY_MS);
-			}
+			const trackSid = this.adapter.captureCoordinator.activeCapturePublishedTrackSid;
+			if (trackSid) return trackSid;
+			if (attempt >= NATIVE_SCREEN_SHARE_PREVIEW_MAX_ATTEMPTS) break;
+			await delay(NATIVE_SCREEN_SHARE_PREVIEW_RETRY_DELAY_MS);
 		}
-		logger.warn('Failed to create native-engine device screen-share local preview', {
-			error: lastError,
-			videoDeviceId: options?.previewVideoDeviceId,
-			attempts: NATIVE_SCREEN_SHARE_PREVIEW_MAX_ATTEMPTS,
-		});
 		return null;
 	}
 }
