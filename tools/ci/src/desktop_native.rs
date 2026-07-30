@@ -760,8 +760,7 @@ fn build_win_game_capture_inject_helper(
         }
         return Ok(());
     }
-    let helper_source = helper_root
-        .join("target")
+    let helper_source = cargo_output_root_for_child_build(&helper_root)
         .join(arch.target)
         .join("release")
         .join("fluxer-inject-helper.exe");
@@ -794,8 +793,7 @@ fn build_win_game_capture_extra(
         }
         return Ok(());
     }
-    let source = cargo_root
-        .join("target")
+    let source = cargo_output_root_for_child_build(cargo_root)
         .join(arch.target)
         .join("release")
         .join(cargo_dynamic_library_file_name(crate_name, "win32")?);
@@ -806,6 +804,26 @@ fn build_win_game_capture_extra(
         &format!("{} {label}", arch.arch),
         required,
     )
+}
+
+fn cargo_output_root_for_child_build(cargo_root: &Path) -> PathBuf {
+    resolve_cargo_output_root(cargo_root, env::var_os("CARGO_TARGET_DIR"))
+}
+
+fn resolve_cargo_output_root(
+    cargo_root: &Path,
+    configured_target_dir: Option<OsString>,
+) -> PathBuf {
+    let Some(configured_target_dir) = configured_target_dir.filter(|value| !value.is_empty())
+    else {
+        return cargo_root.join("target");
+    };
+    let configured_target_dir = PathBuf::from(configured_target_dir);
+    if configured_target_dir.is_absolute() {
+        configured_target_dir
+    } else {
+        cargo_root.join(configured_target_dir)
+    }
 }
 
 fn ensure_rust_target_or_skip(arch: &HookLayerArch, label: &str, required: bool) -> Result<()> {
@@ -1156,6 +1174,39 @@ mod tests {
         assert_eq!(
             cargo_dynamic_library_file_name("fluxer_webauthn", "win32").unwrap(),
             "fluxer_webauthn.dll"
+        );
+    }
+
+    #[test]
+    fn child_build_output_root_honors_absolute_cargo_target_dir() {
+        assert_eq!(
+            resolve_cargo_output_root(
+                Path::new(r"W:\fluxer_desktop\native\win-game-capture\hook"),
+                Some(OsString::from(r"C:\porch-cargo-target")),
+            ),
+            PathBuf::from(r"C:\porch-cargo-target"),
+        );
+    }
+
+    #[test]
+    fn child_build_output_root_resolves_relative_cargo_target_dir_from_crate() {
+        assert_eq!(
+            resolve_cargo_output_root(
+                Path::new(r"W:\fluxer_desktop\native\win-game-capture\hook"),
+                Some(OsString::from(".cargo-output")),
+            ),
+            PathBuf::from(r"W:\fluxer_desktop\native\win-game-capture\hook\.cargo-output"),
+        );
+    }
+
+    #[test]
+    fn child_build_output_root_defaults_to_crate_target_directory() {
+        assert_eq!(
+            resolve_cargo_output_root(
+                Path::new(r"W:\fluxer_desktop\native\win-game-capture\hook"),
+                None,
+            ),
+            PathBuf::from(r"W:\fluxer_desktop\native\win-game-capture\hook\target"),
         );
     }
 
