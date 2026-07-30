@@ -4180,34 +4180,7 @@ impl VoiceEngine {
     }
 
     fn screen_source_metadata(&self) -> Option<ScreenSourceMetadata> {
-        if let Some(metadata) = self
-            .screen
-            .lock()
-            .as_ref()
-            .map(|screen| screen.metadata.clone())
-        {
-            return Some(metadata);
-        }
-        let screen_camera = self.screen_camera.lock();
-        let CameraSource::Device {
-            track_sid,
-            capture: Some(capture),
-            ..
-        } = screen_camera.as_ref()?
-        else {
-            return None;
-        };
-        let track_sid = TrackSid::try_from(track_sid.lock().clone()).ok()?;
-        Some(ScreenSourceMetadata {
-            track_sid,
-            width: capture.output_width,
-            height: capture.output_height,
-            source_width: capture.opened.width,
-            source_height: capture.opened.height,
-            codec: String::new(),
-            target_bitrate_kbps: None,
-            configured_fps: f64::from(capture.request.fps),
-        })
+        screen_source_metadata_from_slots(&self.screen, &self.screen_camera)
     }
 
     fn start_stats_task(&self) {
@@ -4217,6 +4190,7 @@ impl VoiceEngine {
         let state = self.state.clone();
         let room_slot = self.room.clone();
         let screen_slot = self.screen.clone();
+        let screen_camera_slot = self.screen_camera.clone();
         let events_slot = self.events.clone();
         let dropped_engine_events = self.dropped_engine_events.clone();
         let byte_samples = self.byte_samples.clone();
@@ -4261,10 +4235,8 @@ impl VoiceEngine {
                     Some(video) => video.snapshot(&send_audio_stats, extras),
                     None => SendHealthSnapshot::idle(&send_audio_stats),
                 };
-                let screen_metadata = screen_slot
-                    .lock()
-                    .as_ref()
-                    .map(|screen| screen.metadata.clone());
+                let screen_metadata =
+                    screen_source_metadata_from_slots(&screen_slot, &screen_camera_slot);
                 annotate_screen_share_stats(&mut stats, screen_metadata, &send);
                 stats.send = Some(send);
                 let json = stats_mod::stats_to_json(&stats);
@@ -4419,6 +4391,35 @@ fn outbound_screenshare_video_fps(stats: &stats_mod::ConnectionStats) -> Option<
         .fold(None, |best, fps| {
             Some(best.map_or(fps, |value: f64| value.max(fps)))
         })
+}
+
+fn screen_source_metadata_from_slots(
+    screen: &Mutex<Option<ScreenSource>>,
+    screen_camera: &Mutex<Option<CameraSource>>,
+) -> Option<ScreenSourceMetadata> {
+    if let Some(metadata) = screen.lock().as_ref().map(|screen| screen.metadata.clone()) {
+        return Some(metadata);
+    }
+    let screen_camera = screen_camera.lock();
+    let CameraSource::Device {
+        track_sid,
+        capture: Some(capture),
+        ..
+    } = screen_camera.as_ref()?
+    else {
+        return None;
+    };
+    let track_sid = TrackSid::try_from(track_sid.lock().clone()).ok()?;
+    Some(ScreenSourceMetadata {
+        track_sid,
+        width: capture.output_width,
+        height: capture.output_height,
+        source_width: capture.opened.width,
+        source_height: capture.opened.height,
+        codec: String::new(),
+        target_bitrate_kbps: None,
+        configured_fps: f64::from(capture.request.fps),
+    })
 }
 
 fn annotate_screen_share_stats(
@@ -5893,6 +5894,49 @@ mod tests {
             ),
             (1920, 1080),
         );
+    }
+
+    #[test]
+    fn screen_share_stats_report_capture_card_source_and_encoded_dimensions() {
+        let track_sid =
+            TrackSid::try_from("TR_capturecard01".to_string()).expect("valid test track sid");
+        let mut stats = stats_mod::ConnectionStats {
+            outbound: vec![stats_mod::OutboundEntry {
+                track_sid: track_sid.to_string(),
+                source: LIVEKIT_TRACK_SOURCE_SCREEN_SHARE.to_string(),
+                kind: "video".to_string(),
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+        let send_audio = AdaptiveAudioStats::new(DEFAULT_AUDIO_BUFFER_MAX_MS, 0);
+        let send = SendHealthSnapshot::idle(&send_audio);
+
+        annotate_screen_share_stats(
+            &mut stats,
+            Some(ScreenSourceMetadata {
+                track_sid,
+                width: 2580,
+                height: 1080,
+                source_width: 3440,
+                source_height: 1440,
+                codec: String::new(),
+                target_bitrate_kbps: None,
+                configured_fps: 60.0,
+            }),
+            &send,
+        );
+
+        let annotated = &stats.outbound[0];
+        assert_eq!(
+            (annotated.width, annotated.height),
+            (Some(2580), Some(1080))
+        );
+        assert_eq!(
+            (annotated.source_width, annotated.source_height),
+            (Some(3440), Some(1440))
+        );
+        assert_eq!(annotated.configured_fps, Some(60.0));
     }
 
     #[test]

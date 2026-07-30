@@ -17,6 +17,10 @@ import {
 	loadScreenShareDesktopSourceList,
 	loadScreenShareDesktopSources,
 } from '@app/features/voice/components/modals/screen_share_picker_modal/DesktopSourceLoader';
+import {
+	type DeviceSourceMode,
+	formatDeviceSourceModeLabel,
+} from '@app/features/voice/components/modals/screen_share_picker_modal/DeviceSourceModeLabel';
 import {NativeDisplayPickerState} from '@app/features/voice/components/modals/screen_share_picker_modal/NativeDisplayPickerState';
 import {PerWindowAudioNotice} from '@app/features/voice/components/modals/screen_share_picker_modal/PerWindowAudioNotice';
 import {PickerEmptyState} from '@app/features/voice/components/modals/screen_share_picker_modal/PickerEmptyState';
@@ -188,10 +192,6 @@ const DEVICE_SOURCE_FORMAT_LOADING_DESCRIPTOR = msg({
 const DEVICE_SOURCE_FORMAT_DEFAULT_DESCRIPTOR = msg({
 	message: 'Default device format',
 	comment: 'Fallback option when a capture device does not report its native formats.',
-});
-const DEVICE_SOURCE_FORMAT_OPTION_DESCRIPTOR = msg({
-	message: '{width} × {height} · up to {frameRate} FPS',
-	comment: 'Capture-card source format option. Width, height, and frameRate are numbers; FPS is a technical token.',
 });
 const SCREEN_SHARE_PREVIEWS_ENABLED_DESCRIPTOR = msg({
 	message: 'Screen share previews are enabled.',
@@ -508,13 +508,6 @@ export async function openScreenShareSourceSwitcherModal(
 
 type ScreenSharePickerMode = 'start' | 'switch';
 type ScreenSharePreviewCallContext = 'guild' | 'group_dm' | 'dm';
-
-interface DeviceSourceMode {
-	key: string;
-	width: number;
-	height: number;
-	maxFrameRate: number;
-}
 
 function getScreenSharePreviewCallContext(channelId: string | null): ScreenSharePreviewCallContext {
 	const channel = channelId ? Channels.getChannel(channelId) : undefined;
@@ -1464,11 +1457,7 @@ const ScreenSharePickerModalLoadedContent = observer(
 									) : (
 										deviceSourceModes.map((sourceMode) => (
 											<option key={sourceMode.key} value={sourceMode.key}>
-												{i18n._(DEVICE_SOURCE_FORMAT_OPTION_DESCRIPTOR, {
-													width: sourceMode.width,
-													height: sourceMode.height,
-													frameRate: Math.min(60, sourceMode.maxFrameRate),
-												})}
+												{formatDeviceSourceModeLabel(sourceMode)}
 											</option>
 										))
 									)}
