@@ -519,6 +519,33 @@
 			"conflict_risk": "medium",
 			"upstream_status": "permanently-downstream",
 			"removal_condition": "Remove individual changes only when upstream preserves normal warm caches, avoids unavailable self-hosted dictionary downloads, and provides equivalent coalesced scroll observation without navigation regressions."
+		},
+		{
+			"id": "porch-native-media-control-state-0017",
+			"title": "Keep native media controls synchronized with active publishing",
+			"status": "active",
+			"category": "voice-media",
+			"reason": "Native camera and screen-share publishing update Porch's local voice state before participant snapshots necessarily converge. Control surfaces that trusted only a participant snapshot could lose their stop controls after an unrelated rerender while native capture continued in the background. Porch now merges both authoritative signals so the active controls remain available throughout snapshot convergence.",
+			"paths": [
+				".porch/downstream-patches.json",
+				"docs/porch/PERFORMANCE.md",
+				"fluxer_app/src/features/voice/components/LocalMediaControlState.test.ts",
+				"fluxer_app/src/features/voice/components/LocalMediaControlState.ts",
+				"fluxer_app/src/features/voice/components/VoiceControlBar.tsx",
+				"fluxer_app/src/features/voice/components/voice_connection_status/LocalParticipantControls.tsx"
+			],
+			"tests": [
+				"local and participant media-control state merge regression tests",
+				"voice control-bar state-machine tests",
+				"voice connection-status local-control state-machine tests",
+				"app TypeScript typecheck",
+				"Biome formatting and lint checks",
+				"native capture-card share preview-hide lifecycle test",
+				"git diff --check"
+			],
+			"conflict_risk": "medium",
+			"upstream_status": "permanently-downstream",
+			"removal_condition": "Remove when native participant snapshots are synchronously authoritative for local camera and screen-share publication across every rerender and reconnect."
 		}
 	]
 }

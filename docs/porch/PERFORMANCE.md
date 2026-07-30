@@ -97,3 +97,28 @@ enable them without a measured active-call regression that justifies the cost.
 - Add a second authenticated client to a future media lab run to measure remote
   decode, packet adaptation, and end-to-end quality under motion and network
   impairment.
+
+## 2026-07-30 — native capture control-state regression
+
+### Finding
+
+While benchmarking the Elgato capture-card path, changing the stream-preview
+setting caused both active-share control surfaces to revert to their
+“Share your screen” state. Native publishing and streaming priority remained
+active until voice was disconnected. The setting itself did not restart or stop
+capture; its rerender exposed that the controls trusted only a participant
+snapshot while Porch's local voice state still correctly reported an active
+share.
+
+The same convergence window can apply to native camera state, so the fix covers
+both local video sources.
+
+### Implemented and validated
+
+- Merge Porch's observable local camera/share state with the participant
+  snapshot when deriving both voice control surfaces. Either active signal keeps
+  the corresponding stop/configure control available.
+- Add a focused state-merge regression suite and retain the existing voice
+  control-bar and connection-status state-machine suites.
+- Re-test capture-card sharing while toggling the preview preference before
+  considering the Canary candidate releasable.

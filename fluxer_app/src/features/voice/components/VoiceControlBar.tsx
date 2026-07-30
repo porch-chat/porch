@@ -24,6 +24,7 @@ import {
 	VoiceCameraSettingsBottomSheet,
 	VoiceMoreOptionsBottomSheet,
 } from '@app/features/voice/components/bottomsheets/VoiceSettingsBottomSheets';
+import {isLocalMediaControlActive} from '@app/features/voice/components/LocalMediaControlState';
 import {
 	CameraPreviewModalInRoom,
 	CameraPreviewModalStandalone,
@@ -176,8 +177,11 @@ function getLiveKitLocalMediaState(room: Room): VoiceControlLocalMediaState {
 	const {localParticipant} = room;
 	return {
 		localParticipant,
-		isCameraEnabled: localParticipant.isCameraEnabled,
-		isScreenShareEnabled: localParticipant.isScreenShareEnabled,
+		isCameraEnabled: isLocalMediaControlActive(LocalVoiceState.getSelfVideo(), localParticipant.isCameraEnabled),
+		isScreenShareEnabled: isLocalMediaControlActive(
+			LocalVoiceState.getSelfStream(),
+			localParticipant.isScreenShareEnabled,
+		),
 		isConnected: true,
 	};
 }
@@ -220,8 +224,14 @@ function useVoiceControlLocalMediaState(): VoiceControlLocalMediaState {
 	const isConnected = MediaEngine.connected;
 	return {
 		localParticipant: null,
-		isCameraEnabled: localParticipantSnapshot?.isCameraEnabled ?? false,
-		isScreenShareEnabled: localParticipantSnapshot?.isScreenShareEnabled ?? false,
+		isCameraEnabled: isLocalMediaControlActive(
+			LocalVoiceState.getSelfVideo(),
+			localParticipantSnapshot?.isCameraEnabled,
+		),
+		isScreenShareEnabled: isLocalMediaControlActive(
+			LocalVoiceState.getSelfStream(),
+			localParticipantSnapshot?.isScreenShareEnabled,
+		),
 		isConnected,
 	};
 }

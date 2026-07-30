@@ -11,6 +11,7 @@ import {modal} from '@app/features/ui/commands/ModalCommands';
 import FocusRing from '@app/features/ui/focus_ring/FocusRing';
 import {Tooltip} from '@app/features/ui/tooltip/Tooltip';
 import {isDesktop} from '@app/features/ui/utils/NativeUtils';
+import {isLocalMediaControlActive} from '@app/features/voice/components/LocalMediaControlState';
 import {
 	CameraPreviewModalInRoom,
 	CameraPreviewModalStandalone,
@@ -31,6 +32,7 @@ import type {LivekitParticipantSnapshot} from '@app/features/voice/engine/VoiceP
 import {useCameraUserCapBlocked} from '@app/features/voice/hooks/useCameraUserCapBlocked';
 import {useMediaDevices} from '@app/features/voice/hooks/useMediaDevices';
 import ActiveScreenShareSource from '@app/features/voice/state/ActiveScreenShareSource';
+import LocalVoiceState from '@app/features/voice/state/LocalVoiceState';
 import VoiceSettings from '@app/features/voice/state/VoiceSettings';
 import {resolveDisplayShareEnvironment} from '@app/features/voice/utils/ScreenShareEnvironment';
 import {resolveActiveStreamSettingsShareContext} from '@app/features/voice/utils/StreamSettingsUpdatePolicy';
@@ -86,8 +88,14 @@ export const LocalParticipantControls = observer(() => {
 		localParticipantSnapshot = participant;
 		break;
 	}
-	const isCameraEnabled = localParticipantSnapshot?.isCameraEnabled ?? false;
-	const isScreenShareEnabled = localParticipantSnapshot?.isScreenShareEnabled ?? false;
+	const isCameraEnabled = isLocalMediaControlActive(
+		LocalVoiceState.getSelfVideo(),
+		localParticipantSnapshot?.isCameraEnabled,
+	);
+	const isScreenShareEnabled = isLocalMediaControlActive(
+		LocalVoiceState.getSelfStream(),
+		localParticipantSnapshot?.isScreenShareEnabled,
+	);
 	const isNativeConnected = !room && MediaEngine.connected;
 	const isConnected = Boolean((room && localParticipant) || isNativeConnected);
 	const displayShareEnvironment = resolveDisplayShareEnvironment(isDesktop(), NativePermission.isLinuxWaylandDesktop);
