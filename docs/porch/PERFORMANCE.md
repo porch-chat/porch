@@ -65,7 +65,8 @@ substitute for a two-client network quality test.
 
 - Preserve Chromium code and shader caches on normal starts. The existing
   version-aware runtime invalidator remains responsible for purging incompatible
-  caches after Electron, Chromium, V8, executable, or app-bundle changes.
+  caches after Porch release, Electron, Chromium, V8, or installed-executable
+  changes.
 - In automatic spellcheck mode, use an already cached Porch dictionary when
   present; otherwise select the Windows/macOS system spellchecker immediately
   when no dictionary download endpoint is configured.
@@ -122,3 +123,26 @@ both local video sources.
   control-bar and connection-status state-machine suites.
 - Re-test capture-card sharing while toggling the preview preference before
   considering the Canary candidate releasable.
+
+## 2026-07-30 — stable Chromium runtime-cache identity
+
+### Finding
+
+The first packaged performance candidate still purged `Code Cache`, `GPUCache`,
+and Dawn caches on every launch. Electron's patched filesystem exposes
+`app.asar` as a virtual directory. The prior guard fingerprinted that virtual
+directory, whose reported timestamp changed as bundle entries were accessed,
+making every ordinary launch look like a new application bundle.
+
+### Implemented and validation
+
+- Base cache compatibility on the Porch release, Electron/Chromium/Node/V8
+  versions, and the real installed executable fingerprint.
+- Stop fingerprinting virtual `app.asar` directory metadata. Porch's immutable
+  timestamp version changes for every packaged release, while runtime and
+  executable changes remain independently represented.
+- Add focused tests proving identical launches retain one key and release,
+  runtime, or executable changes produce a different key.
+- Validate a packaged build across at least three consecutive launches: the
+  first launch may migrate the old key once, while later launches must not log
+  cache removal.

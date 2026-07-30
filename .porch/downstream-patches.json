@@ -546,6 +546,29 @@
 			"conflict_risk": "medium",
 			"upstream_status": "permanently-downstream",
 			"removal_condition": "Remove when native participant snapshots are synchronously authoritative for local camera and screen-share publication across every rerender and reconnect."
+		},
+		{
+			"id": "porch-runtime-cache-identity-0018",
+			"title": "Keep Chromium runtime-cache identity stable across launches",
+			"status": "active",
+			"category": "client-performance",
+			"reason": "Electron exposes app.asar through a virtual filesystem whose directory timestamp changes as bundle entries are accessed. Including that metadata in Porch's runtime-cache key made every launch purge Chromium code, GPU, shader, and service-worker caches. The key now uses immutable Porch release/runtime identity plus the real installed executable fingerprint.",
+			"paths": [
+				".porch/downstream-patches.json",
+				"docs/porch/PERFORMANCE.md",
+				"fluxer_desktop/src/main/ChromiumRuntime.test.mjs",
+				"fluxer_desktop/src/main/ChromiumRuntime.ts"
+			],
+			"tests": [
+				"runtime-cache identity stability and invalidation regression tests",
+				"desktop TypeScript typecheck",
+				"Biome formatting and lint checks",
+				"git diff --check",
+				"three consecutive packaged Canary launches without repeated cache removal"
+			],
+			"conflict_risk": "low",
+			"upstream_status": "permanently-downstream",
+			"removal_condition": "Remove when upstream provides an equivalent cache-compatibility key that remains stable across ordinary packaged launches while invalidating after runtime or installed-release changes."
 		}
 	]
 }

@@ -87,3 +87,53 @@ describe('ChromiumRuntime Windows capture policy', () => {
 		assert.deepEqual([...features], ['ExistingFeature']);
 	});
 });
+
+describe('ChromiumRuntime cache identity', () => {
+	test('is stable for repeated launches of the same installed runtime', () => {
+		const {module} = loadChromiumRuntime('win32');
+		const input = {
+			appVersion: '2026.730.123820',
+			electronVersion: '41.2.2',
+			chromeVersion: '146.0.7680.188',
+			nodeVersion: '24.14.1',
+			v8Version: '14.6.202.33-electron.0',
+			executable: {mtimeMs: 1785417711250, size: 223292416},
+		};
+
+		assert.equal(module.createRuntimeCacheKey(input), module.createRuntimeCacheKey({...input}));
+	});
+
+	test('changes for a new release, runtime, or installed executable', () => {
+		const {module} = loadChromiumRuntime('win32');
+		const input = {
+			appVersion: '2026.730.123820',
+			electronVersion: '41.2.2',
+			chromeVersion: '146.0.7680.188',
+			nodeVersion: '24.14.1',
+			v8Version: '14.6.202.33-electron.0',
+			executable: {mtimeMs: 1785417711250, size: 223292416},
+		};
+		const key = module.createRuntimeCacheKey(input);
+
+		assert.notEqual(module.createRuntimeCacheKey({...input, appVersion: '2026.730.140000'}), key);
+		assert.notEqual(module.createRuntimeCacheKey({...input, electronVersion: '42.0.0'}), key);
+		assert.notEqual(
+			module.createRuntimeCacheKey({...input, executable: {...input.executable, size: input.executable.size + 1}}),
+			key,
+		);
+	});
+
+	test('does not depend on Electron virtual app.asar directory metadata', () => {
+		const {module} = loadChromiumRuntime('win32');
+		const input = {
+			appVersion: '2026.730.123820',
+			electronVersion: '41.2.2',
+			chromeVersion: '146.0.7680.188',
+			nodeVersion: '24.14.1',
+			v8Version: '14.6.202.33-electron.0',
+			executable: {mtimeMs: 1785417711250, size: 223292416},
+		};
+
+		assert.equal(module.createRuntimeCacheKey(input).includes('appBundle'), false);
+	});
+});

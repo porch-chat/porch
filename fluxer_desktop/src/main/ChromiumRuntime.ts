@@ -118,17 +118,34 @@ function safeFileFingerprint(filePath: string): {mtimeMs: number | null; size: n
 	}
 }
 
-function getRuntimeCacheKey(): string {
-	const executable = safeFileFingerprint(process.execPath);
-	const appBundle = safeFileFingerprint(path.join(process.resourcesPath, 'app.asar'));
+export interface RuntimeCacheKeyInput {
+	appVersion: string;
+	electronVersion: string | null;
+	chromeVersion: string | null;
+	nodeVersion: string | null;
+	v8Version: string | null;
+	executable: ReturnType<typeof safeFileFingerprint>;
+}
+
+export function createRuntimeCacheKey(input: RuntimeCacheKeyInput): string {
 	return JSON.stringify({
+		appVersion: input.appVersion,
+		electronVersion: input.electronVersion,
+		chromeVersion: input.chromeVersion,
+		nodeVersion: input.nodeVersion,
+		v8Version: input.v8Version,
+		executable: input.executable,
+	});
+}
+
+function getRuntimeCacheKey(): string {
+	return createRuntimeCacheKey({
 		appVersion: app.getVersion(),
 		electronVersion: process.versions.electron ?? null,
 		chromeVersion: process.versions.chrome ?? null,
 		nodeVersion: process.versions.node ?? null,
 		v8Version: process.versions.v8 ?? null,
-		executable,
-		appBundle,
+		executable: safeFileFingerprint(process.execPath),
 	});
 }
 
