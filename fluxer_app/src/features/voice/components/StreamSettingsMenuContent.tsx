@@ -47,6 +47,7 @@ import {
 } from '@app/features/voice/utils/ScreenShareStartFlow';
 import {executeScreenShareOperation} from '@app/features/voice/utils/ScreenShareUtils';
 import {
+	buildActiveDeviceScreenShareReplacement,
 	isLinuxDesktopAudioShare,
 	type StreamSettingsShareContext,
 	shouldReconfigureLinuxAudioForActiveStreamSettings,
@@ -259,6 +260,44 @@ export async function pushActiveStreamSettings(
 	});
 	if (preferredScreenShareCodecPreference !== 'auto') {
 		publishOptions.videoCodec = preferredVideoCodec;
+	}
+	if (shareContext === 'device') {
+		const videoDeviceId = ActiveScreenShareSource.getSourceId();
+		const sourceDimensions = ActiveScreenShareSource.getSourceDimensions();
+		const replacement = buildActiveDeviceScreenShareReplacement({
+			videoDeviceId,
+			sourceDimensions,
+			lastSource: VoiceSettings.getLastScreenShareSource(),
+			outputResolution: captureOptions.resolution,
+			includeAudio,
+			audioDeviceId: VoiceSettings.getEffectiveScreenShareAudioDeviceId(),
+		});
+		if (!replacement) {
+			logger.warn('Cannot apply live device-share settings without the active capture source', {
+				videoDeviceId,
+				sourceDimensions,
+			});
+			return;
+		}
+		try {
+			const replaced = await MediaEngine.replaceActiveDeviceScreenShare(replacement, publishOptions);
+			if (!replaced) {
+				logger.warn('Failed to restart active device share with updated stream settings', {
+					videoDeviceId,
+					resolution: captureOptions.resolution,
+				});
+				return;
+			}
+			ActiveScreenShareSource.setSourceId(replacement.videoDeviceId ?? null, {sourceDimensions});
+			AdaptiveScreenShareEngine.start(MediaEngine.room);
+		} catch (error) {
+			logger.warn('Failed to apply updated stream settings to active device share', {
+				error,
+				videoDeviceId,
+				resolution: captureOptions.resolution,
+			});
+		}
+		return;
 	}
 	const localParticipant = MediaEngine.room?.localParticipant ?? null;
 	const hasActiveScreenShareAudioPublication = localParticipant?.getTrackPublication(SCREEN_SHARE_AUDIO_SOURCE) != null;

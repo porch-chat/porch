@@ -2,6 +2,7 @@
 
 import {describe, expect, it} from 'vitest';
 import {
+	buildActiveDeviceScreenShareReplacement,
 	isLinuxDesktopAudioShare,
 	shouldReconfigureLinuxAudioForActiveStreamSettings,
 } from './StreamSettingsUpdatePolicy';
@@ -37,5 +38,67 @@ describe('StreamSettingsUpdatePolicy', () => {
 				audioSettingsChanged: true,
 			}),
 		).toBe(false);
+	});
+
+	it('restarts an active ultrawide device share with separate source and output dimensions', () => {
+		expect(
+			buildActiveDeviceScreenShareReplacement({
+				videoDeviceId: 'elgato-4k-x',
+				sourceDimensions: {width: 3440, height: 1440},
+				lastSource: {
+					kind: 'device',
+					sourceId: 'elgato-4k-x',
+					title: 'Elgato 4K X',
+					updatedAt: 1,
+					sourceWidth: 3440,
+					sourceHeight: 1440,
+					sourceFrameRate: 60,
+				},
+				outputResolution: {width: 2580, height: 1080, frameRate: 60},
+				includeAudio: false,
+				audioDeviceId: 'default',
+			}),
+		).toEqual({
+			videoDeviceId: 'elgato-4k-x',
+			sourceResolution: {width: 3440, height: 1440, frameRate: 60},
+			resolution: {width: 2580, height: 1080, frameRate: 60},
+		});
+	});
+
+	it('uses native output dimensions for Source and preserves selected device audio', () => {
+		expect(
+			buildActiveDeviceScreenShareReplacement({
+				videoDeviceId: 'elgato-4k-x',
+				sourceDimensions: {width: 3440, height: 1440},
+				lastSource: {
+					kind: 'device',
+					sourceId: 'elgato-4k-x',
+					title: 'Elgato 4K X',
+					updatedAt: 1,
+					sourceFrameRate: 60,
+				},
+				outputResolution: {width: 3440, height: 1440, frameRate: 60},
+				includeAudio: true,
+				audioDeviceId: 'capture-card-audio',
+			}),
+		).toEqual({
+			videoDeviceId: 'elgato-4k-x',
+			audioDeviceId: 'capture-card-audio',
+			sourceResolution: {width: 3440, height: 1440, frameRate: 60},
+			resolution: {width: 3440, height: 1440, frameRate: 60},
+		});
+	});
+
+	it('refuses a device-share restart when the active source is unavailable', () => {
+		expect(
+			buildActiveDeviceScreenShareReplacement({
+				videoDeviceId: null,
+				sourceDimensions: {width: 3440, height: 1440},
+				lastSource: null,
+				outputResolution: {width: 3440, height: 1440, frameRate: 60},
+				includeAudio: false,
+				audioDeviceId: 'default',
+			}),
+		).toBeNull();
 	});
 });

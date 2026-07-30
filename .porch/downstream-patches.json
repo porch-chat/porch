@@ -429,7 +429,7 @@
 			"title": "Source-native capture-card and ultrawide screen sharing",
 			"status": "active",
 			"category": "media-quality",
-			"reason": "Porch needs capture-card sharing and unusual display aspect ratios without distortion. Source capture format is now separate from outgoing stream dimensions, presets use a height ceiling while preserving the actual aspect ratio, Source uses native dimensions, FPS remains selectable up to 60, the native sender scales I420 frames only when necessary, capture-mode labels always render real values, and diagnostics distinguish capture-card source dimensions from encoded output dimensions.",
+			"reason": "Porch needs capture-card sharing and unusual display aspect ratios without distortion. Source capture format is now separate from outgoing stream dimensions, presets use a height ceiling while preserving the actual aspect ratio, Source uses native dimensions, FPS remains selectable up to 60, the native sender scales I420 frames only when necessary, capture-mode labels always render real values, diagnostics distinguish capture-card source dimensions from encoded output dimensions, and changing quality on a live native device share restarts that sender with the requested source/output pair.",
 			"paths": [
 				".porch/downstream-patches.json",
 				"fluxer_app/src/features/voice/components/StreamSettingsMenuContent.tsx",
@@ -447,6 +447,7 @@
 				"fluxer_app/src/features/voice/state/VoiceSettings.ts",
 				"fluxer_app/src/features/voice/utils/ScreenShareOptions.ts",
 				"fluxer_app/src/features/voice/utils/ScreenShareStartFlow.ts",
+				"fluxer_app/src/features/voice/utils/StreamSettingsUpdatePolicy.ts",
 				"fluxer_desktop/native/webrtc-sender",
 				"packages/voice_engine_v2"
 			],
@@ -456,6 +457,7 @@
 				"native sender ultrawide output and fallback-aspect tests",
 				"capture-device format label interpolation tests",
 				"capture-card source-versus-encoded diagnostics regression tests",
+				"active native device-share quality replacement policy tests",
 				"voice engine v2 bridge contract tests",
 				"screen-share state, migration, picker, codec, and preview regression suite",
 				"app and desktop TypeScript typechecks",
