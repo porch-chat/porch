@@ -610,11 +610,17 @@
 				"fluxer_app/src/features/voice/utils/VoiceDeviceManager.test.ts",
 				"fluxer_app/src/features/voice/utils/VoiceDeviceManager.ts",
 				"fluxer_app/src/features/voice/utils/VoiceMessageDescriptors.ts",
+				"fluxer_desktop/native/webrtc-sender/Cargo.lock",
+				"fluxer_desktop/native/webrtc-sender/Cargo.toml",
 				"fluxer_desktop/native/webrtc-sender/src/audio.rs",
-				"fluxer_desktop/native/webrtc-sender/src/engine.rs"
+				"fluxer_desktop/native/webrtc-sender/src/engine.rs",
+				"fluxer_desktop/native/webrtc-sender/src/lib.rs",
+				"fluxer_desktop/native/webrtc-sender/src/windows_audio_routes.rs"
 			],
 			"tests": [
 				"default, communications, physical endpoint, automatic camera, and missing-device route tests",
+				"Windows Core Audio default and communications endpoint live probe",
+				"native route annotation and WebRTC inventory mismatch regression tests",
 				"voice media graph simulation suite",
 				"app and desktop TypeScript typechecks",
 				"desktop IPC and bridge regression suite",

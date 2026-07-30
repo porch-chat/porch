@@ -11,6 +11,8 @@ Porch exposes operating-system audio routes separately from physical endpoints.
 
 The desktop native bridge enumerates the complete input and output inventory before a call starts. It does not return a placeholder-only `Default` list while the native audio device module is idle.
 
+On Windows, WebRTC inventory order is not a system-default signal. Porch queries Core Audio's `eConsole` and `eCommunications` roles, then matches those endpoint IDs back to WebRTC's physical inventory. It never labels endpoint index zero as the Windows default merely because it was enumerated first.
+
 For a dynamic route, Porch keeps the saved setting as `default` or `communications` and separately fingerprints the concrete endpoint label and group. A device inventory change that moves the operating-system route therefore refreshes active microphone capture or reapplies active output routing without rewriting the user's preference to a hardware GUID.
 
 ## Camera

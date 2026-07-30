@@ -26,6 +26,8 @@ mod yuv;
 
 #[cfg(feature = "publisher")]
 mod engine;
+#[cfg(target_os = "windows")]
+mod windows_audio_routes;
 
 #[cfg(feature = "bench-internals")]
 pub mod bench_internals {

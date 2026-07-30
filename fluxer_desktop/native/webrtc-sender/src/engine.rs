@@ -17,6 +17,8 @@ use crate::stats as stats_mod;
 #[cfg(target_os = "windows")]
 use crate::texture_source::TextureFrameDesc;
 use crate::texture_source::{self, TextureCapability};
+#[cfg(target_os = "windows")]
+use crate::windows_audio_routes::{self, AudioFlow};
 use crate::yuv;
 use crossbeam_queue::ArrayQueue;
 use fluxer_screen_frame_bus::{
@@ -1014,7 +1016,7 @@ fn collect_factory_playout_devices_from(
         ));
     }
     assert!(raw.len() <= audio::MAX_PLATFORM_AUDIO_DEVICES);
-    Ok(raw)
+    annotate_platform_audio_routes(raw, AudioDeviceFlow::Output)
 }
 
 fn collect_factory_recording_devices_from(
@@ -1032,6 +1034,37 @@ fn collect_factory_recording_devices_from(
         ));
     }
     assert!(raw.len() <= audio::MAX_PLATFORM_AUDIO_DEVICES);
+    annotate_platform_audio_routes(raw, AudioDeviceFlow::Input)
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum AudioDeviceFlow {
+    Input,
+    Output,
+}
+
+#[cfg(target_os = "windows")]
+fn annotate_platform_audio_routes(
+    raw: Vec<(String, String, usize)>,
+    flow: AudioDeviceFlow,
+) -> napi::Result<Vec<(String, String, usize)>> {
+    let route_flow = match flow {
+        AudioDeviceFlow::Input => AudioFlow::Input,
+        AudioDeviceFlow::Output => AudioFlow::Output,
+    };
+    let routes = windows_audio_routes::resolve_audio_route_ids(route_flow).map_err(|error| {
+        napi::Error::from_reason(format!("resolve Windows audio routes: {error}"))
+    })?;
+    audio::prepend_dynamic_audio_routes(&raw, &routes.default, &routes.communications).map_err(
+        |error| napi::Error::from_reason(format!("annotate Windows audio routes: {error}")),
+    )
+}
+
+#[cfg(not(target_os = "windows"))]
+fn annotate_platform_audio_routes(
+    raw: Vec<(String, String, usize)>,
+    _flow: AudioDeviceFlow,
+) -> napi::Result<Vec<(String, String, usize)>> {
     Ok(raw)
 }
 

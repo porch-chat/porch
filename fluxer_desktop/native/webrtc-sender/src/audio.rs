@@ -206,9 +206,44 @@ pub fn shape_input_devices(raw: &[(String, String, usize)]) -> Vec<AudioInputDev
 }
 
 pub const MAX_PLATFORM_AUDIO_DEVICES: usize = 64;
-pub const SHAPED_AUDIO_DEVICES_MAX: usize = MAX_PLATFORM_AUDIO_DEVICES + 1;
+pub const SHAPED_AUDIO_DEVICES_MAX: usize = MAX_PLATFORM_AUDIO_DEVICES + 2;
 
 const _: () = assert!(SHAPED_AUDIO_DEVICES_MAX > MAX_PLATFORM_AUDIO_DEVICES);
+
+pub fn prepend_dynamic_audio_routes(
+    raw: &[(String, String, usize)],
+    default_device_id: &str,
+    communications_device_id: &str,
+) -> Result<Vec<(String, String, usize)>, String> {
+    assert!(raw.len() <= MAX_PLATFORM_AUDIO_DEVICES);
+    let find_endpoint = |device_id: &str, role: &str| {
+        raw.iter()
+            .find(|(id, _, _)| id.trim().eq_ignore_ascii_case(device_id.trim()))
+            .ok_or_else(|| {
+                format!("{role} audio endpoint is absent from the WebRTC device inventory")
+            })
+    };
+    let default_endpoint = find_endpoint(default_device_id, "default")?;
+    let communications_endpoint = find_endpoint(communications_device_id, "communications")?;
+    let mut annotated = Vec::with_capacity(raw.len() + 2);
+    annotated.push((
+        default_endpoint.0.trim().to_string(),
+        format!("Default - {}", default_endpoint.1.trim()),
+        0,
+    ));
+    annotated.push((
+        communications_endpoint.0.trim().to_string(),
+        format!("Communications - {}", communications_endpoint.1.trim()),
+        1,
+    ));
+    annotated.extend(
+        raw.iter()
+            .enumerate()
+            .map(|(index, (id, label, _))| (id.clone(), label.clone(), index + 2)),
+    );
+    assert!(annotated.len() <= SHAPED_AUDIO_DEVICES_MAX);
+    Ok(annotated)
+}
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum PlayoutSwitchPlan {
@@ -780,6 +815,77 @@ mod tests {
             Ok("endpoint-guid".to_string())
         );
         assert!(resolve_recording_device_guid("missing-guid", &raw).is_err());
+    }
+
+    #[test]
+    fn windows_routes_are_prepended_from_endpoint_ids_instead_of_inventory_order() {
+        let raw = vec![
+            (
+                "first-guid".to_string(),
+                "Link 4 In (BEACN Studio)".to_string(),
+                0,
+            ),
+            (
+                "default-guid".to_string(),
+                "Voice Chat Mic (BEACN Studio)".to_string(),
+                1,
+            ),
+            (
+                "communications-guid".to_string(),
+                "Microphone (Anker PowerConf C200)".to_string(),
+                2,
+            ),
+        ];
+
+        let annotated =
+            prepend_dynamic_audio_routes(&raw, "default-guid", "communications-guid").unwrap();
+        assert_eq!(
+            annotated[0],
+            (
+                "default-guid".to_string(),
+                "Default - Voice Chat Mic (BEACN Studio)".to_string(),
+                0,
+            )
+        );
+        assert_eq!(
+            annotated[1],
+            (
+                "communications-guid".to_string(),
+                "Communications - Microphone (Anker PowerConf C200)".to_string(),
+                1,
+            )
+        );
+        assert_eq!(annotated[2].0, "first-guid");
+
+        let shaped = shape_input_devices(&annotated);
+        assert_eq!(shaped[0].device_id, "default");
+        assert_eq!(shaped[0].endpoint_label, "Voice Chat Mic (BEACN Studio)");
+        assert_eq!(shaped[1].device_id, "communications");
+        assert_eq!(
+            shaped[1].endpoint_label,
+            "Microphone (Anker PowerConf C200)"
+        );
+        assert!(shaped.iter().any(|device| device.device_id == "first-guid"));
+    }
+
+    #[test]
+    fn dynamic_route_annotation_rejects_os_endpoints_missing_from_webrtc() {
+        let raw = vec![(
+            "first-guid".to_string(),
+            "Link 4 In (BEACN Studio)".to_string(),
+            0,
+        )];
+
+        assert!(
+            prepend_dynamic_audio_routes(&raw, "missing-default", "first-guid")
+                .unwrap_err()
+                .contains("default audio endpoint")
+        );
+        assert!(
+            prepend_dynamic_audio_routes(&raw, "first-guid", "missing-communications")
+                .unwrap_err()
+                .contains("communications audio endpoint")
+        );
     }
 
     #[test]
