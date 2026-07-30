@@ -3,7 +3,11 @@
 import {Logger} from '@app/features/platform/utils/AppLogger';
 import {VoiceTrackKind} from '@app/features/voice/engine/VoiceTrackSource';
 import VoiceSettings from '@app/features/voice/state/VoiceSettings';
-import {voiceDeviceManager} from '@app/features/voice/utils/VoiceDeviceManager';
+import {
+	resolveEffectiveDeviceRouteKey,
+	type VoiceDeviceState,
+	voiceDeviceManager,
+} from '@app/features/voice/utils/VoiceDeviceManager';
 import type {RemoteAudioTrack, Room} from 'livekit-client';
 
 const logger = new Logger('VoiceOutputDeviceSync');
@@ -152,12 +156,30 @@ export function bindOutputDeviceSync(room: Room): () => void {
 		});
 	}
 	let previousDeviceId = initial;
-	return VoiceSettings.subscribe(() => {
+	let previousRouteKey = resolveEffectiveDeviceRouteKey(initial, voiceDeviceManager.getState().outputDevices);
+	const settingsDisposer = VoiceSettings.subscribe(() => {
 		const deviceId = VoiceSettings.getOutputDeviceId();
 		if (!deviceId || deviceId === previousDeviceId) return;
 		previousDeviceId = deviceId;
+		previousRouteKey = resolveEffectiveDeviceRouteKey(deviceId, voiceDeviceManager.getState().outputDevices);
 		void applyOutputDeviceToRoom(room, deviceId).catch((error) => {
 			logger.warn('Audio output sync failed', {deviceId, error});
 		});
 	});
+	const devicesDisposer = voiceDeviceManager.subscribe((state: VoiceDeviceState) => {
+		const deviceId = VoiceSettings.getOutputDeviceId();
+		const routeKey = resolveEffectiveDeviceRouteKey(deviceId, state.outputDevices);
+		const routeChanged = routeKey !== previousRouteKey;
+		previousRouteKey = routeKey;
+		if (!routeChanged || (deviceId !== 'default' && deviceId !== 'communications')) {
+			return;
+		}
+		void applyOutputDeviceToRoom(room, deviceId).catch((error) => {
+			logger.warn('Dynamic audio output route sync failed', {deviceId, routeKey, error});
+		});
+	});
+	return () => {
+		settingsDisposer();
+		devicesDisposer();
+	};
 }

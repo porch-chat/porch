@@ -27,6 +27,14 @@ const BROWSER_DEFAULT_AUDIO_DEVICE_DESCRIPTOR = msg({
 	message: 'Browser default',
 	comment: 'Audio device label prefix for the browser-managed default audio device.',
 });
+const WINDOWS_COMMUNICATIONS_AUDIO_DEVICE_DESCRIPTOR = msg({
+	message: 'Windows communications',
+	comment: 'Audio device label prefix for the Windows communications audio route.',
+});
+const COMMUNICATIONS_AUDIO_DEVICE_DESCRIPTOR = msg({
+	message: 'Communications device',
+	comment: 'Audio device label prefix for an operating-system communications audio route.',
+});
 const AUDIO_AND_VIDEO_DESCRIPTOR = msg({
 	message: 'Voice & video',
 	comment: 'User settings tab for microphone, speaker, camera, and call stats.',
@@ -35,6 +43,11 @@ const DEFAULT_AUDIO_DEVICE_WITH_ENDPOINT_DESCRIPTOR = msg({
 	message: '{defaultDeviceLabel} ({endpointLabel})',
 	comment:
 		'Audio device label for a default route with the concrete microphone or speaker endpoint in parentheses. defaultDeviceLabel is already localized, for example "Windows Default".',
+});
+const COMMUNICATIONS_AUDIO_DEVICE_WITH_ENDPOINT_DESCRIPTOR = msg({
+	message: '{communicationsDeviceLabel} ({endpointLabel})',
+	comment:
+		'Audio device label for a communications route with the concrete microphone or speaker endpoint in parentheses.',
 });
 export const VOICE_CALL_DESCRIPTOR = msg({
 	message: 'Voice call',
@@ -302,14 +315,26 @@ function getDefaultAudioDeviceLabel(i18n: I18n, platform: VoiceAudioDefaultDevic
 
 export function formatVoiceAudioDeviceLabel(i18n: I18n, device: MediaDeviceInfo, fallbackLabel: string): string {
 	const metadata = getVoiceAudioDeviceMetadata(device);
-	if (metadata?.role === 'default' && metadata.defaultPlatform) {
-		const defaultDeviceLabel = getDefaultAudioDeviceLabel(i18n, metadata.defaultPlatform);
+	if (metadata?.role === 'default' && metadata.platform) {
+		const defaultDeviceLabel = getDefaultAudioDeviceLabel(i18n, metadata.platform);
 		return metadata.endpointLabel
 			? i18n._(DEFAULT_AUDIO_DEVICE_WITH_ENDPOINT_DESCRIPTOR, {
 					defaultDeviceLabel,
 					endpointLabel: metadata.endpointLabel,
 				})
 			: defaultDeviceLabel;
+	}
+	if (metadata?.role === 'communications') {
+		const communicationsDeviceLabel =
+			metadata.platform === 'windows'
+				? i18n._(WINDOWS_COMMUNICATIONS_AUDIO_DEVICE_DESCRIPTOR)
+				: i18n._(COMMUNICATIONS_AUDIO_DEVICE_DESCRIPTOR);
+		return metadata.endpointLabel
+			? i18n._(COMMUNICATIONS_AUDIO_DEVICE_WITH_ENDPOINT_DESCRIPTOR, {
+					communicationsDeviceLabel,
+					endpointLabel: metadata.endpointLabel,
+				})
+			: communicationsDeviceLabel;
 	}
 	return device.label || fallbackLabel;
 }

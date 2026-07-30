@@ -2607,19 +2607,12 @@ impl VoiceEngine {
         device_id: Option<&str>,
     ) -> napi::Result<Option<String>> {
         let requested_device_id = device_id.map(str::trim).unwrap_or_default();
-        if requested_device_id.is_empty() || requested_device_id == "default" {
-            return Ok(Some("default".to_string()));
-        }
         let raw = collect_factory_recording_devices()?;
-        let found = raw
-            .iter()
-            .any(|(id, _, _)| id.trim() == requested_device_id);
-        if !found {
-            return Err(napi::Error::from_reason(format!(
-                "recording device not found: {requested_device_id}"
-            )));
-        }
-        let id = RecordingDeviceId::from_unchecked_guid(requested_device_id);
+        let selected_device_id = audio::resolve_recording_device_guid(requested_device_id, &raw)
+            .map_err(|error| {
+                napi::Error::from_reason(format!("select recording device: {error}"))
+            })?;
+        let id = RecordingDeviceId::from_unchecked_guid(&selected_device_id);
         if self.mic.lock().is_some() {
             platform_audio
                 .switch_recording_device(&id)
@@ -2629,7 +2622,7 @@ impl VoiceEngine {
                 .set_recording_device(&id)
                 .map_err(|e| napi::Error::from_reason(format!("set recording device: {e}")))?;
         }
-        Ok(Some(requested_device_id.to_string()))
+        Ok(Some(selected_device_id))
     }
 
     #[napi]
@@ -3253,9 +3246,6 @@ impl VoiceEngine {
 
     #[napi]
     pub async fn list_audio_output_devices(&self) -> napi::Result<String> {
-        if self.platform_audio.lock().is_none() {
-            return Ok(audio::default_output_devices_json());
-        }
         run_audio_device_module_blocking(|| {
             let raw = collect_factory_playout_devices()?;
             let shaped = audio::shape_output_devices(&raw);
@@ -3266,9 +3256,6 @@ impl VoiceEngine {
 
     #[napi]
     pub async fn list_audio_input_devices(&self) -> napi::Result<String> {
-        if self.platform_audio.lock().is_none() {
-            return Ok(audio::default_input_devices_json());
-        }
         run_audio_device_module_blocking(|| {
             let raw = collect_factory_recording_devices()?;
             let shaped = audio::shape_input_devices(&raw);

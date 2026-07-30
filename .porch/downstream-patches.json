@@ -591,6 +591,41 @@
 			"conflict_risk": "low",
 			"upstream_status": "permanently-downstream",
 			"removal_condition": "Remove when upstream's asset-cache classifier recognizes hash-only Rspack output with an equivalent immutable policy."
+		},
+		{
+			"id": "porch-system-media-device-routing-0020",
+			"title": "Follow operating-system media routes across startup and hot-plug changes",
+			"status": "active",
+			"category": "voice-media",
+			"reason": "Porch desktop returned placeholder-only audio inventories before native call initialization and treated a stored default input as a no-op. Default-route changes also retained the same synthetic ID, so active input, output, camera capture, and preview state could miss the concrete endpoint change. Porch now enumerates real audio devices before a call, preserves Windows default and communications as dynamic routes, reapplies those routes when their endpoint moves, and identifies the synthetic camera route as Automatic.",
+			"paths": [
+				".porch/downstream-patches.json",
+				"docs/porch/MEDIA_DEVICE_ROUTING.md",
+				"fluxer_app/src/features/voice/components/VoiceControlBar.tsx",
+				"fluxer_app/src/features/voice/components/modals/CameraPreviewModal.tsx",
+				"fluxer_app/src/features/voice/engine/VoiceOutputDeviceSync.ts",
+				"fluxer_app/src/features/voice/engine/native_voice_engine/NativeVoiceDeviceSync.ts",
+				"fluxer_app/src/features/voice/engine/v2/VoiceEngineV2AppAudioSettingsSync.ts",
+				"fluxer_app/src/features/voice/utils/SettingsDeviceOptions.ts",
+				"fluxer_app/src/features/voice/utils/VoiceDeviceManager.test.ts",
+				"fluxer_app/src/features/voice/utils/VoiceDeviceManager.ts",
+				"fluxer_app/src/features/voice/utils/VoiceMessageDescriptors.ts",
+				"fluxer_desktop/native/webrtc-sender/src/audio.rs",
+				"fluxer_desktop/native/webrtc-sender/src/engine.rs"
+			],
+			"tests": [
+				"default, communications, physical endpoint, automatic camera, and missing-device route tests",
+				"voice media graph simulation suite",
+				"app and desktop TypeScript typechecks",
+				"desktop IPC and bridge regression suite",
+				"strict translation catalog compilation",
+				"Biome and Rust formatting",
+				"Windows Sound settings and browser media inventory comparison",
+				"git diff --check"
+			],
+			"conflict_risk": "high",
+			"upstream_status": "permanently-downstream",
+			"removal_condition": "Remove individual changes only when upstream enumerates native devices before calls, preserves Windows default and communications routes dynamically, refreshes active routes after endpoint changes, and exposes equivalent automatic camera semantics."
 		}
 	]
 }

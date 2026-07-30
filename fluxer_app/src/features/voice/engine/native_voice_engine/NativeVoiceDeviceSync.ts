@@ -16,7 +16,11 @@ import LocalVoiceState from '@app/features/voice/state/LocalVoiceState';
 import ParticipantVolume from '@app/features/voice/state/ParticipantVolume';
 import StreamAudioPrefs from '@app/features/voice/state/StreamAudioPrefs';
 import VoiceSettings from '@app/features/voice/state/VoiceSettings';
-import {type VoiceDeviceState, voiceDeviceManager} from '@app/features/voice/utils/VoiceDeviceManager';
+import {
+	resolveEffectiveDeviceRouteKey,
+	type VoiceDeviceState,
+	voiceDeviceManager,
+} from '@app/features/voice/utils/VoiceDeviceManager';
 
 const logger = new Logger('NativeVoiceDeviceSync');
 
@@ -174,6 +178,10 @@ export function bindNativeVoiceDeviceSync(deps: NativeVoiceDeviceSyncDeps): () =
 	};
 
 	let previousOutputDeviceId = VoiceSettings.getOutputDeviceId();
+	let previousOutputRouteKey = resolveEffectiveDeviceRouteKey(
+		previousOutputDeviceId,
+		voiceDeviceManager.getState().outputDevices,
+	);
 	const getVolumeSnapshot = () => {
 		const streamContext = getStreamConnectionContext();
 		return {
@@ -192,6 +200,23 @@ export function bindNativeVoiceDeviceSync(deps: NativeVoiceDeviceSyncDeps): () =
 		const deviceId = VoiceSettings.getOutputDeviceId();
 		if (deviceId === previousOutputDeviceId) return;
 		previousOutputDeviceId = deviceId;
+		previousOutputRouteKey = resolveEffectiveDeviceRouteKey(deviceId, voiceDeviceManager.getState().outputDevices);
+		applyOutputDevice(deviceId);
+	};
+	const syncOutputDeviceRoute = (state: VoiceDeviceState): void => {
+		const selectedBeforeHealing = VoiceSettings.getOutputDeviceId();
+		releaseStaleOutputSelection(state);
+		const deviceId = VoiceSettings.getOutputDeviceId();
+		const routeKey = resolveEffectiveDeviceRouteKey(deviceId, state.outputDevices);
+		const routeChanged = routeKey !== previousOutputRouteKey;
+		previousOutputRouteKey = routeKey;
+		if (selectedBeforeHealing !== deviceId) {
+			return;
+		}
+		if (!routeChanged || (deviceId !== 'default' && deviceId !== 'communications')) {
+			return;
+		}
+		logger.info('Dynamic audio output route changed; reapplying selected route', {deviceId, routeKey});
 		applyOutputDevice(deviceId);
 	};
 	const syncVolumes = () => {
@@ -220,7 +245,7 @@ export function bindNativeVoiceDeviceSync(deps: NativeVoiceDeviceSyncDeps): () =
 	const streamPrefsDisposer = StreamAudioPrefs.subscribe(syncVolumes);
 	const localVoiceStateDisposer = subscribeLocalVoiceState(syncVolumes);
 	const participantDisposer = deps.subscribeParticipants?.(syncVolumes) ?? (() => {});
-	const deviceStateDisposer = subscribeDeviceState(releaseStaleOutputSelection);
+	const deviceStateDisposer = subscribeDeviceState(syncOutputDeviceRoute);
 
 	return () => {
 		settingsDisposer();

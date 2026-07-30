@@ -246,11 +246,35 @@ pub fn resolve_playout_device_guid(
         return find_default_device_id(raw)
             .ok_or_else(|| "no audio output devices available".to_string());
     }
+    if requested == "communications" {
+        return find_communications_device_id(raw)
+            .ok_or_else(|| "no communications audio output device available".to_string());
+    }
     let found = raw
         .iter()
         .find(|(id, _, _)| id.trim() == requested)
         .map(|(id, _, _)| id.trim().to_string());
     found.ok_or_else(|| format!("audio output device not found: {requested}"))
+}
+
+pub fn resolve_recording_device_guid(
+    requested: &str,
+    raw: &[(String, String, usize)],
+) -> Result<String, String> {
+    let requested = requested.trim();
+    if requested.is_empty() || requested == "default" {
+        return find_default_device_id(raw)
+            .ok_or_else(|| "no audio input devices available".to_string());
+    }
+    if requested == "communications" {
+        return find_communications_device_id(raw)
+            .ok_or_else(|| "no communications audio input device available".to_string());
+    }
+    let found = raw
+        .iter()
+        .find(|(id, _, _)| id.trim() == requested)
+        .map(|(id, _, _)| id.trim().to_string());
+    found.ok_or_else(|| format!("audio input device not found: {requested}"))
 }
 
 fn shape_audio_devices(raw: &[(String, String, usize)]) -> Vec<ShapedAudioDevice> {
@@ -314,7 +338,7 @@ fn shape_audio_device(id: &str, raw_label: &str, index: usize) -> ShapedAudioDev
     }
     if let Some(endpoint_label) = communications_route_endpoint_label(id, &label) {
         return ShapedAudioDevice {
-            device_id: id.to_string(),
+            device_id: "communications".to_string(),
             label: endpoint_label.clone(),
             is_default: index == 0,
             role: AudioDeviceRole::Communications,
@@ -374,6 +398,19 @@ pub fn find_default_device_id(raw: &[(String, String, usize)]) -> Option<String>
     }
     raw.iter()
         .find(|(id, _, _)| !id.trim().is_empty())
+        .map(|(id, _, _)| id.trim().to_string())
+}
+
+pub fn find_communications_device_id(raw: &[(String, String, usize)]) -> Option<String> {
+    raw.iter()
+        .find(|(id, label, _)| {
+            !id.trim().is_empty()
+                && communications_route_endpoint_label(
+                    id.trim(),
+                    &strip_usb_hardware_id_suffix(label),
+                )
+                .is_some()
+        })
         .map(|(id, _, _)| id.trim().to_string())
 }
 
@@ -703,6 +740,49 @@ mod tests {
     }
 
     #[test]
+    fn dynamic_audio_roles_resolve_to_current_platform_routes() {
+        let raw = vec![
+            (
+                "default-guid".to_string(),
+                "Default - System (BEACN Studio)".to_string(),
+                0,
+            ),
+            (
+                "communications-guid".to_string(),
+                "Communications - Chat (BEACN Studio)".to_string(),
+                1,
+            ),
+            (
+                "endpoint-guid".to_string(),
+                "Headphones (BEACN Studio)".to_string(),
+                2,
+            ),
+        ];
+
+        assert_eq!(
+            resolve_playout_device_guid("default", &raw),
+            Ok("default-guid".to_string())
+        );
+        assert_eq!(
+            resolve_playout_device_guid("communications", &raw),
+            Ok("communications-guid".to_string())
+        );
+        assert_eq!(
+            resolve_recording_device_guid("default", &raw),
+            Ok("default-guid".to_string())
+        );
+        assert_eq!(
+            resolve_recording_device_guid("communications", &raw),
+            Ok("communications-guid".to_string())
+        );
+        assert_eq!(
+            resolve_recording_device_guid("endpoint-guid", &raw),
+            Ok("endpoint-guid".to_string())
+        );
+        assert!(resolve_recording_device_guid("missing-guid", &raw).is_err());
+    }
+
+    #[test]
     fn output_device_json_locks_the_contract_shape() {
         let dev = AudioOutputDevice {
             device_id: "{0.0.0.00000000}.{guid}".into(),
@@ -919,6 +999,7 @@ mod tests {
         assert_eq!(shaped[0].device_id, "default");
         assert_eq!(shaped[0].label, "Headset Microphone (2- Arctis 7 Chat)");
         assert_eq!(shaped[1].role, AudioDeviceRole::Communications);
+        assert_eq!(shaped[1].device_id, "communications");
         assert_eq!(shaped[2].role, AudioDeviceRole::Endpoint);
     }
 

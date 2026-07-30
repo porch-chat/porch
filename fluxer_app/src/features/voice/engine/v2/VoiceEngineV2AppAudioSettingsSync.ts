@@ -3,6 +3,7 @@
 import assert from 'node:assert/strict';
 import VoiceDevicePermissionState from '@app/features/voice/engine/VoiceDevicePermissionState';
 import VoiceSettings from '@app/features/voice/state/VoiceSettings';
+import {resolveEffectiveDeviceRouteKey} from '@app/features/voice/utils/VoiceDeviceManager';
 import {
 	getActiveInputDeviceLabel,
 	resolveVoiceProcessingFromStateForDeviceLabel,
@@ -15,6 +16,7 @@ export interface VoiceEngineV2AppAudioSettingsSnapshot {
 	readonly vadThreshold: number;
 	readonly requestedInputDeviceId: string;
 	readonly effectiveInputDeviceId: string;
+	readonly effectiveInputDeviceRouteKey: string;
 	readonly activeInputDeviceLabel: string | null;
 	readonly processingMode: VoiceProcessingMode;
 	readonly echoCancellation: boolean;
@@ -41,6 +43,11 @@ function assertAudioSettingsSnapshot(snapshot: VoiceEngineV2AppAudioSettingsSnap
 	assert.equal(typeof snapshot.vadThreshold, 'number', `${name}.vadThreshold must be a number`);
 	assert.equal(typeof snapshot.requestedInputDeviceId, 'string', `${name}.requestedInputDeviceId must be a string`);
 	assert.equal(typeof snapshot.effectiveInputDeviceId, 'string', `${name}.effectiveInputDeviceId must be a string`);
+	assert.equal(
+		typeof snapshot.effectiveInputDeviceRouteKey,
+		'string',
+		`${name}.effectiveInputDeviceRouteKey must be a string`,
+	);
 	assert.equal(typeof snapshot.echoCancellation, 'boolean', `${name}.echoCancellation must be a boolean`);
 	assert.equal(typeof snapshot.browserNoiseSuppression, 'boolean', `${name}.browserNoiseSuppression must be a boolean`);
 	assert.equal(typeof snapshot.autoGainControl, 'boolean', `${name}.autoGainControl must be a boolean`);
@@ -50,12 +57,15 @@ function assertAudioSettingsSnapshot(snapshot: VoiceEngineV2AppAudioSettingsSnap
 export function createVoiceEngineV2AppAudioSettingsSnapshot(): VoiceEngineV2AppAudioSettingsSnapshot {
 	const activeInputDeviceLabel = getActiveInputDeviceLabel(VoiceSettings);
 	const profile = resolveVoiceProcessingFromStateForDeviceLabel(VoiceSettings, activeInputDeviceLabel);
+	const requestedInputDeviceId = VoiceSettings.getInputDeviceId();
+	const {inputDevices} = VoiceDevicePermissionState.getState();
 	return {
 		inputVolume: VoiceSettings.getInputVolume(),
 		outputVolume: VoiceSettings.getOutputVolume(),
 		vadThreshold: VoiceSettings.getVadThreshold(),
-		requestedInputDeviceId: VoiceSettings.getInputDeviceId(),
+		requestedInputDeviceId,
 		effectiveInputDeviceId: resolveEffectiveInputDeviceId(),
+		effectiveInputDeviceRouteKey: resolveEffectiveDeviceRouteKey(requestedInputDeviceId, inputDevices),
 		activeInputDeviceLabel,
 		processingMode: profile.mode,
 		echoCancellation: profile.echoCancellation,
@@ -74,6 +84,7 @@ export function hasVoiceEngineV2MicrophoneCaptureSettingsChanged(
 	assertAudioSettingsSnapshot(previous, 'previous');
 	assertAudioSettingsSnapshot(current, 'current');
 	if (previous.effectiveInputDeviceId !== current.effectiveInputDeviceId) return true;
+	if (previous.effectiveInputDeviceRouteKey !== current.effectiveInputDeviceRouteKey) return true;
 	if (previous.processingMode !== current.processingMode) return true;
 	if (previous.echoCancellation !== current.echoCancellation) return true;
 	if (previous.browserNoiseSuppression !== current.browserNoiseSuppression) return true;

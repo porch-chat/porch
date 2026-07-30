@@ -67,6 +67,7 @@ import VoiceCallLayout from '@app/features/voice/state/VoiceCallLayout';
 import VoiceSettings from '@app/features/voice/state/VoiceSettings';
 import {resolveDisplayShareEnvironment} from '@app/features/voice/utils/ScreenShareEnvironment';
 import {resolveActiveStreamSettingsShareContext} from '@app/features/voice/utils/StreamSettingsUpdatePolicy';
+import {resolveEffectiveDeviceRouteKey} from '@app/features/voice/utils/VoiceDeviceManager';
 import {
 	getVoiceDeafenedByModeratorsStatusLabel,
 	VOICE_CAMERA_SETTINGS_DESCRIPTOR,
@@ -244,11 +245,12 @@ const VoiceControlBarInner = observer(function VoiceControlBarInner() {
 	const localSelfMute = LocalVoiceState.getSelfMute();
 	const localSelfDeaf = LocalVoiceState.getSelfDeaf();
 	const voiceSettings = VoiceSettings;
-	const previousVideoDeviceIdRef = useRef(voiceSettings.videoDeviceId);
 	const channelId = MediaEngine.channelId;
 	const guildId = MediaEngine.guildId;
 	const isMobile = MobileLayout.isMobileLayout();
 	const {inputDevices, outputDevices, videoDevices} = useMediaDevices();
+	const videoDeviceRouteKey = resolveEffectiveDeviceRouteKey(voiceSettings.videoDeviceId, videoDevices);
+	const previousVideoDeviceRouteKeyRef = useRef(videoDeviceRouteKey);
 	const [audioSettingsOpen, setAudioSettingsOpen] = useState(false);
 	const [cameraSettingsOpen, setCameraSettingsOpen] = useState(false);
 	const [moreOptionsOpen, setMoreOptionsOpen] = useState(false);
@@ -309,22 +311,22 @@ const VoiceControlBarInner = observer(function VoiceControlBarInner() {
 		ContextMenuCommands.openFromEvent(event, renderMenu);
 	}, []);
 	useEffect(() => {
-		const previousVideoDeviceId = previousVideoDeviceIdRef.current;
-		previousVideoDeviceIdRef.current = voiceSettings.videoDeviceId;
+		const previousVideoDeviceRouteKey = previousVideoDeviceRouteKeyRef.current;
+		previousVideoDeviceRouteKeyRef.current = videoDeviceRouteKey;
 		if (!isConnected) return;
 		if (!isCameraEnabled) return;
 		if (!voiceSettings.videoDeviceId) return;
-		if (voiceSettings.videoDeviceId === previousVideoDeviceId) return;
+		if (videoDeviceRouteKey === previousVideoDeviceRouteKey) return;
 		const deviceId = voiceSettings.videoDeviceId === 'default' ? undefined : voiceSettings.videoDeviceId;
 		const switchCamera = async () => {
 			try {
 				await MediaEngine.updateActiveCameraCapture({deviceId});
 			} catch (error) {
-				logger.error('Failed to switch camera:', error);
+				logger.error('Failed to switch camera after selection or automatic route change:', error);
 			}
 		};
 		void switchCamera();
-	}, [voiceSettings.videoDeviceId, isConnected, isCameraEnabled]);
+	}, [voiceSettings.videoDeviceId, videoDeviceRouteKey, isConnected, isCameraEnabled]);
 	const handleToggleMute = useCallback(() => {
 		VoiceStateCommands.toggleSelfMute(null);
 	}, []);

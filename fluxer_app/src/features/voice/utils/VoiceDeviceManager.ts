@@ -31,6 +31,32 @@ export function resolveEffectiveDeviceId(
 	return devices[0].deviceId;
 }
 
+export function resolveEffectiveDeviceRouteKey(
+	storedDeviceId: string,
+	devices: ReadonlyArray<MediaDeviceInfo>,
+): string {
+	const effectiveDeviceId = resolveEffectiveDeviceId(storedDeviceId, devices);
+	if (effectiveDeviceId === null) {
+		return `unavailable:${storedDeviceId}`;
+	}
+	const device = devices.find((candidate) => candidate.deviceId === effectiveDeviceId);
+	if (!device) {
+		return `unavailable:${storedDeviceId}`;
+	}
+	const metadata = getVoiceAudioDeviceMetadata(device);
+	const isDynamicRoute =
+		device.deviceId === 'default' ||
+		device.deviceId === 'communications' ||
+		metadata?.role === 'default' ||
+		metadata?.role === 'communications';
+	if (!isDynamicRoute) {
+		return `endpoint:${device.deviceId}`;
+	}
+	return ['route', device.deviceId, metadata?.role ?? '', metadata?.endpointLabel ?? device.label, device.groupId].join(
+		':',
+	);
+}
+
 export function hasDeviceLabels(devices: ReadonlyArray<MediaDeviceInfo>): boolean {
 	return devices.some((d) => d.label && d.label.trim().length > 0);
 }
@@ -80,12 +106,12 @@ const sortDevices = (devices: Array<MediaDeviceInfo>): Array<MediaDeviceInfo> =>
 };
 
 export type VoiceAudioDefaultDevicePlatform = 'windows' | 'macos' | 'linux' | 'browser';
-type VoiceAudioDeviceRole = 'default' | 'communications';
+export type VoiceAudioDeviceRole = 'default' | 'communications';
 
 export interface VoiceAudioDeviceMetadata {
 	role: VoiceAudioDeviceRole;
 	endpointLabel: string;
-	defaultPlatform?: VoiceAudioDefaultDevicePlatform;
+	platform?: VoiceAudioDefaultDevicePlatform;
 }
 
 export type VoiceMediaDeviceInfo = MediaDeviceInfo & {
@@ -254,7 +280,12 @@ function createAudioDeviceInfo(
 	device: AudioDeviceShapeInput,
 	normalized: NormalizedAudioDeviceLabel,
 ): VoiceMediaDeviceInfo {
-	const deviceId = normalized.role === 'default' && normalized.isDefaultRoute ? 'default' : device.deviceId.trim();
+	const deviceId =
+		normalized.role === 'default' && normalized.isDefaultRoute
+			? 'default'
+			: normalized.role === 'communications'
+				? 'communications'
+				: device.deviceId.trim();
 	const groupId = device.groupId;
 	const kind = device.kind;
 	const label = normalized.label;
@@ -264,7 +295,7 @@ function createAudioDeviceInfo(
 			: {
 					role: normalized.role,
 					endpointLabel: normalized.endpointLabel,
-					...(normalized.role === 'default' ? {defaultPlatform: getAudioDefaultDevicePlatform()} : {}),
+					platform: getAudioDefaultDevicePlatform(),
 				};
 	const shaped: VoiceMediaDeviceInfo = {
 		deviceId,
@@ -352,18 +383,8 @@ function shapeAudioDevices(
 			];
 		}
 	}
-	const representedEndpointLabels = new Set(
-		normalizedDevices
-			.filter(({label}) => label.role !== 'communications')
-			.map(({label}) => label.endpointLabel)
-			.filter((label) => label.length > 0),
-	);
 	return sortDevices(
-		dedupeAudioDeviceInfos(
-			normalizedDevices
-				.filter(({label}) => label.role !== 'communications' || !representedEndpointLabels.has(label.endpointLabel))
-				.map(({device, label}) => createAudioDeviceInfo(device, label)),
-		),
+		dedupeAudioDeviceInfos(normalizedDevices.map(({device, label}) => createAudioDeviceInfo(device, label))),
 	);
 }
 

@@ -38,7 +38,11 @@ import VoiceSettings, {
 } from '@app/features/voice/state/VoiceSettings';
 import {applyBackgroundProcessor} from '@app/features/voice/utils/VideoBackgroundProcessor';
 import {areVoiceBackgroundsAvailable} from '@app/features/voice/utils/VoiceBackgroundAvailability';
-import {resolveEffectiveDeviceId, type VoiceDeviceState} from '@app/features/voice/utils/VoiceDeviceManager';
+import {
+	resolveEffectiveDeviceId,
+	resolveEffectiveDeviceRouteKey,
+	type VoiceDeviceState,
+} from '@app/features/voice/utils/VoiceDeviceManager';
 import {
 	formatFallbackCameraLabel,
 	VOICE_TURN_ON_CAMERA_DESCRIPTOR,
@@ -69,8 +73,12 @@ const CAMERA_PREVIEW_DESCRIPTOR = msg({
 	comment: 'Title of the camera preview modal.',
 });
 const DEFAULT_CAMERA_DESCRIPTOR = msg({
-	message: 'Default',
-	comment: 'Default camera device option.',
+	message: 'Automatic',
+	comment: 'Camera option that follows the first camera currently selected by the browser or operating system.',
+});
+const DEFAULT_CAMERA_WITH_DEVICE_DESCRIPTOR = msg({
+	message: 'Automatic ({deviceLabel})',
+	comment: 'Automatic camera option with the camera currently selected by the browser or operating system.',
 });
 const MIRROR_CAMERA_DESCRIPTOR = msg({
 	message: 'Mirror camera',
@@ -126,6 +134,7 @@ const CAMERA_RESOLUTION_PRESETS: Record<'low' | 'medium' | 'high', VideoResoluti
 
 interface CameraPreviewConfig {
 	videoDeviceId: string;
+	videoDeviceRouteKey: string;
 	backgroundImageId: string;
 	mirrorCamera: boolean;
 	cameraResolution: 'low' | 'medium' | 'high';
@@ -603,6 +612,7 @@ const CameraPreviewModalContent = observer((props: CameraPreviewModalProps) => {
 				backgroundOverrideId ?? (voiceBackgroundsAvailable ? voiceSettings.backgroundImageId : NONE_BACKGROUND_ID);
 			const currentConfig: CameraPreviewConfig = {
 				videoDeviceId: effectiveVideoDeviceId ?? 'default',
+				videoDeviceRouteKey: resolveEffectiveDeviceRouteKey(voiceSettings.videoDeviceId, videoDevices),
 				backgroundImageId,
 				mirrorCamera: voiceSettings.mirrorCamera,
 				cameraResolution: voiceSettings.cameraResolution,
@@ -782,6 +792,7 @@ const CameraPreviewModalContent = observer((props: CameraPreviewModalProps) => {
 			backgroundOverrideId ?? (voiceBackgroundsAvailable ? voiceSettings.backgroundImageId : NONE_BACKGROUND_ID);
 		const currentConfig: CameraPreviewConfig = {
 			videoDeviceId: voiceSettings.videoDeviceId,
+			videoDeviceRouteKey: resolveEffectiveDeviceRouteKey(voiceSettings.videoDeviceId, videoDevices),
 			backgroundImageId,
 			mirrorCamera: voiceSettings.mirrorCamera,
 			cameraResolution: voiceSettings.cameraResolution,
@@ -813,7 +824,9 @@ const CameraPreviewModalContent = observer((props: CameraPreviewModalProps) => {
 					value: device.deviceId,
 					label:
 						device.deviceId === 'default'
-							? i18n._(DEFAULT_CAMERA_DESCRIPTOR)
+							? device.label
+								? i18n._(DEFAULT_CAMERA_WITH_DEVICE_DESCRIPTOR, {deviceLabel: device.label})
+								: i18n._(DEFAULT_CAMERA_DESCRIPTOR)
 							: device.label || formatFallbackCameraLabel(i18n),
 				}))
 			: [{value: 'default', label: i18n._(DEFAULT_CAMERA_DESCRIPTOR)}];

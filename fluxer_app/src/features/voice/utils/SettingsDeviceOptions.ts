@@ -24,6 +24,14 @@ const CAMERA_DEVICE_DESCRIPTOR = msg({
 	message: 'Camera',
 	comment: 'Fallback camera option label when the operating system does not report a device name.',
 });
+const AUTOMATIC_CAMERA_DESCRIPTOR = msg({
+	message: 'Automatic',
+	comment: 'Camera option that follows the first camera currently selected by the browser or operating system.',
+});
+const AUTOMATIC_CAMERA_WITH_DEVICE_DESCRIPTOR = msg({
+	message: 'Automatic ({deviceLabel})',
+	comment: 'Automatic camera option with the camera currently selected by the browser or operating system.',
+});
 
 function devicesForKind(deviceState: VoiceDeviceState, kind: SettingsDeviceKind): Array<MediaDeviceInfo> {
 	switch (kind) {
@@ -49,12 +57,18 @@ function buildAudioDeviceOptions(
 
 function buildVideoDeviceOptions(
 	devices: ReadonlyArray<MediaDeviceInfo>,
-	defaultLabel: string,
+	automaticLabel: string,
 	fallbackLabel: string,
+	i18n: I18n,
 ): Array<ComboboxOption> {
 	return devices.map((device) => ({
 		value: device.deviceId,
-		label: device.deviceId === 'default' ? defaultLabel : device.label || fallbackLabel,
+		label:
+			device.deviceId === 'default'
+				? device.label
+					? i18n._(AUTOMATIC_CAMERA_WITH_DEVICE_DESCRIPTOR, {deviceLabel: device.label})
+					: automaticLabel
+				: device.label || fallbackLabel,
 	}));
 }
 
@@ -70,7 +84,12 @@ export function buildSettingsDeviceOptions(
 		return lockedFallback;
 	}
 	if (kind === 'videoinput') {
-		return buildVideoDeviceOptions(devices, defaultLabel, i18n._(CAMERA_DEVICE_DESCRIPTOR));
+		return buildVideoDeviceOptions(
+			devices,
+			i18n._(AUTOMATIC_CAMERA_DESCRIPTOR),
+			i18n._(CAMERA_DEVICE_DESCRIPTOR),
+			i18n,
+		);
 	}
 	if (!hasDeviceLabels(devices)) {
 		return lockedFallback;
