@@ -8,6 +8,8 @@ moderate Fluxer-owned repositories, organizations, infrastructure, or storage.
 ## Supported automation
 
 - **Build Porch API** publishes the shared API/worker image from `canary`.
+- **Build Porch admin** publishes the downstream administration UI from
+  `canary`.
 - **Build Porch app proxy** publishes the web client image from `canary`.
 - **Build Porch static assets** publishes Porch-owned static files from
   `canary`.

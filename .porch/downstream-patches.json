@@ -346,8 +346,10 @@
 			"category": "community-membership",
 			"reason": "Give every eligible Porch account a shared welcome community without coupling account registration to community invites or enabling Fluxer's restrictive single-community mode.",
 			"paths": [
+				".github/workflows/build-porch-admin.yaml",
 				".porch/downstream-patches.json",
 				"docs/porch/PORCH_HUB.md",
+				"docs/porch/ACTIONS_POLICY.md",
 				"fluxer_admin/openapi-admin.json",
 				"fluxer_admin/src/api/instance_config.rs",
 				"fluxer_admin/src/api/types/instance_config.rs",
@@ -360,7 +362,8 @@
 				"fluxer_api/src/api/instance/PorchHubService.ts",
 				"fluxer_api/src/api/middleware/ServiceMiddleware.ts",
 				"fluxer_api/src/api/types/HonoEnv.ts",
-				"packages/schema/src/domains/admin/AdminSchemas.ts"
+				"packages/schema/src/domains/admin/AdminSchemas.ts",
+				"scripts/validate-porch-actions.mjs"
 			],
 			"tests": [
 				"Porch Hub registration, backfill, approval, voluntary-leave, and login reconciliation API tests",

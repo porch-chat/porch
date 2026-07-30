@@ -10,6 +10,7 @@ const workflowsRoot = path.join(root, '.github', 'workflows');
 const failures = [];
 
 const requiredWorkflows = new Map([
+	['build-porch-admin.yaml', ['name: build Porch admin', 'image: fluxer-admin', 'moving-tags: canary']],
 	['build-porch-api.yaml', ['name: build Porch API', 'image: fluxer-api', 'moving-tags: canary']],
 	[
 		'build-porch-app-proxy.yaml',
