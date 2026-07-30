@@ -16,6 +16,10 @@ describe('formatDesktopBuildVersion', () => {
 		);
 	});
 
+	it('restores the leading clock zero stripped by the release workflow', () => {
+		expect(formatDesktopBuildVersion('2026.730.42636', 'en-US')).toBe('Jul 30, 2026, 4:26:36 AM UTC · 2026.730.42636');
+	});
+
 	it('leaves normal semantic versions and invalid timestamps unchanged', () => {
 		expect(formatDesktopBuildVersion('1.4.2', 'en-US')).toBe('1.4.2');
 		expect(formatDesktopBuildVersion('2026.229.135314', 'en-US')).toBe('2026.229.135314');
