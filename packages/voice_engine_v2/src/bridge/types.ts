@@ -17,7 +17,7 @@ import type {
 	VoiceEngineV2VideoCodec,
 } from '../protocol';
 
-export const VOICE_ENGINE_V2_BRIDGE_VERSION = 19;
+export const VOICE_ENGINE_V2_BRIDGE_VERSION = 18;
 
 export type VoiceEngineV2BridgeMethodName =
 	| 'isSupported'
