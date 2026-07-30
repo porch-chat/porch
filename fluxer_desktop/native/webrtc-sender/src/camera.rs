@@ -686,7 +686,7 @@ mod live {
 
     fn list_device_formats(index: CameraIndex) -> Vec<super::CameraDeviceFormat> {
         let requested = RequestedFormat::new::<RgbFormat>(RequestedFormatType::None);
-        let Ok(camera) = Camera::new(index, requested) else {
+        let Ok(mut camera) = Camera::new(index, requested) else {
             return Vec::new();
         };
         let Ok(formats) = camera.compatible_camera_formats() else {
