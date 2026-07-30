@@ -237,10 +237,14 @@ pub fn is_static_asset(path: &str) -> bool {
 }
 
 pub fn is_hashed_asset(path: &str) -> bool {
-    let Some(last_dot) = path.rfind('.') else {
+    let filename = path.rsplit('/').next().unwrap_or(path);
+    let Some(last_dot) = filename.rfind('.') else {
         return false;
     };
-    let prefix = &path[..last_dot];
+    let prefix = &filename[..last_dot];
+    if prefix.len() >= 8 && prefix.chars().all(|c| c.is_ascii_hexdigit()) {
+        return true;
+    }
     for sep in ['.', '-'] {
         if let Some(sep_pos) = prefix.rfind(sep) {
             let hash_part = &prefix[sep_pos + 1..];
@@ -283,6 +287,25 @@ mod tests {
     #[test]
     fn mime_png() {
         assert_eq!(guess_mime("p.png"), "image/png");
+    }
+
+    #[test]
+    fn recognizes_content_hash_only_asset_names() {
+        assert!(is_hashed_asset("/assets/45b608b46e7c16c9.png"));
+        assert!(is_hashed_asset("assets/b4a58ac1ef27c03a.js"));
+    }
+
+    #[test]
+    fn recognizes_hash_suffix_asset_names() {
+        assert!(is_hashed_asset("/assets/app.45b608b46e7c16c9.js"));
+        assert!(is_hashed_asset("/assets/app-45b608b46e7c16c9.css"));
+    }
+
+    #[test]
+    fn rejects_unversioned_or_short_hex_asset_names() {
+        assert!(!is_hashed_asset("/assets/app.js"));
+        assert!(!is_hashed_asset("/assets/deadbee.png"));
+        assert!(!is_hashed_asset("/assets/emoji-picker.png"));
     }
     #[test]
     fn mime_jpg() {

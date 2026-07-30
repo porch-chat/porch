@@ -146,3 +146,31 @@ making every ordinary launch look like a new application bundle.
 - Validate a packaged build across at least three consecutive launches: the
   first launch may migrate the old key once, while later launches must not log
   cache removal.
+
+## 2026-07-30 — immutable content-addressed asset caching
+
+### Finding
+
+Rspack emits Porch assets with content-hash-only names such as
+`45b608b46e7c16c9.png` and `b4a58ac1ef27c03a.js`. The app proxy's hashed-asset
+detector recognized only `name.<hash>.ext` and `name-<hash>.ext`, so these
+immutable payloads were served with `max-age=3600, must-revalidate` instead of
+the intended one-year immutable policy.
+
+The 1.46 MB default emoji atlas made the impact especially visible. It is
+correctly deferred until the emoji picker opens rather than blocking startup,
+and lossless WebP saved less than five percent, so Porch retains the upstream
+PNG sprite contract. The cache policy—not a risky binary-format fork—was the
+appropriate fix.
+
+### Implemented and validation
+
+- Recognize a filename stem made entirely of at least eight hexadecimal
+  characters as content-addressed in addition to the existing suffix formats.
+- Keep short hexadecimal and ordinary unversioned asset names on the
+  one-hour revalidation policy.
+- Add regression coverage for hash-only, dotted, hyphenated, short-hex, and
+  unversioned filenames.
+- Verify deployed hash-only JS, CSS, image, and WASM assets return
+  `public, max-age=31536000, immutable`, while mutable metadata and application
+  entry points retain their existing revalidation/no-store policies.

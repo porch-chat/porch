@@ -569,6 +569,28 @@
 			"conflict_risk": "low",
 			"upstream_status": "permanently-downstream",
 			"removal_condition": "Remove when upstream provides an equivalent cache-compatibility key that remains stable across ordinary packaged launches while invalidating after runtime or installed-release changes."
+		},
+		{
+			"id": "porch-content-addressed-cache-policy-0019",
+			"title": "Cache hash-only Rspack assets immutably",
+			"status": "active",
+			"category": "client-performance",
+			"reason": "Porch's Rspack output uses content-hash-only filenames, but the app proxy recognized only dotted or hyphenated hash suffixes. Immutable JS, CSS, images, and WASM therefore revalidated hourly. Porch now recognizes all three content-addressed naming forms and applies its existing one-year immutable cache policy.",
+			"paths": [
+				".porch/downstream-patches.json",
+				"docs/porch/PERFORMANCE.md",
+				"fluxer_app_proxy/src/routes/spa_static.rs"
+			],
+			"tests": [
+				"hash-only, dotted, hyphenated, short-hex, and unversioned cache-key classification tests",
+				"app-proxy Rust tests",
+				"Rust formatting",
+				"git diff --check",
+				"deployed content-addressed asset Cache-Control verification"
+			],
+			"conflict_risk": "low",
+			"upstream_status": "permanently-downstream",
+			"removal_condition": "Remove when upstream's asset-cache classifier recognizes hash-only Rspack output with an equivalent immutable policy."
 		}
 	]
 }
