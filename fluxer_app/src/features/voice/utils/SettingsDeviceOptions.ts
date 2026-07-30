@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import type {ComboboxOption} from '@app/features/ui/components/form/FormCombobox';
-import {hasDeviceLabels, type VoiceDeviceState} from '@app/features/voice/utils/VoiceDeviceManager';
+import {
+	formatAutomaticDeviceLabel,
+	hasDeviceLabels,
+	type VoiceDeviceState,
+} from '@app/features/voice/utils/VoiceDeviceManager';
 import {formatVoiceAudioDeviceLabel} from '@app/features/voice/utils/VoiceMessageDescriptors';
 import type {I18n} from '@lingui/core';
 import {msg} from '@lingui/core/macro';
@@ -27,10 +31,6 @@ const CAMERA_DEVICE_DESCRIPTOR = msg({
 const AUTOMATIC_CAMERA_DESCRIPTOR = msg({
 	message: 'Automatic',
 	comment: 'Camera option that follows the first camera currently selected by the browser or operating system.',
-});
-const AUTOMATIC_CAMERA_WITH_DEVICE_DESCRIPTOR = msg({
-	message: 'Automatic ({deviceLabel})',
-	comment: 'Automatic camera option with the camera currently selected by the browser or operating system.',
 });
 
 function devicesForKind(deviceState: VoiceDeviceState, kind: SettingsDeviceKind): Array<MediaDeviceInfo> {
@@ -59,15 +59,12 @@ function buildVideoDeviceOptions(
 	devices: ReadonlyArray<MediaDeviceInfo>,
 	automaticLabel: string,
 	fallbackLabel: string,
-	i18n: I18n,
 ): Array<ComboboxOption> {
 	return devices.map((device) => ({
 		value: device.deviceId,
 		label:
 			device.deviceId === 'default'
-				? device.label
-					? i18n._(AUTOMATIC_CAMERA_WITH_DEVICE_DESCRIPTOR, {deviceLabel: device.label})
-					: automaticLabel
+				? formatAutomaticDeviceLabel(automaticLabel, device.label)
 				: device.label || fallbackLabel,
 	}));
 }
@@ -84,12 +81,7 @@ export function buildSettingsDeviceOptions(
 		return lockedFallback;
 	}
 	if (kind === 'videoinput') {
-		return buildVideoDeviceOptions(
-			devices,
-			i18n._(AUTOMATIC_CAMERA_DESCRIPTOR),
-			i18n._(CAMERA_DEVICE_DESCRIPTOR),
-			i18n,
-		);
+		return buildVideoDeviceOptions(devices, i18n._(AUTOMATIC_CAMERA_DESCRIPTOR), i18n._(CAMERA_DEVICE_DESCRIPTOR));
 	}
 	if (!hasDeviceLabels(devices)) {
 		return lockedFallback;

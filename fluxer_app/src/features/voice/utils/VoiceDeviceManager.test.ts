@@ -3,6 +3,7 @@
 
 import {describe, expect, it} from 'vitest';
 import {
+	formatAutomaticDeviceLabel,
 	getVoiceAudioDeviceMetadata,
 	resolveEffectiveDeviceId,
 	resolveEffectiveDeviceRouteKey,
@@ -73,6 +74,11 @@ describe('VoiceDeviceManager device routing', () => {
 			resolveEffectiveDeviceRouteKey('default', after),
 		);
 		expect(resolveEffectiveDeviceRouteKey('elgato', before)).toBe('endpoint:elgato');
+	});
+
+	it('renders the automatic camera endpoint without leaving an ICU placeholder in production fallback copy', () => {
+		expect(formatAutomaticDeviceLabel('Automatic', 'Anker PowerConf C200')).toBe('Automatic (Anker PowerConf C200)');
+		expect(formatAutomaticDeviceLabel('Automatic', '')).toBe('Automatic');
 	});
 
 	it('falls back deterministically when a persisted endpoint disappears', () => {

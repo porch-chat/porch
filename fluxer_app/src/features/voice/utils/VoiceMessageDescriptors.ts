@@ -44,11 +44,6 @@ const DEFAULT_AUDIO_DEVICE_WITH_ENDPOINT_DESCRIPTOR = msg({
 	comment:
 		'Audio device label for a default route with the concrete microphone or speaker endpoint in parentheses. defaultDeviceLabel is already localized, for example "Windows Default".',
 });
-const COMMUNICATIONS_AUDIO_DEVICE_WITH_ENDPOINT_DESCRIPTOR = msg({
-	message: '{communicationsDeviceLabel} ({endpointLabel})',
-	comment:
-		'Audio device label for a communications route with the concrete microphone or speaker endpoint in parentheses.',
-});
 export const VOICE_CALL_DESCRIPTOR = msg({
 	message: 'Voice call',
 	comment: 'Short label for a voice call (lobby header, DM action, settings section).',
@@ -330,10 +325,7 @@ export function formatVoiceAudioDeviceLabel(i18n: I18n, device: MediaDeviceInfo,
 				? i18n._(WINDOWS_COMMUNICATIONS_AUDIO_DEVICE_DESCRIPTOR)
 				: i18n._(COMMUNICATIONS_AUDIO_DEVICE_DESCRIPTOR);
 		return metadata.endpointLabel
-			? i18n._(COMMUNICATIONS_AUDIO_DEVICE_WITH_ENDPOINT_DESCRIPTOR, {
-					communicationsDeviceLabel,
-					endpointLabel: metadata.endpointLabel,
-				})
+			? `${communicationsDeviceLabel} (${metadata.endpointLabel})`
 			: communicationsDeviceLabel;
 	}
 	return device.label || fallbackLabel;

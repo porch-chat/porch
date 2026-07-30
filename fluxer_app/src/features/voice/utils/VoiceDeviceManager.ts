@@ -61,6 +61,11 @@ export function hasDeviceLabels(devices: ReadonlyArray<MediaDeviceInfo>): boolea
 	return devices.some((d) => d.label && d.label.trim().length > 0);
 }
 
+export function formatAutomaticDeviceLabel(automaticLabel: string, deviceLabel: string): string {
+	const trimmedDeviceLabel = deviceLabel.trim();
+	return trimmedDeviceLabel.length > 0 ? `${automaticLabel} (${trimmedDeviceLabel})` : automaticLabel;
+}
+
 type PermissionStatus = 'idle' | 'loading' | 'granted' | 'denied';
 
 export interface EnsureVoiceDevicesOptions {

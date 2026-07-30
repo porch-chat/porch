@@ -39,6 +39,7 @@ import VoiceSettings, {
 import {applyBackgroundProcessor} from '@app/features/voice/utils/VideoBackgroundProcessor';
 import {areVoiceBackgroundsAvailable} from '@app/features/voice/utils/VoiceBackgroundAvailability';
 import {
+	formatAutomaticDeviceLabel,
 	resolveEffectiveDeviceId,
 	resolveEffectiveDeviceRouteKey,
 	type VoiceDeviceState,
@@ -75,10 +76,6 @@ const CAMERA_PREVIEW_DESCRIPTOR = msg({
 const DEFAULT_CAMERA_DESCRIPTOR = msg({
 	message: 'Automatic',
 	comment: 'Camera option that follows the first camera currently selected by the browser or operating system.',
-});
-const DEFAULT_CAMERA_WITH_DEVICE_DESCRIPTOR = msg({
-	message: 'Automatic ({deviceLabel})',
-	comment: 'Automatic camera option with the camera currently selected by the browser or operating system.',
 });
 const MIRROR_CAMERA_DESCRIPTOR = msg({
 	message: 'Mirror camera',
@@ -824,9 +821,7 @@ const CameraPreviewModalContent = observer((props: CameraPreviewModalProps) => {
 					value: device.deviceId,
 					label:
 						device.deviceId === 'default'
-							? device.label
-								? i18n._(DEFAULT_CAMERA_WITH_DEVICE_DESCRIPTOR, {deviceLabel: device.label})
-								: i18n._(DEFAULT_CAMERA_DESCRIPTOR)
+							? formatAutomaticDeviceLabel(i18n._(DEFAULT_CAMERA_DESCRIPTOR), device.label)
 							: device.label || formatFallbackCameraLabel(i18n),
 				}))
 			: [{value: 'default', label: i18n._(DEFAULT_CAMERA_DESCRIPTOR)}];
