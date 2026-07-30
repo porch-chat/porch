@@ -4,7 +4,7 @@ use super::client::{AdminApiClient, ApiResult};
 use super::types::{
     CreateRegistrationUrlRequest, CreateRegistrationUrlResponse, InstanceConfigResponse,
     InstanceConfigUpdateRequest, InstanceEmailSmtpTestRequest, InstanceEmailSmtpTestResponse,
-    PendingRegistrationActionRequest, RegistrationUrlActionRequest,
+    PendingRegistrationActionRequest, PorchHubBackfillResponse, RegistrationUrlActionRequest,
 };
 
 impl AdminApiClient {
@@ -25,6 +25,11 @@ impl AdminApiClient {
         request: &InstanceEmailSmtpTestRequest,
     ) -> ApiResult<InstanceEmailSmtpTestResponse> {
         self.post_typed("/admin/instance-config/integrations/smtp/test", request)
+            .await
+    }
+
+    pub async fn backfill_porch_hub(&self) -> ApiResult<PorchHubBackfillResponse> {
+        self.post("/admin/instance-config/porch-hub/backfill", None)
             .await
     }
 

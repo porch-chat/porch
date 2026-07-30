@@ -11,13 +11,14 @@ import {
 	InstanceEmailSmtpTestRequest,
 	InstanceEmailSmtpTestResponse,
 	PendingRegistrationActionRequest,
+	PorchHubBackfillResponse,
 	RegistrationUrlActionRequest,
 } from '@fluxer/schema/src/domains/admin/AdminSchemas';
 import {GatewayRolloutConfigSchema} from '@fluxer/schema/src/domains/admin/GatewayRolloutSchemas';
 import {SmtpEmailProvider} from '@pkgs/email/src/SmtpEmailProvider';
 import type {Context} from 'hono';
 import {createMiddleware} from 'hono/factory';
-import {createUserID} from '../../BrandedTypes';
+import {createGuildID, createUserID, type UserID} from '../../BrandedTypes';
 import {Config} from '../../Config';
 import {
 	type InstanceBrandingConfig,
@@ -90,6 +91,8 @@ async function buildInstanceConfigResponse(): Promise<InstanceConfigResponse> {
 		self_hosted: Config.instance.selfHosted,
 		app_public: appPublic,
 		policy: {
+			porch_hub_enabled: policy.porch_hub_enabled,
+			porch_hub_guild_id: policy.porch_hub_guild_id,
 			single_community_enabled: policy.single_community_enabled,
 			single_community_locked: policy.single_community_locked,
 			single_community_guild_id: policy.single_community_guild_id,
@@ -491,6 +494,24 @@ export function InstanceConfigAdminController(app: HonoApp) {
 		},
 	);
 	app.post(
+		'/admin/instance-config/porch-hub/backfill',
+		RateLimitMiddleware(RateLimitConfigs.ADMIN_USER_MODIFY),
+		requireAdminACL(AdminACLs.INSTANCE_CONFIG_UPDATE),
+		OpenAPI({
+			operationId: 'backfill_porch_hub',
+			summary: 'Backfill Porch Hub membership',
+			description:
+				'Idempotently enrolls eligible existing users into the configured Porch Hub. Requires INSTANCE_CONFIG_UPDATE permission.',
+			responseSchema: PorchHubBackfillResponse,
+			statusCode: 200,
+			security: 'adminApiKey',
+			tags: 'Admin',
+		}),
+		async (ctx) => {
+			return ctx.json(await ctx.get('porchHubService').backfillExistingUsers(ctx.get('requestCache')));
+		},
+	);
+	app.post(
 		'/admin/instance-config/pending-registrations/approve',
 		RateLimitMiddleware(RateLimitConfigs.ADMIN_USER_MODIFY),
 		requireAdminACL(AdminACLs.INSTANCE_CONFIG_UPDATE),
@@ -507,8 +528,11 @@ export function InstanceConfigAdminController(app: HonoApp) {
 		}),
 		async (ctx) => {
 			const userId = ctx.req.valid('json').user_id;
-			await updatePendingRegistrationUser(ctx, userId, 'approve');
+			const approvedUserId = await updatePendingRegistrationUser(ctx, userId, 'approve');
 			await instanceConfigRepository.removePendingRegistration(userId);
+			if (approvedUserId) {
+				await ctx.get('porchHubService').ensureMember(approvedUserId, {requestCache: ctx.get('requestCache')});
+			}
 			return ctx.json(await buildInstanceConfigResponse());
 		},
 	);
@@ -582,6 +606,22 @@ async function applyInstancePolicyUpdate(
 	if (policy.premium_mode !== undefined) {
 		patch.premium_mode = policy.premium_mode;
 	}
+	if (policy.porch_hub_guild_id !== undefined) {
+		patch.porch_hub_guild_id = policy.porch_hub_guild_id;
+	}
+	if (policy.porch_hub_enabled !== undefined) {
+		patch.porch_hub_enabled = policy.porch_hub_enabled;
+	}
+	const nextPorchHubEnabled =
+		policy.porch_hub_enabled === undefined ? current.porch_hub_enabled : policy.porch_hub_enabled;
+	const nextPorchHubGuildId =
+		policy.porch_hub_guild_id === undefined ? current.porch_hub_guild_id : policy.porch_hub_guild_id;
+	if (nextPorchHubEnabled) {
+		if (!nextPorchHubGuildId) {
+			throw new InstancePolicyTransitionNotAllowedError();
+		}
+		await ctx.get('guildService').data.getPublicGuildData(createGuildID(BigInt(nextPorchHubGuildId)));
+	}
 	if (policy.services) {
 		if (policy.services.gif_enabled !== undefined) {
 			patch.gif_enabled = policy.services.gif_enabled ?? null;
@@ -596,6 +636,13 @@ async function applyInstancePolicyUpdate(
 	if (Object.keys(patch).length > 0) {
 		await instanceConfigRepository.setInstancePolicyConfig(patch);
 	}
+	const porchHubChanged =
+		nextPorchHubEnabled &&
+		(policy.porch_hub_enabled !== undefined || policy.porch_hub_guild_id !== undefined) &&
+		(nextPorchHubEnabled !== current.porch_hub_enabled || nextPorchHubGuildId !== current.porch_hub_guild_id);
+	if (porchHubChanged) {
+		await ctx.get('porchHubService').backfillExistingUsers(ctx.get('requestCache'));
+	}
 	if (policy.premium_mode !== undefined && policy.premium_mode !== current.premium_mode) {
 		await ctx.get('limitConfigService').reloadForPolicyChange();
 	}
@@ -605,11 +652,11 @@ async function updatePendingRegistrationUser(
 	ctx: Context<HonoEnv>,
 	userId: string,
 	decision: 'approve' | 'reject',
-): Promise<void> {
+): Promise<UserID | null> {
 	const userRepository = ctx.get('userRepository');
 	const user = await userRepository.findUnique(createUserID(BigInt(userId)));
 	if (!user) {
-		return;
+		return null;
 	}
 	const traits = new Set(user.traits);
 	traits.delete(REGISTRATION_PENDING_APPROVAL_TRAIT);
@@ -626,4 +673,5 @@ async function updatePendingRegistrationUser(
 		action: decision === 'approve' ? 'approve_registration' : 'reject_registration',
 		auditLogReason: ctx.get('auditLogReason'),
 	});
+	return user.id;
 }

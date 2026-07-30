@@ -511,6 +511,8 @@ const InstancePolicyResponse = z.object({
 	single_community_enabled: z.boolean(),
 	single_community_locked: z.boolean(),
 	single_community_guild_id: z.string().nullable(),
+	porch_hub_enabled: z.boolean(),
+	porch_hub_guild_id: z.string().nullable(),
 	direct_messages_disabled: z.boolean(),
 	direct_messages_locked: z.boolean(),
 	premium_mode: z.enum(['mirror', 'everyone']),
@@ -728,6 +730,8 @@ export const InstanceConfigUpdateRequest = z.object({
 		.object({
 			single_community_enabled: z.boolean().optional(),
 			single_community_name: z.string().trim().min(1).max(100).optional(),
+			porch_hub_enabled: z.boolean().optional(),
+			porch_hub_guild_id: z.string().trim().regex(/^\d+$/).nullable().optional(),
 			direct_messages_disabled: z.boolean().optional(),
 			premium_mode: z.enum(['mirror', 'everyone']).optional(),
 			services: z
@@ -742,6 +746,16 @@ export const InstanceConfigUpdateRequest = z.object({
 });
 
 export type InstanceConfigUpdateRequest = z.infer<typeof InstanceConfigUpdateRequest>;
+
+export const PorchHubBackfillResponse = z.object({
+	scanned: z.number().int().nonnegative(),
+	enrolled: z.number().int().nonnegative(),
+	already_enrolled: z.number().int().nonnegative(),
+	ineligible: z.number().int().nonnegative(),
+	failed: z.number().int().nonnegative(),
+});
+
+export type PorchHubBackfillResponse = z.infer<typeof PorchHubBackfillResponse>;
 
 export const BrandingAssetUploadRequest = z.object({
 	kind: z.enum(['icon', 'symbol', 'logo', 'wordmark', 'favicon']),

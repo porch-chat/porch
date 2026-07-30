@@ -5152,6 +5152,59 @@
 				}
 			}
 		},
+		"/admin/instance-config/porch-hub/backfill": {
+			"post": {
+				"operationId": "backfill_porch_hub",
+				"summary": "Backfill Porch Hub membership",
+				"tags": ["Admin"],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"content": {"application/json": {"schema": {"$ref": "#/components/schemas/PorchHubBackfillResponse"}}}
+					},
+					"400": {
+						"description": "Bad Request - The request was malformed or contained invalid data",
+						"content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+					},
+					"401": {
+						"description": "Unauthorized - Authentication is required or the token is invalid",
+						"content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+					},
+					"403": {
+						"description": "Forbidden - You do not have permission to perform this action",
+						"content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+					},
+					"429": {
+						"description": "Too Many Requests - You are being rate limited",
+						"content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}},
+						"headers": {
+							"Retry-After": {
+								"description": "Number of seconds to wait before retrying (only on 429)",
+								"schema": {"type": "integer"}
+							},
+							"X-RateLimit-Limit": {
+								"description": "The number of requests that can be made in the current window",
+								"schema": {"type": "integer"}
+							},
+							"X-RateLimit-Remaining": {
+								"description": "The number of remaining requests that can be made",
+								"schema": {"type": "integer"}
+							},
+							"X-RateLimit-Reset": {
+								"description": "Unix timestamp when the rate limit resets",
+								"schema": {"type": "integer"}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal Server Error - An unexpected error occurred",
+						"content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+					}
+				},
+				"description": "Idempotently enrolls eligible existing users into the configured Porch Hub. Requires INSTANCE_CONFIG_UPDATE permission.",
+				"security": [{"adminApiKey": []}]
+			}
+		},
 		"/admin/instance-config/registration-urls/create": {
 			"post": {
 				"operationId": "create_registration_url",
@@ -12548,6 +12601,8 @@
 							"single_community_enabled": {"type": "boolean"},
 							"single_community_locked": {"type": "boolean"},
 							"single_community_guild_id": {"nullable": true, "type": "string"},
+							"porch_hub_enabled": {"type": "boolean"},
+							"porch_hub_guild_id": {"nullable": true, "type": "string"},
 							"direct_messages_disabled": {"type": "boolean"},
 							"direct_messages_locked": {"type": "boolean"},
 							"premium_mode": {"enum": ["mirror", "everyone"], "type": "string"},
@@ -12583,6 +12638,8 @@
 							"single_community_enabled",
 							"single_community_locked",
 							"single_community_guild_id",
+							"porch_hub_enabled",
+							"porch_hub_guild_id",
 							"direct_messages_disabled",
 							"direct_messages_locked",
 							"premium_mode",
@@ -12857,6 +12914,17 @@
 				"properties": {"user_id": {"$ref": "#/components/schemas/SnowflakeType"}},
 				"required": ["user_id"]
 			},
+			"PorchHubBackfillResponse": {
+				"type": "object",
+				"properties": {
+					"scanned": {"type": "integer", "minimum": 0, "maximum": 9007199254740991, "format": "int53"},
+					"enrolled": {"type": "integer", "minimum": 0, "maximum": 9007199254740991, "format": "int53"},
+					"already_enrolled": {"type": "integer", "minimum": 0, "maximum": 9007199254740991, "format": "int53"},
+					"ineligible": {"type": "integer", "minimum": 0, "maximum": 9007199254740991, "format": "int53"},
+					"failed": {"type": "integer", "minimum": 0, "maximum": 9007199254740991, "format": "int53"}
+				},
+				"required": ["scanned", "enrolled", "already_enrolled", "ineligible", "failed"]
+			},
 			"CreateRegistrationUrlResponse": {
 				"type": "object",
 				"properties": {
@@ -13107,6 +13175,8 @@
 						"properties": {
 							"single_community_enabled": {"type": "boolean"},
 							"single_community_name": {"type": "string", "minLength": 1, "maxLength": 100},
+							"porch_hub_enabled": {"type": "boolean"},
+							"porch_hub_guild_id": {"nullable": true, "type": "string", "pattern": "^\\d+$"},
 							"direct_messages_disabled": {"type": "boolean"},
 							"premium_mode": {"enum": ["mirror", "everyone"], "type": "string"},
 							"services": {

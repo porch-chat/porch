@@ -23,6 +23,9 @@ pub struct InstanceConfigResponse {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct InstancePolicyResponse {
     #[serde(default)]
+    pub porch_hub_enabled: bool,
+    pub porch_hub_guild_id: Option<String>,
+    #[serde(default)]
     pub single_community_enabled: bool,
     #[serde(default)]
     pub single_community_locked: bool,
@@ -44,6 +47,8 @@ pub struct InstancePolicyResponse {
 impl Default for InstancePolicyResponse {
     fn default() -> Self {
         Self {
+            porch_hub_enabled: false,
+            porch_hub_guild_id: None,
             single_community_enabled: false,
             single_community_locked: false,
             single_community_guild_id: None,
@@ -510,6 +515,10 @@ pub struct InstanceConfigUpdateRequest {
 #[derive(Clone, Debug, Default, Serialize)]
 pub struct InstancePolicyUpdateRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub porch_hub_enabled: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub porch_hub_guild_id: Option<Option<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub single_community_enabled: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub single_community_name: Option<String>,
@@ -519,6 +528,15 @@ pub struct InstancePolicyUpdateRequest {
     pub premium_mode: Option<PremiumMode>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub services: Option<InstanceServicesUpdateRequest>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct PorchHubBackfillResponse {
+    pub scanned: u64,
+    pub enrolled: u64,
+    pub already_enrolled: u64,
+    pub ineligible: u64,
+    pub failed: u64,
 }
 
 #[derive(Clone, Debug, Default, Serialize)]

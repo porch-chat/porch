@@ -192,6 +192,20 @@ pub async fn instance_config_post(
             let update = build_policy_update(&form);
             instance_config_result(client.update_instance_config(&update).await)
         }
+        "backfill_porch_hub" => match client.backfill_porch_hub().await {
+            Ok(result) => FlashData::success(format!(
+                "Hub backfill complete: {} enrolled, {} already enrolled, {} ineligible, {} failed ({} scanned)",
+                result.enrolled,
+                result.already_enrolled,
+                result.ineligible,
+                result.failed,
+                result.scanned,
+            )),
+            Err(error) => {
+                tracing::warn!(%error, "admin API request failed: backfill Porch Hub");
+                FlashData::error("Failed to backfill Porch Hub membership")
+            }
+        },
         "update_integrations" => {
             let update = build_integrations_update(&form);
             instance_config_result(client.update_instance_config(&update).await)
@@ -534,6 +548,10 @@ fn build_app_registration_update(form: &MultiValueForm) -> InstanceConfigUpdateR
 }
 
 fn build_policy_update(form: &MultiValueForm) -> InstanceConfigUpdateRequest {
+    let porch_hub_enabled = form
+        .first("policy_porch_hub_enabled")
+        .map(|value| value == "true");
+    let porch_hub_guild_id = form.first("policy_porch_hub_guild_id").map(clean_string);
     let direct_messages_disabled = form
         .first("policy_direct_messages_disabled")
         .map(|value| value == "true");
@@ -549,6 +567,8 @@ fn build_policy_update(form: &MultiValueForm) -> InstanceConfigUpdateRequest {
         sso: None,
         app_public: None,
         policy: Some(InstancePolicyUpdateRequest {
+            porch_hub_enabled,
+            porch_hub_guild_id,
             single_community_enabled: None,
             single_community_name: None,
             direct_messages_disabled,
@@ -703,6 +723,8 @@ fn build_disable_single_community_update() -> InstanceConfigUpdateRequest {
         sso: None,
         app_public: None,
         policy: Some(InstancePolicyUpdateRequest {
+            porch_hub_enabled: None,
+            porch_hub_guild_id: None,
             single_community_enabled: Some(false),
             single_community_name: None,
             direct_messages_disabled: None,

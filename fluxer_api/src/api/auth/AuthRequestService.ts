@@ -32,6 +32,7 @@ import type {
 import type {UserPartialResponse} from '@fluxer/schema/src/domains/user/UserResponseSchemas';
 import type {ApiContext} from '../ApiContext';
 import {createUserID, type UserID} from '../BrandedTypes';
+import type {PorchHubService} from '../instance/PorchHubService';
 import type {RequestCache} from '../middleware/RequestCacheMiddleware';
 import type {User} from '../models/User';
 import {mapUserToPartialResponse} from '../user/UserMappers';
@@ -142,6 +143,7 @@ export class AuthRequestService {
 		private apiContext: ApiContext,
 		private ssoService: SsoService,
 		private desktopHandoffService: DesktopHandoffService,
+		private porchHubService: PorchHubService,
 		private registrationDependencies: AuthRegistration.RegistrationDependencies,
 		private loginDependencies: AuthLogin.LoginDependencies,
 	) {}
@@ -240,6 +242,7 @@ export class AuthRequestService {
 	async completeIpAuthorization({data}: AuthAuthorizeIpRequest): Promise<void> {
 		const {cache} = this.apiContext.services;
 		const result = await AuthLogin.completeIpAuthorization(this.apiContext, data.token);
+		await this.porchHubService.ensureMember(createUserID(BigInt(result.user_id)));
 		const payload = JSON.stringify({token: result.token, user_id: result.user_id});
 		await cache.set(`ip-auth-result:${result.ticket}`, payload, 60);
 	}
@@ -276,6 +279,7 @@ export class AuthRequestService {
 
 	async authenticateWebAuthnDiscoverable({data, request}: AuthWebAuthnAuthenticateRequest) {
 		const user = await AuthMfa.verifyWebAuthnAuthenticationDiscoverable(this.apiContext, data.response, data.challenge);
+		await this.porchHubService.ensureMember(user.id);
 		const [token] = await AuthSession.createAuthSession(this.apiContext, {user, request});
 		return {token, user_id: user.id.toString(), user: mapUserToPartialResponse(user)};
 	}
@@ -374,6 +378,7 @@ export class AuthRequestService {
 	}
 
 	private async toAuthTokenResponse(result: {user_id: string; token: string}): Promise<AuthTokenWithUserIdResponse> {
+		await this.porchHubService.ensureMember(createUserID(BigInt(result.user_id)));
 		return {
 			...result,
 			user: await this.getUserPartial(result.user_id),

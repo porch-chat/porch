@@ -338,6 +338,41 @@
 			"conflict_risk": "medium",
 			"upstream_status": "permanently-downstream",
 			"removal_condition": "Remove only if Porch ceases to be a detached distribution or all inherited automation becomes destination-safe, Porch-owned, and compatible with the Porch deployment model."
+		},
+		{
+			"id": "porch-hub-auto-enrollment-0011",
+			"title": "Porch Hub automatic account enrollment",
+			"status": "active",
+			"category": "community-membership",
+			"reason": "Give every eligible Porch account a shared welcome community without coupling account registration to community invites or enabling Fluxer's restrictive single-community mode.",
+			"paths": [
+				".porch/downstream-patches.json",
+				"docs/porch/PORCH_HUB.md",
+				"fluxer_admin/openapi-admin.json",
+				"fluxer_admin/src/api/instance_config.rs",
+				"fluxer_admin/src/api/types/instance_config.rs",
+				"fluxer_admin/src/routes/system_actions.rs",
+				"fluxer_admin/src/templates/pages/instance_config.rs",
+				"fluxer_api/src/api/admin/controllers/InstanceConfigAdminController.ts",
+				"fluxer_api/src/api/auth/AuthRequestService.ts",
+				"fluxer_api/src/api/auth/tests/PorchHubEnrollment.test.ts",
+				"fluxer_api/src/api/instance/InstanceConfigRepository.ts",
+				"fluxer_api/src/api/instance/PorchHubService.ts",
+				"fluxer_api/src/api/middleware/ServiceMiddleware.ts",
+				"fluxer_api/src/api/types/HonoEnv.ts",
+				"packages/schema/src/domains/admin/AdminSchemas.ts"
+			],
+			"tests": [
+				"Porch Hub registration, backfill, approval, voluntary-leave, and login reconciliation API tests",
+				"API TypeScript typecheck",
+				"admin Rust compile and formatting",
+				"OpenAPI generation and validation",
+				"Porch branding and automation isolation validation",
+				"git diff --check"
+			],
+			"conflict_risk": "medium",
+			"upstream_status": "permanently-downstream",
+			"removal_condition": "Remove only if Porch no longer uses a default Hub or upstream adds equivalent configurable, exactly-once enrollment with approval and backfill support."
 		}
 	]
 }

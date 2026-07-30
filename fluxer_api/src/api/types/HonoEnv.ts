@@ -43,6 +43,7 @@ import type {KVActivityTracker} from '../infrastructure/KVActivityTracker';
 import type {LiveKitWebhookService} from '../infrastructure/LiveKitWebhookService';
 import type {UserCacheService} from '../infrastructure/UserCacheService';
 import type {InstanceConfigRepository} from '../instance/InstanceConfigRepository';
+import type {PorchHubService} from '../instance/PorchHubService';
 import type {SingleCommunityService} from '../instance/SingleCommunityService';
 import type {InviteRequestService} from '../invite/InviteRequestService';
 import type {InviteService} from '../invite/InviteService';
@@ -188,6 +189,7 @@ export interface HonoEnv {
 		sudoModeValid: boolean;
 		sudoModeToken: string | null;
 		instanceConfigRepository: InstanceConfigRepository;
+		porchHubService: PorchHubService;
 		singleCommunityService: SingleCommunityService;
 		limitConfigService: LimitConfigService;
 		requestLocale: string;

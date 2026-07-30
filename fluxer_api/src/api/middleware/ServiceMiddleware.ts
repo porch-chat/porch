@@ -37,6 +37,7 @@ import type {IVoiceRoomStore} from '../infrastructure/IVoiceRoomStore';
 import {LiveKitService} from '../infrastructure/LiveKitService';
 import {LiveKitWebhookService} from '../infrastructure/LiveKitWebhookService';
 import {VoiceRoomStore} from '../infrastructure/VoiceRoomStore';
+import {PorchHubService} from '../instance/PorchHubService';
 import {SingleCommunityService} from '../instance/SingleCommunityService';
 import {InviteRequestService} from '../invite/InviteRequestService';
 import {JobLedgerRepository} from '../jobs/JobLedgerRepository';
@@ -453,6 +454,7 @@ export const ServiceMiddleware = createMiddleware<HonoEnv>(async (ctx, next) => 
 		guildService.data,
 		guildService.members,
 	);
+	const porchHubService = new PorchHubService(getInstanceConfigRepository(), guildService.members, userRepository);
 	const registrationDependencies = {
 		inviteService,
 		instanceConfigRepository: getInstanceConfigRepository(),
@@ -478,6 +480,7 @@ export const ServiceMiddleware = createMiddleware<HonoEnv>(async (ctx, next) => 
 		apiContext,
 		ssoService,
 		desktopHandoffService,
+		porchHubService,
 		registrationDependencies,
 		{
 			inviteService,
@@ -639,6 +642,7 @@ export const ServiceMiddleware = createMiddleware<HonoEnv>(async (ctx, next) => 
 	ctx.set('gatewayService', gatewayService);
 	ctx.set('gatewayRequestService', new GatewayRequestService(botAuthService));
 	ctx.set('guildService', guildService);
+	ctx.set('porchHubService', porchHubService);
 	ctx.set('singleCommunityService', singleCommunityService);
 	ctx.set(
 		'discoveryService',

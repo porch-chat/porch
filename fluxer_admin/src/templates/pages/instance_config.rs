@@ -188,6 +188,7 @@ fn policy_config_section(base: &str, csrf_token: &str, policy: &InstancePolicyRe
          are enabled.",
         html! {
             div class="space-y-8" {
+                (porch_hub_form(base, csrf_token, policy))
                 (single_community_form(base, csrf_token, policy))
                 (direct_messages_form(base, csrf_token, policy))
                 (premium_mode_form(base, csrf_token, policy))
@@ -197,6 +198,56 @@ fn policy_config_section(base: &str, csrf_token: &str, policy: &InstancePolicyRe
     )
 }
 
+fn porch_hub_form(base: &str, csrf_token: &str, policy: &InstancePolicyResponse) -> Markup {
+    let status = if policy.porch_hub_enabled {
+        ("Enabled", BadgeVariant::Success)
+    } else {
+        ("Disabled", BadgeVariant::Default)
+    };
+    html! {
+        div class="space-y-4" {
+            div class="flex flex-wrap items-center gap-2" {
+                h3 class="text-sm font-semibold text-neutral-900" { "Porch Hub" }
+                (badge(status.0, status.1))
+            }
+            p class="text-sm text-neutral-500" {
+                "Automatically enroll every eligible account into a normal community after \
+                 signup or approval. Members can leave later without being forced back in."
+            }
+            form method="post" action={(base) "/instance-config?action=update_policy"} {
+                (csrf_input(csrf_token))
+                div class="space-y-4" {
+                    (select_input("policy_porch_hub_enabled", "Automatic Hub enrollment", &[
+                        ("false", "Disabled"),
+                        ("true", "Enabled"),
+                    ], if policy.porch_hub_enabled { "true" } else { "false" }))
+                    (text_input(
+                        "policy_porch_hub_guild_id",
+                        "Hub community ID",
+                        policy.porch_hub_guild_id.as_deref().unwrap_or(""),
+                        "123456789012345678",
+                    ))
+                    p class="text-xs text-neutral-500" {
+                        "Save with enrollment enabled to enroll existing eligible accounts too. \
+                         The community must already exist."
+                    }
+                    (form_actions(html! {
+                        (submit_button("Save Porch Hub"))
+                    }))
+                }
+            }
+            @if policy.porch_hub_enabled && policy.porch_hub_guild_id.is_some() {
+                form method="post" action={(base) "/instance-config?action=backfill_porch_hub"} {
+                    (csrf_input(csrf_token))
+                    (form_actions(html! {
+                        (submit_button("Retry Hub backfill"))
+                    }))
+                }
+            }
+        }
+    }
+}
+
 fn single_community_form(base: &str, csrf_token: &str, policy: &InstancePolicyResponse) -> Markup {
     let status = if policy.single_community_enabled {
         ("Enabled", BadgeVariant::Success)
@@ -204,7 +255,7 @@ fn single_community_form(base: &str, csrf_token: &str, policy: &InstancePolicyRe
         ("Disabled", BadgeVariant::Default)
     };
     html! {
-        div class="space-y-4" {
+        div class="space-y-4 border-t border-neutral-200 pt-6" {
             div class="flex flex-wrap items-center gap-2" {
                 h3 class="text-sm font-semibold text-neutral-900" { "Single community" }
                 (badge(status.0, status.1))

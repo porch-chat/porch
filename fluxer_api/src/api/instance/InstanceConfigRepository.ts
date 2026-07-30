@@ -83,6 +83,8 @@ export interface InstancePolicyConfig {
 	single_community_enabled: boolean;
 	single_community_locked: boolean;
 	single_community_guild_id: string | null;
+	porch_hub_enabled: boolean;
+	porch_hub_guild_id: string | null;
 	direct_messages_disabled: boolean;
 	direct_messages_locked: boolean;
 	premium_mode: InstancePremiumMode;
@@ -403,6 +405,8 @@ const DEFAULT_INSTANCE_POLICY_CONFIG: InstancePolicyConfig = {
 	single_community_enabled: false,
 	single_community_locked: false,
 	single_community_guild_id: null,
+	porch_hub_enabled: false,
+	porch_hub_guild_id: null,
 	direct_messages_disabled: false,
 	direct_messages_locked: false,
 	premium_mode: 'everyone',
@@ -427,6 +431,8 @@ function normalizeInstancePolicyConfig(value: unknown): InstancePolicyConfig {
 		single_community_enabled: value.single_community_enabled === true,
 		single_community_locked: value.single_community_locked === true,
 		single_community_guild_id: normalizeNullableString(value.single_community_guild_id),
+		porch_hub_enabled: value.porch_hub_enabled === true,
+		porch_hub_guild_id: normalizeNullableString(value.porch_hub_guild_id),
 		direct_messages_disabled: value.direct_messages_disabled === true,
 		direct_messages_locked: value.direct_messages_locked === true,
 		premium_mode: isPremiumMode(value.premium_mode) ? value.premium_mode : DEFAULT_INSTANCE_POLICY_CONFIG.premium_mode,
