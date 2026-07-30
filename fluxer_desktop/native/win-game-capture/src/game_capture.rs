@@ -7,13 +7,13 @@ use crate::{
     CaptureInner,
     compatibility::{InjectionPolicy, injection_policy_for_window},
     dxgi_capture::{resolve_output_size, wall_clock_us},
-    emit_lifecycle, emit_shared_texture_frame,
+    emit_bgra_frame, emit_lifecycle, emit_shared_texture_frame,
     game_capture_abi::{
         GAME_CAPTURE_API_OPENGL, GAME_CAPTURE_BUFFER_COUNT,
-        GAME_CAPTURE_CONTROL_DISABLE_SHARED_TEXTURE, GAME_CAPTURE_FRAME_PREFIX,
-        GAME_CAPTURE_INFO_PREFIX, GAME_CAPTURE_KEEPALIVE_PREFIX, GAME_CAPTURE_READY_PREFIX,
-        GAME_CAPTURE_STATE_ERROR, GAME_CAPTURE_STATE_RESIZE_REQUIRED, GAME_CAPTURE_STATE_STOPPED,
-        GAME_CAPTURE_STOP_PREFIX, GAME_CAPTURE_TRANSPORT_MEMORY,
+        GAME_CAPTURE_CONTROL_DISABLE_SHARED_TEXTURE, GAME_CAPTURE_FLAG_FLIP_VERTICAL,
+        GAME_CAPTURE_FRAME_PREFIX, GAME_CAPTURE_INFO_PREFIX, GAME_CAPTURE_KEEPALIVE_PREFIX,
+        GAME_CAPTURE_READY_PREFIX, GAME_CAPTURE_STATE_ERROR, GAME_CAPTURE_STATE_RESIZE_REQUIRED,
+        GAME_CAPTURE_STATE_STOPPED, GAME_CAPTURE_STOP_PREFIX, GAME_CAPTURE_TRANSPORT_MEMORY,
         GAME_CAPTURE_TRANSPORT_SHARED_TEXTURE, GameCaptureSharedInfo, mutex_name, object_name,
         presented_recently, qpc_now_us, shared_frame_mapping_size,
     },
@@ -58,8 +58,8 @@ use windows_sys::Win32::{
         Threading::{
             CreateEventW, CreateMutexW, CreateRemoteThread, GetCurrentProcessId, IsWow64Process,
             IsWow64Process2, OpenProcess, PROCESS_CREATE_THREAD, PROCESS_QUERY_INFORMATION,
-            PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_VM_OPERATION, PROCESS_VM_WRITE, ResetEvent,
-            SetEvent, WaitForSingleObject,
+            PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_VM_OPERATION, PROCESS_VM_WRITE,
+            ReleaseMutex, ResetEvent, SetEvent, WaitForSingleObject,
         },
     },
     UI::WindowsAndMessaging::{
@@ -1434,6 +1434,80 @@ fn shared_texture_timestamp(info: &GameCaptureSharedInfo) -> i64 {
     }
 }
 
+fn emit_memory_frame_to_bus(
+    session: &GameCaptureSession,
+    info: &GameCaptureSharedInfo,
+    inner: &CaptureInner,
+    frame_sink: &crate::FrameSinkRef,
+) -> Result<bool, String> {
+    let frame_index = info.frame_index as usize;
+    if frame_index >= GAME_CAPTURE_BUFFER_COUNT {
+        return Err("game capture CPU frame index was out of range".into());
+    }
+    let stride = info
+        .width
+        .checked_mul(4)
+        .ok_or_else(|| "game capture BGRA stride overflow".to_string())?;
+    if info.pitch < stride {
+        return Err("game capture CPU frame pitch was smaller than BGRA width".into());
+    }
+    let source_len = (info.pitch as usize)
+        .checked_mul(info.height as usize)
+        .ok_or_else(|| "game capture CPU frame length overflow".to_string())?;
+    if source_len == 0 || source_len > session.frame_buffer_capacity {
+        return Err("game capture CPU frame exceeded its shared buffer slot".into());
+    }
+    let mutex = &session.frame_mutexes[frame_index];
+    let wait = unsafe { WaitForSingleObject(mutex.raw(), FRAME_EVENT_WAIT_MS) };
+    if wait == WAIT_TIMEOUT {
+        return Ok(false);
+    }
+    if wait != WAIT_OBJECT_0 && wait != WAIT_ABANDONED {
+        return Err("game capture CPU frame mutex wait failed".into());
+    }
+    let row_bytes = stride as usize;
+    let total = row_bytes
+        .checked_mul(info.height as usize)
+        .ok_or_else(|| "game capture tight BGRA length overflow".to_string())?;
+    let mut data = vec![0u8; total];
+    let source = unsafe {
+        session
+            .frames
+            .ptr
+            .add(frame_index * session.frame_buffer_capacity)
+    };
+    let flip_vertical = info.capture_flags & GAME_CAPTURE_FLAG_FLIP_VERTICAL != 0;
+    for output_row in 0..info.height as usize {
+        let source_row = if flip_vertical {
+            info.height as usize - 1 - output_row
+        } else {
+            output_row
+        };
+        unsafe {
+            std::ptr::copy_nonoverlapping(
+                source.add(source_row * info.pitch as usize),
+                data.as_mut_ptr().add(output_row * row_bytes),
+                row_bytes,
+            );
+        }
+    }
+    let released = unsafe { ReleaseMutex(mutex.raw()) };
+    if released == 0 {
+        return Err("game capture CPU frame mutex release failed".into());
+    }
+    session.set_native_texture_info(None);
+    let timestamp_us = shared_texture_timestamp(info);
+    Ok(emit_bgra_frame(
+        inner,
+        frame_sink,
+        data,
+        info.width,
+        info.height,
+        stride,
+        timestamp_us,
+    ))
+}
+
 struct StallTracker {
     last_frame_counter: Option<u64>,
     last_change_at: std::time::Instant,
@@ -1610,7 +1684,17 @@ pub fn capture_loop(inner: &Arc<CaptureInner>, _frame_interval: std::time::Durat
                 inner,
                 &frame_sink,
             ) {
-                Ok(_) => continue,
+                Ok(true) => continue,
+                Ok(false) => {
+                    emit_lifecycle(
+                        inner,
+                        "diagnostic",
+                        "Game shared texture was rejected; requesting hook CPU-memory fallback",
+                    );
+                    session.request_hook_disable_shared_texture();
+                    shared_texture_reader = None;
+                    continue;
+                }
                 Err(error) => {
                     if info.api_type == GAME_CAPTURE_API_OPENGL {
                         emit_lifecycle(
@@ -1643,10 +1727,24 @@ pub fn capture_loop(inner: &Arc<CaptureInner>, _frame_interval: std::time::Durat
             handle_fallback_signature(inner, fallback::FailureSignature::UnsupportedTransport);
             break;
         }
-        note_cpu_fallback_frame_dropped(
-            inner,
-            "Windows game capture CPU-memory transport dropped; native sender requires shared textures",
-        );
+        match emit_memory_frame_to_bus(&session, &info, inner, &frame_sink) {
+            Ok(true) => continue,
+            Ok(false) => note_cpu_fallback_frame_dropped(
+                inner,
+                "Windows game capture CPU-memory frame skipped because its buffer was busy",
+            ),
+            Err(error) => {
+                emit_lifecycle(
+                    inner,
+                    "diagnostic",
+                    &format!("Windows game capture CPU-memory fallback failed: {error}"),
+                );
+                note_cpu_fallback_frame_dropped(
+                    inner,
+                    "Windows game capture CPU-memory fallback dropped an invalid frame",
+                );
+            }
+        }
     }
 
     inner.running.store(false, Ordering::Release);

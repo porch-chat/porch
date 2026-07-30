@@ -7,8 +7,9 @@ use windows::{
         Graphics::{
             Direct3D::D3D_DRIVER_TYPE_UNKNOWN,
             Direct3D11::{
-                D3D11_BOX, D3D11_CREATE_DEVICE_BGRA_SUPPORT, D3D11_RESOURCE_MISC_SHARED,
-                D3D11_SDK_VERSION, D3D11_TEXTURE2D_DESC, D3D11_USAGE_DEFAULT, D3D11CreateDevice,
+                D3D11_BOX, D3D11_CPU_ACCESS_READ, D3D11_CREATE_DEVICE_BGRA_SUPPORT, D3D11_MAP_READ,
+                D3D11_MAPPED_SUBRESOURCE, D3D11_RESOURCE_MISC_SHARED, D3D11_SDK_VERSION,
+                D3D11_TEXTURE2D_DESC, D3D11_USAGE_DEFAULT, D3D11_USAGE_STAGING, D3D11CreateDevice,
                 ID3D11Device, ID3D11DeviceContext, ID3D11Resource, ID3D11Texture2D,
             },
             Dxgi::{
@@ -33,8 +34,8 @@ use windows::{
 
 #[cfg(target_os = "windows")]
 use crate::{
-    CaptureInner, emit_lifecycle, emit_shared_texture_frame, note_media_frame_without_sink,
-    resolve_frame_sink,
+    CaptureInner, emit_bgra_frame, emit_lifecycle, emit_shared_texture_frame,
+    note_media_frame_without_sink, resolve_frame_sink,
 };
 
 #[cfg(target_os = "windows")]
@@ -117,6 +118,7 @@ struct DuplicationState {
     cap_h: u32,
     out_w: u32,
     out_h: u32,
+    cpu_fallback_active: bool,
 }
 
 #[cfg(target_os = "windows")]
@@ -125,6 +127,7 @@ pub(crate) const SHARED_OUTPUT_SLOT_COUNT: usize = 3;
 #[cfg(target_os = "windows")]
 pub(crate) struct SharedOutputSlot {
     pub(crate) texture: ID3D11Texture2D,
+    staging: ID3D11Texture2D,
     pub(crate) handle: u64,
 }
 
@@ -149,6 +152,70 @@ impl SharedTextureOutput {
         self.slot_cursor = (slot_index + 1) % SHARED_OUTPUT_SLOT_COUNT;
         slot_index
     }
+
+    pub(crate) fn readback_bgra(
+        &self,
+        context: &ID3D11DeviceContext,
+        slot_index: usize,
+    ) -> Result<(Vec<u8>, u32), String> {
+        let slot = self
+            .slots
+            .get(slot_index)
+            .ok_or_else(|| "shared output slot index out of range".to_string())?;
+        let source: ID3D11Resource = slot
+            .texture
+            .cast()
+            .map_err(|e| format!("BGRA source resource cast: {e}"))?;
+        let staging: ID3D11Resource = slot
+            .staging
+            .cast()
+            .map_err(|e| format!("BGRA staging resource cast: {e}"))?;
+        unsafe {
+            context.CopyResource(&staging, &source);
+        }
+        let mut mapped = D3D11_MAPPED_SUBRESOURCE::default();
+        unsafe {
+            context
+                .Map(&staging, 0, D3D11_MAP_READ, 0, Some(&mut mapped))
+                .map_err(|e| format!("Map BGRA staging texture: {e}"))?;
+        }
+        let result = copy_mapped_bgra_tight(&mapped, self.width, self.height);
+        unsafe {
+            context.Unmap(&staging, 0);
+        }
+        result
+    }
+}
+
+#[cfg(target_os = "windows")]
+fn copy_mapped_bgra_tight(
+    mapped: &D3D11_MAPPED_SUBRESOURCE,
+    width: u32,
+    height: u32,
+) -> Result<(Vec<u8>, u32), String> {
+    let stride = width
+        .checked_mul(4)
+        .ok_or_else(|| "BGRA stride overflow".to_string())?;
+    let row_bytes = stride as usize;
+    let row_pitch = mapped.RowPitch as usize;
+    if mapped.pData.is_null() || row_pitch < row_bytes {
+        return Err("BGRA staging texture returned an invalid mapped layout".into());
+    }
+    let total = row_bytes
+        .checked_mul(height as usize)
+        .ok_or_else(|| "BGRA readback length overflow".to_string())?;
+    let mut data = vec![0u8; total];
+    let source = mapped.pData as *const u8;
+    for row in 0..height as usize {
+        unsafe {
+            std::ptr::copy_nonoverlapping(
+                source.add(row * row_pitch),
+                data.as_mut_ptr().add(row * row_bytes),
+                row_bytes,
+            );
+        }
+    }
+    Ok((data, stride))
 }
 
 #[cfg(target_os = "windows")]
@@ -366,8 +433,31 @@ fn create_shared_output_slot(
     if handle.is_invalid() {
         return Err("GetSharedHandle shared output returned an invalid handle".into());
     }
+    let staging_desc = D3D11_TEXTURE2D_DESC {
+        Width: width,
+        Height: height,
+        MipLevels: 1,
+        ArraySize: 1,
+        Format: DXGI_FORMAT_B8G8R8A8_UNORM,
+        SampleDesc: DXGI_SAMPLE_DESC {
+            Count: 1,
+            Quality: 0,
+        },
+        Usage: D3D11_USAGE_STAGING,
+        BindFlags: 0,
+        CPUAccessFlags: D3D11_CPU_ACCESS_READ.0 as u32,
+        MiscFlags: 0,
+    };
+    let mut staging = None;
+    let staging = unsafe {
+        device
+            .CreateTexture2D(&staging_desc, None, Some(&mut staging))
+            .map_err(|e| format!("CreateTexture2D BGRA staging output: {e}"))?;
+        staging.ok_or("D3D11 BGRA staging output texture was None")?
+    };
     Ok(SharedOutputSlot {
         texture,
+        staging,
         handle: handle.0 as usize as u64,
     })
 }
@@ -508,6 +598,7 @@ pub fn capture_loop(inner: &Arc<CaptureInner>, frame_interval: std::time::Durati
                 state.out_w = out_w;
                 state.out_h = out_h;
                 state.shared_output = create_shared_output_texture(&device, width, height).ok();
+                state.cpu_fallback_active = false;
             }
             FrameResult::AccessLost => {
                 duplication_state = None;
@@ -583,6 +674,7 @@ fn setup_duplication(
         cap_h,
         out_w,
         out_h,
+        cpu_fallback_active: false,
     })
 }
 
@@ -718,7 +810,12 @@ fn emit_acquired_frame(
             "DXGI native bus scaling requires a GPU scaler; refusing CPU readback fallback".into(),
         );
     }
-    let Some(shared_output) = state.shared_output.as_mut() else {
+    let DuplicationState {
+        shared_output,
+        cpu_fallback_active,
+        ..
+    } = state;
+    let Some(shared_output) = shared_output.as_mut() else {
         return FrameResult::Error("DXGI shared texture output unavailable".into());
     };
     let slot_index = shared_output.next_slot_index();
@@ -742,16 +839,45 @@ fn emit_acquired_frame(
         );
         context.Flush();
     }
-    let _ = emit_shared_texture_frame(
+    let timestamp_us = capture_timestamp_us(capture_start);
+    if !*cpu_fallback_active
+        && emit_shared_texture_frame(
+            inner,
+            &frame_sink,
+            slot.handle,
+            shared_output.width,
+            shared_output.height,
+            shared_output.dxgi_format,
+            timestamp_us,
+        )
+    {
+        return FrameResult::Ok;
+    }
+    if !*cpu_fallback_active {
+        *cpu_fallback_active = true;
+        emit_lifecycle(
+            inner,
+            "diagnostic",
+            "DXGI shared texture was rejected; using BGRA CPU readback fallback",
+        );
+    }
+    let (data, stride) = match shared_output.readback_bgra(context, slot_index) {
+        Ok(frame) => frame,
+        Err(error) => return FrameResult::Error(error),
+    };
+    if emit_bgra_frame(
         inner,
         &frame_sink,
-        slot.handle,
+        data,
         shared_output.width,
         shared_output.height,
-        shared_output.dxgi_format,
-        capture_timestamp_us(capture_start),
-    );
-    FrameResult::Ok
+        stride,
+        timestamp_us,
+    ) {
+        FrameResult::Ok
+    } else {
+        FrameResult::Error("DXGI BGRA CPU fallback was rejected by native frame sink".into())
+    }
 }
 
 #[cfg(target_os = "windows")]
@@ -1031,8 +1157,9 @@ fn composite_monochrome_pointer(
 
 #[cfg(test)]
 mod tests {
-    use super::pacing_sleep_and_next_deadline;
+    use super::{copy_mapped_bgra_tight, pacing_sleep_and_next_deadline};
     use std::time::{Duration, Instant};
+    use windows::Win32::Graphics::Direct3D11::D3D11_MAPPED_SUBRESOURCE;
 
     const TEST_FRAME_INTERVAL: Duration = Duration::from_millis(33);
 
@@ -1082,6 +1209,24 @@ mod tests {
             pacing_sleep_and_next_deadline(deadline, deadline, TEST_FRAME_INTERVAL);
         assert_eq!(sleep_duration, Duration::ZERO);
         assert_eq!(next_deadline, deadline + TEST_FRAME_INTERVAL);
+    }
+
+    #[test]
+    fn bgra_readback_strips_gpu_row_pitch_padding() {
+        let mut mapped_bytes: Vec<u8> = vec![
+            1, 2, 3, 4, 5, 6, 7, 8, 90, 91, 92, 93, 9, 10, 11, 12, 13, 14, 15, 16, 94, 95, 96, 97,
+        ];
+        let mapped = D3D11_MAPPED_SUBRESOURCE {
+            pData: mapped_bytes.as_mut_ptr().cast(),
+            RowPitch: 12,
+            DepthPitch: 24,
+        };
+        let (data, stride) = copy_mapped_bgra_tight(&mapped, 2, 2).expect("copy padded BGRA rows");
+        assert_eq!(stride, 8);
+        assert_eq!(
+            data,
+            vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+        );
     }
 }
 

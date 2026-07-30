@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 use windows::Win32::Graphics::Direct3D11::{
-    D3D11_BIND_RENDER_TARGET, D3D11_RESOURCE_MISC_SHARED, D3D11_TEXTURE2D_DESC,
-    D3D11_USAGE_DEFAULT, D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE, D3D11_VIDEO_PROCESSOR_CONTENT_DESC,
+    D3D11_BIND_RENDER_TARGET, D3D11_CPU_ACCESS_READ, D3D11_MAP_READ, D3D11_MAPPED_SUBRESOURCE,
+    D3D11_RESOURCE_MISC_SHARED, D3D11_TEXTURE2D_DESC, D3D11_USAGE_DEFAULT, D3D11_USAGE_STAGING,
+    D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE, D3D11_VIDEO_PROCESSOR_CONTENT_DESC,
     D3D11_VIDEO_PROCESSOR_INPUT_VIEW_DESC, D3D11_VIDEO_PROCESSOR_INPUT_VIEW_DESC_0,
     D3D11_VIDEO_PROCESSOR_OUTPUT_VIEW_DESC, D3D11_VIDEO_PROCESSOR_OUTPUT_VIEW_DESC_0,
     D3D11_VIDEO_PROCESSOR_STREAM, D3D11_VIDEO_USAGE_PLAYBACK_NORMAL,
     D3D11_VPIV_DIMENSION_TEXTURE2D, D3D11_VPOV_DIMENSION_TEXTURE2D, ID3D11Device,
-    ID3D11DeviceContext, ID3D11Texture2D, ID3D11VideoContext, ID3D11VideoContext1,
+    ID3D11DeviceContext, ID3D11Resource, ID3D11Texture2D, ID3D11VideoContext, ID3D11VideoContext1,
     ID3D11VideoDevice, ID3D11VideoProcessor, ID3D11VideoProcessorEnumerator,
     ID3D11VideoProcessorInputView, ID3D11VideoProcessorOutputView,
 };
@@ -31,7 +32,8 @@ fn vlog(msg: &str) {
 pub const NV12_OUTPUT_SLOT_COUNT: usize = 3;
 
 struct Nv12OutputSlot {
-    _texture: ID3D11Texture2D,
+    texture: ID3D11Texture2D,
+    staging: ID3D11Texture2D,
     view: ID3D11VideoProcessorOutputView,
     handle: u64,
 }
@@ -54,6 +56,7 @@ pub struct Nv12SharedTextureFrame {
     pub width: u32,
     pub height: u32,
     pub dxgi_format: u32,
+    slot_index: usize,
 }
 
 impl Nv12GpuConverter {
@@ -215,7 +218,43 @@ impl Nv12GpuConverter {
             width: self.out_width,
             height: self.out_height,
             dxgi_format: self.dxgi_format(),
+            slot_index,
         })
+    }
+
+    pub fn readback_nv12(
+        &self,
+        frame: &Nv12SharedTextureFrame,
+    ) -> Result<(Vec<u8>, u32, u32), String> {
+        if frame.width != self.out_width || frame.height != self.out_height {
+            return Err("NV12 readback frame dimensions do not match converter output".into());
+        }
+        let slot = self
+            .output_slots
+            .get(frame.slot_index)
+            .ok_or_else(|| "NV12 readback slot index out of range".to_string())?;
+        let source: ID3D11Resource = slot
+            .texture
+            .cast()
+            .map_err(|e| format!("NV12 source resource cast: {e}"))?;
+        let staging: ID3D11Resource = slot
+            .staging
+            .cast()
+            .map_err(|e| format!("NV12 staging resource cast: {e}"))?;
+        unsafe {
+            self.context.CopyResource(&staging, &source);
+        }
+        let mut mapped = D3D11_MAPPED_SUBRESOURCE::default();
+        unsafe {
+            self.context
+                .Map(&staging, 0, D3D11_MAP_READ, 0, Some(&mut mapped))
+                .map_err(|e| format!("Map NV12 staging texture: {e}"))?;
+        }
+        let result = copy_mapped_nv12_tight(&mapped, frame.width, frame.height);
+        unsafe {
+            self.context.Unmap(&staging, 0);
+        }
+        result
     }
 
     fn run_video_processor(&self, slot_index: usize) -> Result<(), String> {
@@ -262,6 +301,26 @@ fn create_output_slot(
         .inspect_err(|e| vlog(&format!("CreateTexture2D NV12 output: {e:?}")))
         .ok()?;
     let output_texture = output_texture?;
+    let staging_desc = D3D11_TEXTURE2D_DESC {
+        Width: output_desc.Width,
+        Height: output_desc.Height,
+        MipLevels: 1,
+        ArraySize: 1,
+        Format: DXGI_FORMAT_NV12,
+        SampleDesc: DXGI_SAMPLE_DESC {
+            Count: 1,
+            Quality: 0,
+        },
+        Usage: D3D11_USAGE_STAGING,
+        BindFlags: 0,
+        CPUAccessFlags: D3D11_CPU_ACCESS_READ.0 as u32,
+        MiscFlags: 0,
+    };
+    let mut staging = None;
+    unsafe { device.CreateTexture2D(&staging_desc, None, Some(&mut staging)) }
+        .inspect_err(|e| vlog(&format!("CreateTexture2D NV12 staging output: {e:?}")))
+        .ok()?;
+    let staging = staging?;
     let resource: IDXGIResource = output_texture
         .cast()
         .inspect_err(|e| {
@@ -299,10 +358,59 @@ fn create_output_slot(
     let output_view = output_view?;
 
     Some(Nv12OutputSlot {
-        _texture: output_texture,
+        texture: output_texture,
+        staging,
         view: output_view,
         handle: shared_handle,
     })
+}
+
+fn copy_mapped_nv12_tight(
+    mapped: &D3D11_MAPPED_SUBRESOURCE,
+    width: u32,
+    height: u32,
+) -> Result<(Vec<u8>, u32, u32), String> {
+    if width < 2 || height < 2 || !width.is_multiple_of(2) || !height.is_multiple_of(2) {
+        return Err("NV12 readback requires positive even dimensions".into());
+    }
+    let row_bytes = width as usize;
+    let row_pitch = mapped.RowPitch as usize;
+    if mapped.pData.is_null() || row_pitch < row_bytes {
+        return Err("NV12 staging texture returned an invalid mapped layout".into());
+    }
+    let y_len = row_bytes
+        .checked_mul(height as usize)
+        .ok_or_else(|| "NV12 luma readback length overflow".to_string())?;
+    let uv_len = row_bytes
+        .checked_mul((height / 2) as usize)
+        .ok_or_else(|| "NV12 chroma readback length overflow".to_string())?;
+    let mut data = vec![
+        0u8;
+        y_len
+            .checked_add(uv_len)
+            .ok_or_else(|| "NV12 readback length overflow".to_string())?
+    ];
+    let source = mapped.pData as *const u8;
+    for row in 0..height as usize {
+        unsafe {
+            std::ptr::copy_nonoverlapping(
+                source.add(row * row_pitch),
+                data.as_mut_ptr().add(row * row_bytes),
+                row_bytes,
+            );
+        }
+    }
+    let uv_source = unsafe { source.add(row_pitch * height as usize) };
+    for row in 0..(height / 2) as usize {
+        unsafe {
+            std::ptr::copy_nonoverlapping(
+                uv_source.add(row * row_pitch),
+                data.as_mut_ptr().add(y_len + row * row_bytes),
+                row_bytes,
+            );
+        }
+    }
+    Ok((data, width, width))
 }
 
 fn input_colour_space(source_format: hdr::SourceFormat) -> DXGI_COLOR_SPACE_TYPE {
@@ -361,5 +469,21 @@ mod tests {
             cs_value(hdr::SourceFormat::Rgba16Float { hdr: true }),
             DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709.0
         );
+    }
+
+    #[test]
+    fn nv12_readback_strips_gpu_row_pitch_padding_from_both_planes() {
+        let mut mapped_bytes: Vec<u8> = vec![
+            1, 2, 3, 4, 90, 91, 5, 6, 7, 8, 92, 93, 20, 21, 22, 23, 94, 95,
+        ];
+        let mapped = D3D11_MAPPED_SUBRESOURCE {
+            pData: mapped_bytes.as_mut_ptr().cast(),
+            RowPitch: 6,
+            DepthPitch: 18,
+        };
+        let (data, stride_y, stride_uv) =
+            copy_mapped_nv12_tight(&mapped, 4, 2).expect("copy padded NV12 planes");
+        assert_eq!((stride_y, stride_uv), (4, 4));
+        assert_eq!(data, vec![1, 2, 3, 4, 5, 6, 7, 8, 20, 21, 22, 23]);
     }
 }

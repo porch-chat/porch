@@ -360,7 +360,65 @@ pub(crate) fn emit_shared_texture_frame(
             sink.enqueue(fluxer_screen_frame_bus::ScreenFrame::SharedTexture(desc))
         }
     };
-    record_frame_sink_outcome(inner, outcome);
+    record_frame_sink_outcome(inner, outcome, "shared texture");
+    frame_sink_outcome_delivered(outcome)
+}
+
+#[cfg(target_os = "windows")]
+pub(crate) fn emit_nv12_frame(
+    inner: &CaptureInner,
+    sink: &FrameSinkRef,
+    data: Vec<u8>,
+    width: u32,
+    height: u32,
+    stride_y: u32,
+    stride_uv: u32,
+    timestamp_us: i64,
+) -> bool {
+    let outcome = match sink {
+        FrameSinkRef::Native(sink) => {
+            sink.enqueue_nv12_copy(&data, width, height, stride_y, stride_uv, timestamp_us)
+        }
+        FrameSinkRef::Bus(sink) => sink.enqueue(fluxer_screen_frame_bus::ScreenFrame::Nv12(
+            fluxer_screen_frame_bus::Nv12Frame {
+                data: fluxer_screen_frame_bus::FrameData::from_owned(data),
+                width,
+                height,
+                stride_y,
+                stride_uv,
+                timestamp_us,
+            },
+        )),
+    };
+    record_frame_sink_outcome(inner, outcome, "NV12 CPU fallback");
+    frame_sink_outcome_delivered(outcome)
+}
+
+#[cfg(target_os = "windows")]
+pub(crate) fn emit_bgra_frame(
+    inner: &CaptureInner,
+    sink: &FrameSinkRef,
+    data: Vec<u8>,
+    width: u32,
+    height: u32,
+    stride: u32,
+    timestamp_us: i64,
+) -> bool {
+    let outcome = match sink {
+        FrameSinkRef::Native(sink) => {
+            sink.enqueue_bgra_copy(&data, width, height, stride, timestamp_us)
+        }
+        FrameSinkRef::Bus(sink) => sink.enqueue(fluxer_screen_frame_bus::ScreenFrame::Bgra(
+            fluxer_screen_frame_bus::BgraFrame {
+                data,
+                width,
+                height,
+                stride,
+                timestamp_us,
+            },
+        )),
+    };
+    record_frame_sink_outcome(inner, outcome, "BGRA CPU fallback");
     frame_sink_outcome_delivered(outcome)
 }
 
@@ -370,7 +428,11 @@ fn frame_sink_outcome_delivered(outcome: EnqueueOutcome) -> bool {
 }
 
 #[cfg(target_os = "windows")]
-fn record_frame_sink_outcome(inner: &CaptureInner, outcome: EnqueueOutcome) {
+fn record_frame_sink_outcome(
+    inner: &CaptureInner,
+    outcome: EnqueueOutcome,
+    transport: &'static str,
+) {
     match outcome {
         EnqueueOutcome::Accepted => {
             inner.frame_sink_accepted.fetch_add(1, Ordering::AcqRel);
@@ -379,14 +441,22 @@ fn record_frame_sink_outcome(inner: &CaptureInner, outcome: EnqueueOutcome) {
             inner.frame_sink_coalesced.fetch_add(1, Ordering::AcqRel);
             emit_frame_sink_backpressure_once(
                 inner,
-                "Windows shared texture frame coalesced by native frame sink",
+                if transport == "shared texture" {
+                    "Windows shared texture frame coalesced by native frame sink"
+                } else {
+                    "Windows CPU fallback frame coalesced by native frame sink"
+                },
             );
         }
         EnqueueOutcome::Rejected => {
             inner.frame_sink_rejected.fetch_add(1, Ordering::AcqRel);
             emit_frame_sink_backpressure_once(
                 inner,
-                "Windows shared texture frame rejected by native frame sink",
+                if transport == "shared texture" {
+                    "Windows shared texture frame rejected by native frame sink"
+                } else {
+                    "Windows CPU fallback frame rejected by native frame sink"
+                },
             );
         }
     }

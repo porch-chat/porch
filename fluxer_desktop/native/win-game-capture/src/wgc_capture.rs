@@ -32,8 +32,8 @@ use crate::dxgi_capture::{
 };
 use crate::nv12_gpu::Nv12GpuConverter;
 use crate::{
-    CaptureInner, emit_lifecycle, emit_shared_texture_frame, note_media_frame_without_sink,
-    resolve_frame_sink,
+    CaptureInner, emit_bgra_frame, emit_lifecycle, emit_nv12_frame, emit_shared_texture_frame,
+    note_media_frame_without_sink, resolve_frame_sink,
 };
 
 const WGC_FRAME_POOL_BUFFERS: i32 = 2;
@@ -252,6 +252,7 @@ struct WgcState {
     content_height: u32,
     out_w: u32,
     out_h: u32,
+    cpu_fallback_active: bool,
 }
 
 impl WgcState {
@@ -516,6 +517,7 @@ fn create_wgc_state_for_format(
         content_height,
         out_w,
         out_h,
+        cpu_fallback_active: false,
     })
 }
 
@@ -580,6 +582,7 @@ fn resize_wgc_state_for_format(
     state.out_h = out_h;
     state.pixel_format = pixel_format;
     state.output_pipeline = output_pipeline;
+    state.cpu_fallback_active = false;
     Ok(())
 }
 
@@ -758,6 +761,7 @@ fn emit_wgc_frame(
     let Some(output_pipeline) = state.output_pipeline.as_mut() else {
         return WgcFrameResult::Error("WGC shared texture output unavailable".into());
     };
+    let cpu_fallback_active = &mut state.cpu_fallback_active;
     match output_pipeline {
         WgcOutputPipeline::Bgra(shared_output) => emit_wgc_bgra_frame(
             inner,
@@ -768,6 +772,7 @@ fn emit_wgc_frame(
             content_width,
             content_height,
             timestamp_us,
+            cpu_fallback_active,
         ),
         WgcOutputPipeline::Nv12(pipeline) => emit_wgc_nv12_frame(
             inner,
@@ -778,6 +783,7 @@ fn emit_wgc_frame(
             content_width,
             content_height,
             timestamp_us,
+            cpu_fallback_active,
         ),
     }
 }
@@ -792,6 +798,7 @@ fn emit_wgc_bgra_frame(
     content_width: u32,
     content_height: u32,
     timestamp_us: i64,
+    cpu_fallback_active: &mut bool,
 ) -> WgcFrameResult {
     if shared_output.width != content_width || shared_output.height != content_height {
         return WgcFrameResult::Error(
@@ -825,16 +832,44 @@ fn emit_wgc_bgra_frame(
         );
         context.Flush();
     }
-    let _ = emit_shared_texture_frame(
+    if !*cpu_fallback_active
+        && emit_shared_texture_frame(
+            inner,
+            frame_sink,
+            slot.handle,
+            shared_output.width,
+            shared_output.height,
+            shared_output.dxgi_format,
+            timestamp_us,
+        )
+    {
+        return WgcFrameResult::Ok;
+    }
+    if !*cpu_fallback_active {
+        *cpu_fallback_active = true;
+        emit_lifecycle(
+            inner,
+            "diagnostic",
+            "WGC shared texture was rejected; using BGRA CPU readback fallback",
+        );
+    }
+    let (data, stride) = match shared_output.readback_bgra(context, slot_index) {
+        Ok(frame) => frame,
+        Err(error) => return WgcFrameResult::Error(error),
+    };
+    if emit_bgra_frame(
         inner,
         frame_sink,
-        slot.handle,
+        data,
         shared_output.width,
         shared_output.height,
-        shared_output.dxgi_format,
+        stride,
         timestamp_us,
-    );
-    WgcFrameResult::Ok
+    ) {
+        WgcFrameResult::Ok
+    } else {
+        WgcFrameResult::Error("WGC BGRA CPU fallback was rejected by native frame sink".into())
+    }
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -847,6 +882,7 @@ fn emit_wgc_nv12_frame(
     content_width: u32,
     content_height: u32,
     timestamp_us: i64,
+    cpu_fallback_active: &mut bool,
 ) -> WgcFrameResult {
     let src_box = D3D11_BOX {
         left: 0,
@@ -872,14 +908,43 @@ fn emit_wgc_nv12_frame(
         Ok(frame) => frame,
         Err(error) => return WgcFrameResult::Error(error),
     };
-    let _ = emit_shared_texture_frame(
+    if !*cpu_fallback_active
+        && emit_shared_texture_frame(
+            inner,
+            frame_sink,
+            frame.handle,
+            frame.width,
+            frame.height,
+            frame.dxgi_format,
+            timestamp_us,
+        )
+    {
+        return WgcFrameResult::Ok;
+    }
+    if !*cpu_fallback_active {
+        *cpu_fallback_active = true;
+        emit_lifecycle(
+            inner,
+            "diagnostic",
+            "WGC shared texture was rejected; using NV12 CPU readback fallback",
+        );
+    }
+    let (data, stride_y, stride_uv) = match pipeline.converter.readback_nv12(&frame) {
+        Ok(frame) => frame,
+        Err(error) => return WgcFrameResult::Error(error),
+    };
+    if emit_nv12_frame(
         inner,
         frame_sink,
-        frame.handle,
+        data,
         frame.width,
         frame.height,
-        frame.dxgi_format,
+        stride_y,
+        stride_uv,
         timestamp_us,
-    );
-    WgcFrameResult::Ok
+    ) {
+        WgcFrameResult::Ok
+    } else {
+        WgcFrameResult::Error("WGC NV12 CPU fallback was rejected by native frame sink".into())
+    }
 }

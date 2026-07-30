@@ -1428,7 +1428,23 @@ impl ScreenFrameSink for BusSenderSink {
     fn enqueue(&self, frame: BusScreenFrame) -> EnqueueOutcome {
         let timestamp_us = frame.timestamp_us();
         let pending = match frame {
-            BusScreenFrame::Nv12(_) | BusScreenFrame::Bgra(_) => return EnqueueOutcome::Rejected,
+            BusScreenFrame::Nv12(frame) => PendingVideoFrame::Nv12 {
+                data: frame.data.into_vec(),
+                width: frame.width,
+                height: frame.height,
+                stride_y: frame.stride_y,
+                stride_uv: frame.stride_uv,
+                timestamp_us,
+                enqueued_at: Instant::now(),
+            },
+            BusScreenFrame::Bgra(frame) => PendingVideoFrame::Bgra {
+                data: frame.data,
+                width: frame.width,
+                height: frame.height,
+                stride: frame.stride,
+                timestamp_us,
+                enqueued_at: Instant::now(),
+            },
             #[cfg(target_os = "macos")]
             BusScreenFrame::MacCvPixelBuffer(mac_frame) => {
                 let raw = mac_frame.into_raw_pixel_buffer();
@@ -1566,6 +1582,96 @@ fn bus_sender_sink_from_context<'a>(context: *const c_void) -> Option<&'a BusSen
         return None;
     }
     Some(unsafe { &*(context as *const BusSenderSink) })
+}
+
+unsafe extern "C" fn enqueue_native_nv12(
+    context: *const c_void,
+    data: *const u8,
+    data_len: usize,
+    width: u32,
+    height: u32,
+    stride_y: u32,
+    stride_uv: u32,
+    timestamp_us: i64,
+) -> u32 {
+    let Some(sink) = bus_sender_sink_from_context(context) else {
+        return frame_bus::NATIVE_SCREEN_FRAME_SINK_REJECTED;
+    };
+    let Some(y_bytes) = (stride_y as usize).checked_mul(height as usize) else {
+        return frame_bus::NATIVE_SCREEN_FRAME_SINK_REJECTED;
+    };
+    let Some(uv_bytes) = (stride_uv as usize).checked_mul((height / 2) as usize) else {
+        return frame_bus::NATIVE_SCREEN_FRAME_SINK_REJECTED;
+    };
+    let Some(required_len) = y_bytes.checked_add(uv_bytes) else {
+        return frame_bus::NATIVE_SCREEN_FRAME_SINK_REJECTED;
+    };
+    if data.is_null()
+        || width < 2
+        || height < 2
+        || !width.is_multiple_of(2)
+        || !height.is_multiple_of(2)
+        || stride_y < width
+        || stride_uv < width
+        || timestamp_us <= 0
+        || required_len == 0
+        || required_len > data_len
+        || required_len > frame_bus::FRAME_DATA_BYTES_CAP
+    {
+        return frame_bus::NATIVE_SCREEN_FRAME_SINK_REJECTED;
+    }
+    let frame = frame_bus::Nv12Frame {
+        data: frame_bus::FrameData::from_owned(
+            unsafe { std::slice::from_raw_parts(data, required_len) }.to_vec(),
+        ),
+        width,
+        height,
+        stride_y,
+        stride_uv,
+        timestamp_us,
+    };
+    NativeScreenFrameSinkHandle::native_outcome(sink.enqueue(BusScreenFrame::Nv12(frame)))
+}
+
+unsafe extern "C" fn enqueue_native_bgra(
+    context: *const c_void,
+    data: *const u8,
+    data_len: usize,
+    width: u32,
+    height: u32,
+    stride: u32,
+    timestamp_us: i64,
+) -> u32 {
+    let Some(sink) = bus_sender_sink_from_context(context) else {
+        return frame_bus::NATIVE_SCREEN_FRAME_SINK_REJECTED;
+    };
+    let Some(min_stride) = width.checked_mul(4) else {
+        return frame_bus::NATIVE_SCREEN_FRAME_SINK_REJECTED;
+    };
+    let Some(required_len) = (stride as usize).checked_mul(height as usize) else {
+        return frame_bus::NATIVE_SCREEN_FRAME_SINK_REJECTED;
+    };
+    if data.is_null()
+        || width < 2
+        || height < 2
+        || !width.is_multiple_of(2)
+        || !height.is_multiple_of(2)
+        || stride < min_stride
+        || timestamp_us <= 0
+        || required_len == 0
+        || required_len > data_len
+        || required_len > frame_bus::FRAME_DATA_BYTES_CAP
+    {
+        return frame_bus::NATIVE_SCREEN_FRAME_SINK_REJECTED;
+    }
+    let frame = frame_bus::BgraFrame {
+        data: unsafe { std::slice::from_raw_parts(data, required_len) }.to_vec(),
+        width,
+        height,
+        stride,
+        timestamp_us,
+    };
+    NativeScreenFrameSinkHandle::native_outcome(sink.enqueue(BusScreenFrame::Bgra(frame)))
 }
 
 #[cfg(target_os = "macos")]
@@ -1710,8 +1816,8 @@ fn create_native_screen_frame_sink_handle(sink: Arc<BusSenderSink>) -> NativeScr
         retain: retain_bus_sender_sink,
         release: release_bus_sender_sink,
         enqueue_screen_audio: None,
-        enqueue_nv12: None,
-        enqueue_bgra: None,
+        enqueue_nv12: Some(enqueue_native_nv12),
+        enqueue_bgra: Some(enqueue_native_bgra),
         #[cfg(target_os = "macos")]
         enqueue_mac_cv_pixel_buffer: Some(enqueue_native_mac_cv_pixel_buffer),
         #[cfg(not(target_os = "macos"))]
@@ -6410,7 +6516,7 @@ mod tests {
     }
 
     #[test]
-    fn bus_sender_sink_rejects_copied_nv12_frames() {
+    fn bus_sender_sink_accepts_copied_nv12_frames() {
         let (sender, _stats) = sender_for_tests();
         let sink = BusSenderSink {
             sender: sender.clone(),
@@ -6426,12 +6532,28 @@ mod tests {
             stride_uv: 8,
             timestamp_us: 1234,
         });
-        assert_eq!(sink.enqueue(frame), EnqueueOutcome::Rejected);
-        assert_eq!(sender.pending.len(), 0);
+        assert_eq!(sink.enqueue(frame), EnqueueOutcome::Accepted);
+        assert_eq!(sender.pending.len(), 1);
+        let Some(PendingVideoFrame::Nv12 {
+            data,
+            width,
+            height,
+            stride_y,
+            stride_uv,
+            timestamp_us,
+            ..
+        }) = sender.pending.pop()
+        else {
+            panic!("expected a copied NV12 frame");
+        };
+        assert_eq!(data.len(), 8 * 8 + 8 * 4);
+        assert_eq!((width, height), (8, 8));
+        assert_eq!((stride_y, stride_uv), (8, 8));
+        assert_eq!(timestamp_us, 1234);
     }
 
     #[test]
-    fn bus_sender_sink_rejects_copied_bgra_frames() {
+    fn bus_sender_sink_accepts_copied_bgra_frames() {
         let (sender, _stats) = sender_for_tests();
         let sink = BusSenderSink {
             sender: sender.clone(),
@@ -6446,12 +6568,27 @@ mod tests {
             stride: 32,
             timestamp_us: 5678,
         });
-        assert_eq!(sink.enqueue(frame), EnqueueOutcome::Rejected);
-        assert_eq!(sender.pending.len(), 0);
+        assert_eq!(sink.enqueue(frame), EnqueueOutcome::Accepted);
+        assert_eq!(sender.pending.len(), 1);
+        let Some(PendingVideoFrame::Bgra {
+            data,
+            width,
+            height,
+            stride,
+            timestamp_us,
+            ..
+        }) = sender.pending.pop()
+        else {
+            panic!("expected a copied BGRA frame");
+        };
+        assert_eq!(data.len(), 4 * 8 * 8);
+        assert_eq!((width, height), (8, 8));
+        assert_eq!(stride, 32);
+        assert_eq!(timestamp_us, 5678);
     }
 
     #[test]
-    fn native_screen_frame_sink_handle_omits_copied_frame_callbacks() {
+    fn native_screen_frame_sink_handle_exposes_copied_frame_callbacks() {
         let (sender, _stats) = sender_for_tests();
         let sink = BusSenderSink {
             sender: sender.clone(),
@@ -6461,9 +6598,67 @@ mod tests {
         };
         let handle = create_native_screen_frame_sink_handle(Arc::new(sink));
         assert!(handle.is_valid());
-        assert!(handle.enqueue_nv12.is_none());
-        assert!(handle.enqueue_bgra.is_none());
+        assert!(handle.enqueue_nv12.is_some());
+        assert!(handle.enqueue_bgra.is_some());
         assert!(handle.enqueue_screen_audio.is_none());
+
+        let nv12 = vec![127u8; 8 * 8 + 8 * 4];
+        let nv12_outcome = unsafe {
+            handle.enqueue_nv12.expect("NV12 callback")(
+                handle.context,
+                nv12.as_ptr(),
+                nv12.len(),
+                8,
+                8,
+                8,
+                8,
+                1234,
+            )
+        };
+        assert_eq!(nv12_outcome, frame_bus::NATIVE_SCREEN_FRAME_SINK_ACCEPTED);
+
+        let bgra = vec![63u8; 4 * 8 * 8];
+        let bgra_outcome = unsafe {
+            handle.enqueue_bgra.expect("BGRA callback")(
+                handle.context,
+                bgra.as_ptr(),
+                bgra.len(),
+                8,
+                8,
+                32,
+                5678,
+            )
+        };
+        assert_eq!(bgra_outcome, frame_bus::NATIVE_SCREEN_FRAME_SINK_ACCEPTED);
+        assert_eq!(sender.pending.len(), 2);
+        unsafe { (handle.release)(handle.context) };
+    }
+
+    #[test]
+    fn native_screen_frame_sink_handle_rejects_invalid_copied_frames() {
+        let (sender, _stats) = sender_for_tests();
+        let sink = BusSenderSink {
+            sender: sender.clone(),
+            texture_capability: texture_source::TextureCapability::unavailable(
+                texture_source::TextureEncodeError::NoHardwareEncoder,
+            ),
+        };
+        let handle = create_native_screen_frame_sink_handle(Arc::new(sink));
+        let too_short = vec![0u8; 8];
+        let outcome = unsafe {
+            handle.enqueue_nv12.expect("NV12 callback")(
+                handle.context,
+                too_short.as_ptr(),
+                too_short.len(),
+                8,
+                8,
+                8,
+                8,
+                1234,
+            )
+        };
+        assert_eq!(outcome, frame_bus::NATIVE_SCREEN_FRAME_SINK_REJECTED);
+        assert_eq!(sender.pending.len(), 0);
         unsafe { (handle.release)(handle.context) };
     }
 
