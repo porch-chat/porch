@@ -416,7 +416,7 @@ export const Scroller = forwardRef<ScrollerHandle, ScrollerProps>(function Scrol
 		containerObserver.observe(containerEl);
 		contentObserver.observe(contentEl);
 		syncChildObservers();
-		childListObserver.observe(contentEl, {childList: true, subtree: true});
+		childListObserver.observe(contentEl, {childList: true});
 		refreshThumbState();
 		return () => {
 			cancelScheduledThumbRefresh();

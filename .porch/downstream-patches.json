@@ -493,6 +493,32 @@
 			"conflict_risk": "low",
 			"upstream_status": "permanently-downstream",
 			"removal_condition": "Remove if Porch stops using timestamp desktop versions or upstream displays them with equivalent human-readable context."
+		},
+		{
+			"id": "porch-client-performance-0016",
+			"title": "Preserve warm caches and reduce navigation observer churn",
+			"status": "active",
+			"category": "client-performance",
+			"reason": "Porch navigation intermittently stalled because normal desktop starts discarded Chromium code and shader caches, self-hosted spellcheck attempted unavailable downloads before falling back, and scroll components performed redundant subtree observation, synchronous layout measurement, and React state transitions. The performance record also preserves the acceleration and media benchmark evidence behind the selected defaults.",
+			"paths": [
+				".porch/downstream-patches.json",
+				"docs/porch/PERFORMANCE.md",
+				"fluxer_app/src/features/app/components/layout/ScrollIndicatorOverlay.tsx",
+				"fluxer_app/src/features/ui/components/Scroller.tsx",
+				"fluxer_desktop/src/main/Spellcheck.ts",
+				"fluxer_desktop/src/main/Window.ts"
+			],
+			"tests": [
+				"scroll-indicator state-machine regression tests",
+				"app and desktop TypeScript typechecks",
+				"Biome formatting and lint checks",
+				"git diff --check",
+				"Canary warm-start and navigation benchmark",
+				"hardware acceleration on/off idle, voice, camera, display-share, and capture-card matrix"
+			],
+			"conflict_risk": "medium",
+			"upstream_status": "permanently-downstream",
+			"removal_condition": "Remove individual changes only when upstream preserves normal warm caches, avoids unavailable self-hosted dictionary downloads, and provides equivalent coalesced scroll observation without navigation regressions."
 		}
 	]
 }

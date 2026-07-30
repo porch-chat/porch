@@ -78,6 +78,19 @@ function findScrollIndicatorNode(container: HTMLElement, id: string): HTMLElemen
 	return null;
 }
 
+function areEquivalentActiveIndicators(
+	left: ActiveScrollIndicator | null,
+	right: ActiveScrollIndicator | null,
+): boolean {
+	if (left === right) return true;
+	if (!left || !right) return false;
+	return (
+		left.direction === right.direction &&
+		left.indicator.id === right.indicator.id &&
+		left.indicator.severity === right.indicator.severity
+	);
+}
+
 export const useScrollEdgeIndicators = (
 	getScrollContainer: () => HTMLElement | null,
 	dependencies: React.DependencyList = [],
@@ -86,10 +99,21 @@ export const useScrollEdgeIndicators = (
 	const activeIndicator = selectActiveScrollIndicator(snapshot);
 	const preferredDirectionRef = useRef<ScrollIndicatorDirection | null>(null);
 	const lastScrollTopRef = useRef(0);
+	const refreshFrameRef = useRef<number | null>(null);
+	const refreshWindowRef = useRef<Window | null>(null);
 	const send = useCallback((event: ScrollIndicatorMachineEvent) => {
-		setSnapshot((previous) => transitionScrollIndicatorSnapshot(previous, event));
+		setSnapshot((previous) => {
+			const next = transitionScrollIndicatorSnapshot(previous, event);
+			if (
+				areEquivalentActiveIndicators(selectActiveScrollIndicator(previous), selectActiveScrollIndicator(next)) &&
+				previous.context.lastDirection === next.context.lastDirection
+			) {
+				return previous;
+			}
+			return next;
+		});
 	}, []);
-	const refresh = useCallback(() => {
+	const refreshNow = useCallback(() => {
 		const container = getScrollContainer();
 		if (!container) {
 			send({type: 'scrollIndicator.reset'});
@@ -105,6 +129,27 @@ export const useScrollEdgeIndicators = (
 			},
 		});
 	}, [getScrollContainer, send]);
+	const refresh = useCallback(() => {
+		if (refreshFrameRef.current != null) return;
+		const container = getScrollContainer();
+		const ownerWindow = container?.ownerDocument.defaultView ?? window;
+		refreshWindowRef.current = ownerWindow;
+		refreshFrameRef.current = ownerWindow.requestAnimationFrame(() => {
+			refreshFrameRef.current = null;
+			refreshWindowRef.current = null;
+			refreshNow();
+		});
+	}, [getScrollContainer, refreshNow]);
+	useEffect(
+		() => () => {
+			if (refreshFrameRef.current != null) {
+				refreshWindowRef.current?.cancelAnimationFrame(refreshFrameRef.current);
+				refreshFrameRef.current = null;
+				refreshWindowRef.current = null;
+			}
+		},
+		[],
+	);
 	useLayoutEffect(() => {
 		refresh();
 	}, [refresh, ...dependencies]);
@@ -130,7 +175,7 @@ export const useScrollEdgeIndicators = (
 			attributes: true,
 			childList: true,
 			subtree: true,
-			attributeFilter: ['data-scroll-indicator', 'data-scroll-id', 'class', 'style'],
+			attributeFilter: ['data-scroll-indicator', 'data-scroll-id'],
 		});
 		return () => {
 			resizeObserver?.disconnect();

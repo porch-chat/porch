@@ -186,6 +186,10 @@ const dictionaryCacheDir = (dict: SpellcheckDictionaryCatalogEntry): string =>
 		`v${DICTIONARY_CACHE_VERSION}`,
 		dictionaryCacheKey(dict),
 	);
+const hasCachedDictionaryFiles = (dict: SpellcheckDictionaryCatalogEntry): boolean => {
+	const cacheDir = dictionaryCacheDir(dict);
+	return fsSync.existsSync(path.join(cacheDir, 'index.aff')) && fsSync.existsSync(path.join(cacheDir, 'index.dic'));
+};
 
 export function cleanupLinuxChromiumSpellcheckDictionaries(userDataPath: string): void {
 	if (!isLinux) return;
@@ -665,8 +669,15 @@ const resolveEngine = (state: SpellcheckState, session: Session): ResolvedEngine
 		}
 		return {mode: 'system', hunspellLangs: [], systemLangs: resolveSystemLanguages(session, requested)};
 	}
-	if (bundled.length > 0) {
-		return {mode: 'hunspell', hunspellLangs: bundled, systemLangs: []};
+	const availableBundled =
+		DICTIONARY_DOWNLOAD_BASE_URL || isLinux
+			? bundled
+			: bundled.filter((tag) => {
+					const dict = resolveBundledFor(tag);
+					return dict ? hasCachedDictionaryFiles(dict) : false;
+				});
+	if (availableBundled.length > 0) {
+		return {mode: 'hunspell', hunspellLangs: availableBundled, systemLangs: []};
 	}
 	if (isLinux) {
 		return resolveLinuxHunspellFallback(state, session, false);

@@ -588,16 +588,6 @@ function openWindowDevTools(window: BrowserWindow, options?: {forceDetach?: bool
 	window.webContents.openDevTools(getDevToolsOptions(options));
 }
 
-async function clearStartupRenderingCaches(session: Electron.Session): Promise<void> {
-	try {
-		logger.info('Clearing Chromium startup rendering caches');
-		await session.clearStorageData({storages: ['shadercache']});
-		await session.clearCodeCaches({});
-	} catch (error) {
-		logger.warn('Failed to clear Chromium startup rendering caches', error);
-	}
-}
-
 export function toggleWindowDevTools(window: BrowserWindow): void {
 	if (window.webContents.isDevToolsOpened()) {
 		window.webContents.closeDevTools();
@@ -1031,7 +1021,7 @@ export function createWindow(options: CreateWindowOptions = {}): BrowserWindow {
 		});
 		logPhase('load-url-dispatched');
 	};
-	void clearStartupRenderingCaches(session).then(loadAppUrl);
+	loadAppUrl();
 	webContents.on('will-navigate', (event, url) => {
 		if (!isTrustedOrigin(url)) {
 			event.preventDefault();
