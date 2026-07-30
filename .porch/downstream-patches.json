@@ -376,6 +376,31 @@
 			"conflict_risk": "medium",
 			"upstream_status": "permanently-downstream",
 			"removal_condition": "Remove only if Porch no longer uses a default Hub or upstream adds equivalent configurable, exactly-once enrollment with approval and backfill support."
+		},
+		{
+			"id": "porch-screen-share-preview-resilience-0012",
+			"title": "Keep native screen sharing active when local preview capture fails",
+			"status": "active",
+			"category": "media-resilience",
+			"reason": "The native sender and native pixel capture can start successfully even when Chromium cannot acquire the second, local-only preview track. A preview failure must not tear down a working outgoing screen share.",
+			"paths": [
+				".porch/downstream-patches.json",
+				"fluxer_app/src/features/voice/engine/ScreenShareCaptureDiagnostics.ts",
+				"fluxer_app/src/features/voice/engine/v2/VoiceEngineV2AppScreenShareCaptureCoordinator.ts",
+				"fluxer_app/src/features/voice/engine/v2/VoiceEngineV2AppScreenSharePreviewTracking.ts",
+				"fluxer_app/src/features/voice/engine/voice_screen_share_manager/DisplayMediaCapture.test.ts",
+				"fluxer_app/src/features/voice/engine/voice_screen_share_manager/DisplayMediaCapture.ts"
+			],
+			"tests": [
+				"native display capture preview-failure regression tests",
+				"screen-share option and active-source regression tests",
+				"app TypeScript typecheck",
+				"Biome formatting and lint checks",
+				"git diff --check"
+			],
+			"conflict_risk": "medium",
+			"upstream_status": "permanently-downstream",
+			"removal_condition": "Remove if upstream makes native outgoing capture independent from Chromium local-preview acquisition or replaces the duplicate preview capture with a reliable native preview path."
 		}
 	]
 }

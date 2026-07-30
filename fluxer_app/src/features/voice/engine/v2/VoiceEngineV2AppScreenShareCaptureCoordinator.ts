@@ -1292,7 +1292,7 @@ export class VoiceEngineV2AppScreenShareCaptureCoordinator {
 	): Promise<void> {
 		assert.ok(nativeOptions);
 		logger.warn('Failed to start native-engine screen share', {error});
-		if (capture && !this.adapter.nativeEngineScreenSharePreviewTrackSid) {
+		if (capture?.previewBridge && !this.adapter.nativeEngineScreenSharePreviewTrackSid) {
 			await capture.previewBridge.cleanup(false).catch((cleanupError) => {
 				logger.warn('Failed to clean up native-engine screen-share preview after start failure', {
 					captureId: capture?.captureId,
@@ -1410,7 +1410,15 @@ export class VoiceEngineV2AppScreenShareCaptureCoordinator {
 		assert.ok(publishDimensions);
 		this.deviceCaptureActive = true;
 		this.adapter.previewTracking.registerDevicePreview(options, publishDimensions);
-		markScreenShareCaptureActive({method: 'device-media', device: {videoDeviceId: options?.videoDeviceId}});
+		markScreenShareCaptureActive({
+			method: 'device-media',
+			device: {
+				videoDeviceId: options?.videoDeviceId,
+				requestedWidth: publishDimensions.width,
+				requestedHeight: publishDimensions.height,
+				requestedFrameRate: publishDimensions.frameRate,
+			},
+		});
 		await runScreenShareActivationRitual({
 			adapter: this.adapter,
 			room: null,

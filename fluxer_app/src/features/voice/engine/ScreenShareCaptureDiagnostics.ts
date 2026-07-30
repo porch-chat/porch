@@ -31,6 +31,12 @@ interface ScreenShareCaptureState {
 	device?: {
 		videoDeviceId?: string;
 		audioDeviceId?: string;
+		requestedWidth?: number;
+		requestedHeight?: number;
+		requestedFrameRate?: number;
+		actualWidth?: number;
+		actualHeight?: number;
+		actualFrameRate?: number;
 	};
 	nativeAvailability?: NativeScreenCaptureAvailability | null;
 	nativeDiagnostics?: NativeScreenCaptureDiagnostics | null;
@@ -47,6 +53,12 @@ interface CaptureStateUpdate {
 	device?: {
 		videoDeviceId?: string;
 		audioDeviceId?: string;
+		requestedWidth?: number;
+		requestedHeight?: number;
+		requestedFrameRate?: number;
+		actualWidth?: number;
+		actualHeight?: number;
+		actualFrameRate?: number;
 	};
 	nativeAvailability?: NativeScreenCaptureAvailability | null;
 	nativeDiagnostics?: NativeScreenCaptureDiagnostics | null;

@@ -48,6 +48,12 @@ export class VoiceEngineV2AppScreenSharePreviewTracking {
 		assert.ok(capture, 'capture required');
 		assert.equal(typeof capture.captureId, 'string', 'capture.captureId must be string');
 		this.clearPreview();
+		if (!capture.previewBridge) {
+			logger.warn('Native-engine screen share has no local preview track; outgoing capture remains active', {
+				captureId: capture.captureId,
+			});
+			return;
+		}
 		const token = this.adapter.nativeEngineScreenSharePreviewStartToken;
 		void this.attachCapturePreview(capture, token);
 	}
@@ -74,6 +80,7 @@ export class VoiceEngineV2AppScreenSharePreviewTracking {
 	}
 
 	private async cleanupUnattachedPreview(capture: NativeEngineScreenCapture, reason: string): Promise<void> {
+		if (!capture.previewBridge) return;
 		await capture.previewBridge.cleanup(false).catch((error) => {
 			logger.warn('Failed to clean up unattached native-engine screen-share preview', {
 				captureId: capture.captureId,
@@ -148,6 +155,8 @@ export class VoiceEngineV2AppScreenSharePreviewTracking {
 	}
 
 	private async attachCapturePreview(capture: NativeEngineScreenCapture, token: number): Promise<void> {
+		const previewBridge = capture.previewBridge;
+		if (!previewBridge) return;
 		const localParticipant = await this.waitForLocalParticipant(token);
 		if (token !== this.adapter.nativeEngineScreenSharePreviewStartToken) {
 			await this.cleanupUnattachedPreview(capture, 'stale-preview-registration');
@@ -169,8 +178,8 @@ export class VoiceEngineV2AppScreenSharePreviewTracking {
 			source: VoiceTrackSource.ScreenShare,
 			width: capture.width,
 			height: capture.height,
-			stream: new MediaStream([capture.previewBridge.track]),
-			cleanup: () => capture.previewBridge.cleanup(false),
+			stream: new MediaStream([previewBridge.track]),
+			cleanup: () => previewBridge.cleanup(false),
 		});
 	}
 

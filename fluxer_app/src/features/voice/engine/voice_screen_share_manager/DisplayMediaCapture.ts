@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import DeveloperOptions from '@app/features/devtools/state/DeveloperOptions';
+import {Logger} from '@app/features/platform/utils/AppLogger';
 import {getElectronAPI} from '@app/features/ui/utils/NativeUtils';
 import {
 	markScreenShareCaptureActive,
-	markScreenShareCaptureEnded,
 	updateScreenShareDisplayMediaSettings,
 } from '@app/features/voice/engine/ScreenShareCaptureDiagnostics';
 import {
@@ -29,6 +29,8 @@ import type {
 	NativeScreenCaptureStartResult,
 } from '@app/types/electron.d';
 import type {ScreenShareCaptureOptions} from 'livekit-client';
+
+const logger = new Logger('DisplayMediaCapture');
 
 type DisplayMediaVideoConstraints = MediaTrackConstraints & {
 	cursor?: 'always' | 'motion' | 'never';
@@ -195,7 +197,7 @@ export interface NativeEngineScreenCapture {
 	captureId: string;
 	width: number;
 	height: number;
-	previewBridge: NativeScreenBridgeHandle;
+	previewBridge: NativeScreenBridgeHandle | null;
 }
 
 export async function isNativeScreenCaptureAvailable(): Promise<boolean> {
@@ -241,20 +243,29 @@ export async function startNativeCaptureForEngine(
 		captureId: startResult.captureId,
 		nativeAvailability: availability,
 	});
-	let previewBridge: NativeScreenBridgeHandle;
-	try {
-		if (!options.desktopCaptureSourceId) {
-			throw new Error('Chromium desktop capture source id unavailable for native screen preview');
+	let previewBridge: NativeScreenBridgeHandle | null = null;
+	if (!options.desktopCaptureSourceId) {
+		logger.warn('Native screen capture started without a Chromium source id; continuing without local preview', {
+			captureId: startResult.captureId,
+			sourceId: source.id,
+			sourceKind: source.kind,
+		});
+	} else {
+		try {
+			previewBridge = await createScreenChromiumPreviewBridge(
+				options.desktopCaptureSourceId,
+				getNativePreviewBridgeOptions(source, startResult, resolution),
+			);
+			markNativeScreenShareTrack(previewBridge.track);
+		} catch (error) {
+			logger.warn('Native screen capture started but its local Chromium preview failed; continuing without preview', {
+				captureId: startResult.captureId,
+				sourceId: source.id,
+				sourceKind: source.kind,
+				desktopCaptureSourceId: options.desktopCaptureSourceId,
+				error,
+			});
 		}
-		previewBridge = await createScreenChromiumPreviewBridge(
-			options.desktopCaptureSourceId,
-			getNativePreviewBridgeOptions(source, startResult, resolution),
-		);
-		markNativeScreenShareTrack(previewBridge.track);
-	} catch (error) {
-		await api.stop(startResult.captureId).catch(() => undefined);
-		markScreenShareCaptureEnded('native-voice-engine-screen-preview-bridge-failed');
-		throw error;
 	}
 	return {
 		captureId: startResult.captureId,
