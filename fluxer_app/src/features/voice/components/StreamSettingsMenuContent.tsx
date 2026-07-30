@@ -23,6 +23,7 @@ import ScreenShareCodecNegotiation from '@app/features/voice/engine/ScreenShareC
 import {useStoreVersion} from '@app/features/voice/engine/Store';
 import {VoiceTrackSource} from '@app/features/voice/engine/VoiceTrackSource';
 import {useMediaDevices} from '@app/features/voice/hooks/useMediaDevices';
+import ActiveScreenShareSource from '@app/features/voice/state/ActiveScreenShareSource';
 import VoiceSettings, {type ScreenshareResolution, type StreamingMode} from '@app/features/voice/state/VoiceSettings';
 import {resolveScreenShareContentHintForContext} from '@app/features/voice/utils/CodecCapabilityDetector';
 import {getNativeAudioAvailabilityCached} from '@app/features/voice/utils/NativeAudioCaptureBridge';
@@ -253,6 +254,7 @@ export async function pushActiveStreamSettings(
 		streamingMode: normalisedMode,
 		contentHint,
 		maxBitrateBps: VoiceSettings.getScreenShareMaxBitrateBpsOverride(),
+		sourceDimensions: ActiveScreenShareSource.getSourceDimensions(),
 		preferredDisplaySurface,
 	});
 	if (preferredScreenShareCodecPreference !== 'auto') {
@@ -422,7 +424,6 @@ export const StreamSettingsMenuContent = observer(
 		}, [isDeviceShare, hasHigherVideoQuality, i18n.locale]);
 		const resolutionOptions: Array<Option<ScreenshareResolution>> = useMemo(() => {
 			const options: Array<Option<ScreenshareResolution>> = [
-				{value: 'low_240p', label: '240p', isPremium: false},
 				{value: 'low_480p', label: '480p', isPremium: false},
 				{value: 'medium', label: '720p', isPremium: false},
 			];
@@ -430,13 +431,14 @@ export const StreamSettingsMenuContent = observer(
 				options.push(
 					{value: 'high', label: '1080p', isPremium: true},
 					{value: 'ultra', label: '1440p', isPremium: true},
+					{value: 'uhd', label: '4K', isPremium: true},
 				);
 			}
-			if (!isDeviceShare && (hasHigherVideoQuality || showPremiumFeatures)) {
+			if (hasHigherVideoQuality || showPremiumFeatures) {
 				options.push({value: 'source', label: i18n._(SOURCE_DESCRIPTOR), isPremium: true});
 			}
 			return options;
-		}, [hasHigherVideoQuality, isDeviceShare, showPremiumFeatures, i18n.locale]);
+		}, [hasHigherVideoQuality, showPremiumFeatures, i18n.locale]);
 		const frameRateOptions: Array<Option<SupportedScreenShareFrameRate>> = useMemo(
 			() => [
 				{value: 15, label: i18n._(MESSAGE_15_FPS_DESCRIPTOR), isPremium: false},
@@ -728,6 +730,7 @@ const RESOLUTION_LABELS: Record<ScreenshareResolution, string> = {
 	medium: '720p',
 	high: '1080p',
 	ultra: '1440p',
+	uhd: '4K',
 	source: '',
 };
 

@@ -13,6 +13,7 @@ interface PickerGridProps {
 	activeTab: ScreenSharePickerTab;
 	activeShareLabel: string;
 	pendingSelectionId: string | null;
+	selectedCardId?: string | null;
 	onSelect: (cardId: string) => void;
 	onPreviewImageError: (cardId: string) => void;
 }
@@ -22,6 +23,7 @@ export const PickerGrid: React.FC<PickerGridProps> = ({
 	activeTab,
 	activeShareLabel,
 	pendingSelectionId,
+	selectedCardId,
 	onSelect,
 	onPreviewImageError,
 }) => {
@@ -35,6 +37,7 @@ export const PickerGrid: React.FC<PickerGridProps> = ({
 						card={card}
 						isDeviceCard={isDeviceCard}
 						isPending={pendingSelectionId === card.id}
+						isSelected={selectedCardId === card.id}
 						isAnyPending={pendingSelectionId != null}
 						ariaLabel={`${activeShareLabel}: ${card.title}`}
 						onSelect={() => onSelect(card.id)}

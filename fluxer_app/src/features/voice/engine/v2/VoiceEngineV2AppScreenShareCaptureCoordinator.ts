@@ -1360,6 +1360,9 @@ export class VoiceEngineV2AppScreenShareCaptureCoordinator {
 		await ensureNativeCameraPermissionForDeviceShare('start');
 		await requireVoiceEngineV2AppNativeBridge('publish native device screen share').publishDeviceScreenShare({
 			...(videoDeviceId && videoDeviceId !== 'default' ? {deviceId: videoDeviceId} : {}),
+			captureWidth: options?.sourceResolution?.width,
+			captureHeight: options?.sourceResolution?.height,
+			captureFrameRate: options?.sourceResolution?.frameRate,
 			width: publishDimensions.width,
 			height: publishDimensions.height,
 			frameRate: publishDimensions.frameRate,
@@ -1414,6 +1417,9 @@ export class VoiceEngineV2AppScreenShareCaptureCoordinator {
 			method: 'device-media',
 			device: {
 				videoDeviceId: options?.videoDeviceId,
+				actualWidth: options?.sourceResolution?.width,
+				actualHeight: options?.sourceResolution?.height,
+				actualFrameRate: options?.sourceResolution?.frameRate,
 				requestedWidth: publishDimensions.width,
 				requestedHeight: publishDimensions.height,
 				requestedFrameRate: publishDimensions.frameRate,
@@ -1447,6 +1453,9 @@ export class VoiceEngineV2AppScreenShareCaptureCoordinator {
 		logger.info('Started native-engine device screen share', {
 			videoDeviceId: options?.videoDeviceId,
 			previewVideoDeviceId: options?.previewVideoDeviceId,
+			captureWidth: options?.sourceResolution?.width,
+			captureHeight: options?.sourceResolution?.height,
+			captureFrameRate: options?.sourceResolution?.frameRate,
 			width: publishDimensions.width,
 			height: publishDimensions.height,
 			frameRate: publishDimensions.frameRate,

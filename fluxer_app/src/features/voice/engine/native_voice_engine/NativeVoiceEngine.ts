@@ -707,6 +707,9 @@ export class NativeVoiceEngine implements VoiceEngine {
 	async publishDeviceScreenShare(params: VoiceEngineV2BridgePublishDeviceScreenShareOptions): Promise<void> {
 		const publishOptions = {
 			deviceId: params.deviceId,
+			captureWidth: params.captureWidth,
+			captureHeight: params.captureHeight,
+			captureFrameRate: params.captureFrameRate,
 			width: params.width,
 			height: params.height,
 			frameRate: params.frameRate,

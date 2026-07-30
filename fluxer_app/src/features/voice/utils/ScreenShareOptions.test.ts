@@ -1,9 +1,32 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import {describe, expect, it} from 'vitest';
-import {buildScreenShareOptions, resolveStreamingModeSettings} from './ScreenShareOptions';
+import {
+	buildScreenShareOptions,
+	getScreenShareEncoding,
+	resolveDeviceSourceCaptureResolution,
+	resolveEffectiveScreenShareDimensions,
+	resolveScreenShareFrameRate,
+	resolveStreamingModeSettings,
+} from './ScreenShareOptions';
 
 describe('buildScreenShareOptions', () => {
+	it('keeps capture-card source format separate from ultrawide output dimensions', () => {
+		expect(
+			resolveDeviceSourceCaptureResolution(
+				{width: 2580, height: 1080, frameRate: 60},
+				{width: 3440, height: 1440},
+				59.94,
+			),
+		).toEqual({width: 3440, height: 1440, frameRate: 60});
+	});
+
+	it('caps capture-card source FPS at the selected outgoing FPS', () => {
+		expect(
+			resolveDeviceSourceCaptureResolution({width: 1720, height: 720, frameRate: 30}, {width: 3440, height: 1440}, 60),
+		).toEqual({width: 3440, height: 1440, frameRate: 30});
+	});
+
 	it('asks display capture to omit the cursor for app windows', () => {
 		const {captureOptions} = buildScreenShareOptions({
 			resolution: 'medium',
@@ -138,6 +161,55 @@ describe('buildScreenShareOptions', () => {
 			includeAudio: false,
 		});
 		expect(publishOptions.screenShareEncoding?.maxBitrate).toBe(24000000);
+	});
+	it('keeps Source at the exact native ultrawide dimensions', () => {
+		expect(resolveEffectiveScreenShareDimensions('source', {width: 3440, height: 1440})).toEqual({
+			width: 3440,
+			height: 1440,
+		});
+		expect(resolveEffectiveScreenShareDimensions('source', {width: 5120, height: 1440})).toEqual({
+			width: 5120,
+			height: 1440,
+		});
+	});
+	it('uses resolution presets as height ceilings while preserving source aspect ratio', () => {
+		expect(resolveEffectiveScreenShareDimensions('ultra', {width: 3440, height: 1440})).toEqual({
+			width: 3440,
+			height: 1440,
+		});
+		expect(resolveEffectiveScreenShareDimensions('high', {width: 3440, height: 1440})).toEqual({
+			width: 2580,
+			height: 1080,
+		});
+		expect(resolveEffectiveScreenShareDimensions('medium', {width: 5120, height: 1440})).toEqual({
+			width: 2560,
+			height: 720,
+		});
+	});
+	it('never upscales a source below the selected height ceiling', () => {
+		expect(resolveEffectiveScreenShareDimensions('uhd', {width: 1920, height: 1080})).toEqual({
+			width: 1920,
+			height: 1080,
+		});
+	});
+	it('caps every requested frame rate at the supported 60 FPS ceiling', () => {
+		expect(resolveScreenShareFrameRate(15)).toBe(15);
+		expect(resolveScreenShareFrameRate(30)).toBe(30);
+		expect(resolveScreenShareFrameRate(60)).toBe(60);
+		expect(resolveScreenShareFrameRate(120)).toBe(60);
+	});
+	it('allocates additional bitrate to an ultrawide frame at the same height', () => {
+		const standard = getScreenShareEncoding('high', 60, undefined, {width: 1920, height: 1080});
+		const ultrawide = getScreenShareEncoding('high', 60, undefined, {width: 2580, height: 1080});
+		expect(ultrawide.maxBitrate).toBeGreaterThan(standard.maxBitrate ?? 0);
+	});
+	it('builds the 4K option at 3840 by 2160', () => {
+		const {captureOptions} = buildScreenShareOptions({
+			resolution: 'uhd',
+			frameRate: 60,
+			includeAudio: false,
+		});
+		expect(captureOptions.resolution).toEqual({width: 3840, height: 2160, frameRate: 60});
 	});
 	it('defaults the high-tier gaming preset to 60 fps', () => {
 		expect(resolveStreamingModeSettings('gaming', 'medium', 30, true)).toEqual({

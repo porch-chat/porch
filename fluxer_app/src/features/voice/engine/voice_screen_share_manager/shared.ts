@@ -33,6 +33,11 @@ export interface DeviceScreenShareCaptureOptions {
 	videoDeviceId?: string;
 	previewVideoDeviceId?: string;
 	audioDeviceId?: string;
+	sourceResolution?: {
+		width: number;
+		height: number;
+		frameRate: number;
+	};
 	resolution?: ScreenShareCaptureOptions['resolution'];
 	sendUpdate?: boolean;
 	playSound?: boolean;

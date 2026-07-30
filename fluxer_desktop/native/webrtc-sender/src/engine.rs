@@ -215,6 +215,8 @@ struct ScreenSourceMetadata {
     track_sid: TrackSid,
     width: u32,
     height: u32,
+    source_width: u32,
+    source_height: u32,
     codec: String,
     target_bitrate_kbps: Option<f64>,
     configured_fps: f64,
@@ -652,11 +654,14 @@ fn emit_deep_filter_status(
 #[derive(Clone)]
 struct DeviceCameraCapture {
     source: NativeVideoSource,
+    output_width: u32,
+    output_height: u32,
     participant_sid: String,
     participant_identity: String,
     track_name: String,
     track_source: String,
     request: camera::CameraRequest,
+    opened: camera::OpenedCamera,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -2424,6 +2429,8 @@ impl VoiceEngine {
                 track_sid,
                 width,
                 height,
+                source_width: width,
+                source_height: height,
                 codec: codec.trim().to_string(),
                 target_bitrate_kbps: max_bitrate_bps
                     .filter(|bps| bps.is_finite() && *bps > 0.0)
@@ -3453,9 +3460,9 @@ impl VoiceEngine {
         background.live_background = Some(self.camera_live_background.clone());
         let request = camera::CameraRequest::from_opts(
             opts.device_id.as_deref(),
-            opts.width,
-            opts.height,
-            opts.frame_rate,
+            opts.capture_width.or(opts.width),
+            opts.capture_height.or(opts.height),
+            opts.capture_frame_rate.or(opts.frame_rate),
             opts.mirror.unwrap_or(false),
             background,
         );
@@ -3465,10 +3472,29 @@ impl VoiceEngine {
             .map_err(napi::Error::from_reason)?;
 
         let worker = open_camera_capture_worker(request.clone()).await?;
+        eprintln!(
+            "webrtc-sender: {} capture format requested={}x{}@{} selected={}x{}@{}",
+            publication_kind.track_name(),
+            request.width,
+            request.height,
+            request.fps,
+            worker.opened.width,
+            worker.opened.height,
+            worker.opened.fps,
+        );
+        let (output_width, output_height) = camera_capture_output_dimensions(worker.opened, &opts);
+        eprintln!(
+            "webrtc-sender: {} output format={}x{} source={}x{}",
+            publication_kind.track_name(),
+            output_width,
+            output_height,
+            worker.opened.width,
+            worker.opened.height,
+        );
         let source = NativeVideoSource::new(
             VideoResolution {
-                width: worker.opened.width & !1,
-                height: worker.opened.height & !1,
+                width: output_width,
+                height: output_height,
             },
             publication_kind.is_screencast(),
         );
@@ -3498,11 +3524,14 @@ impl VoiceEngine {
         let track_sid = Arc::new(Mutex::new(publication.sid().to_string()));
         let capture = DeviceCameraCapture {
             source,
+            output_width,
+            output_height,
             participant_sid: local.sid().to_string(),
             participant_identity: local.identity().to_string(),
             track_name: publication.name(),
             track_source: events::track_source_str(publication.source()).to_string(),
             request,
+            opened: worker.opened,
         };
         store_camera_slot(
             slot,
@@ -3549,6 +3578,8 @@ impl VoiceEngine {
         let frame_sink_active = local_video_frame_sink_active(self.video_frames.clone());
         camera::CameraCaptureSinks {
             source: capture.source.clone(),
+            output_width: capture.output_width,
+            output_height: capture.output_height,
             frame_sink,
             frame_sink_active,
         }
@@ -3697,6 +3728,9 @@ impl VoiceEngine {
         );
         let camera_opts = CameraOptions {
             device_id: None,
+            capture_width: None,
+            capture_height: None,
+            capture_frame_rate: None,
             width: Some(opts.width),
             height: Some(opts.height),
             frame_rate: Some(opts.frame_rate),
@@ -3810,6 +3844,16 @@ impl VoiceEngine {
                         description: device.description,
                         index: device.index,
                         device_id_aliases: device.device_id_aliases,
+                        formats: device
+                            .formats
+                            .into_iter()
+                            .map(|format| CameraDeviceFormatInfo {
+                                width: format.width,
+                                height: format.height,
+                                frame_rate: format.frame_rate,
+                                pixel_format: format.pixel_format,
+                            })
+                            .collect(),
                     })
                     .collect()
             })
@@ -3900,6 +3944,8 @@ impl VoiceEngine {
         let frame_sink_active = local_video_frame_sink_active(self.video_frames.clone());
         let sinks = camera::CameraCaptureSinks {
             source,
+            output_width: width,
+            output_height: height,
             frame_sink,
             frame_sink_active,
         };
@@ -4134,10 +4180,34 @@ impl VoiceEngine {
     }
 
     fn screen_source_metadata(&self) -> Option<ScreenSourceMetadata> {
-        self.screen
+        if let Some(metadata) = self
+            .screen
             .lock()
             .as_ref()
             .map(|screen| screen.metadata.clone())
+        {
+            return Some(metadata);
+        }
+        let screen_camera = self.screen_camera.lock();
+        let CameraSource::Device {
+            track_sid,
+            capture: Some(capture),
+            ..
+        } = screen_camera.as_ref()?
+        else {
+            return None;
+        };
+        let track_sid = TrackSid::try_from(track_sid.lock().clone()).ok()?;
+        Some(ScreenSourceMetadata {
+            track_sid,
+            width: capture.output_width,
+            height: capture.output_height,
+            source_width: capture.opened.width,
+            source_height: capture.opened.height,
+            codec: String::new(),
+            target_bitrate_kbps: None,
+            configured_fps: f64::from(capture.request.fps),
+        })
     }
 
     fn start_stats_task(&self) {
@@ -4262,6 +4332,9 @@ pub struct MicrophoneOptions {
 #[napi(object)]
 pub struct CameraOptions {
     pub device_id: Option<String>,
+    pub capture_width: Option<u32>,
+    pub capture_height: Option<u32>,
+    pub capture_frame_rate: Option<u32>,
     pub width: Option<u32>,
     pub height: Option<u32>,
     pub frame_rate: Option<u32>,
@@ -4311,6 +4384,15 @@ pub struct CameraDeviceInfo {
     pub description: String,
     pub index: Option<u32>,
     pub device_id_aliases: Vec<String>,
+    pub formats: Vec<CameraDeviceFormatInfo>,
+}
+
+#[napi(object)]
+pub struct CameraDeviceFormatInfo {
+    pub width: u32,
+    pub height: u32,
+    pub frame_rate: u32,
+    pub pixel_format: String,
 }
 
 fn snapshot_participants(room: &Room) -> (LocalParticipant, Vec<RemoteParticipant>) {
@@ -4360,8 +4442,8 @@ fn annotate_screen_share_stats(
         }
         entry.width = Some(metadata.width);
         entry.height = Some(metadata.height);
-        entry.source_width = Some(metadata.width);
-        entry.source_height = Some(metadata.height);
+        entry.source_width = Some(metadata.source_width);
+        entry.source_height = Some(metadata.source_height);
         entry.target_bitrate_kbps = metadata.target_bitrate_kbps;
         entry.configured_fps = Some(metadata.configured_fps);
         entry.target_fps = Some(send.outgoing_video_target_fps);
@@ -5234,6 +5316,31 @@ fn texture_capability_for_screen_codec(codec: &str) -> TextureCapability {
     )
 }
 
+fn camera_capture_output_dimensions(
+    opened: camera::OpenedCamera,
+    opts: &CameraOptions,
+) -> (u32, u32) {
+    let source_width = (opened.width & !1).max(2);
+    let source_height = (opened.height & !1).max(2);
+    if opts.capture_width.is_none() || opts.capture_height.is_none() {
+        return (source_width, source_height);
+    }
+    let target_height = opts
+        .height
+        .filter(|height| *height >= 2)
+        .map(|height| height & !1)
+        .unwrap_or(source_height);
+    if target_height >= source_height {
+        return (source_width, source_height);
+    }
+    let output_height = target_height.max(2);
+    let output_width = (((u64::from(source_width) * u64::from(output_height))
+        / u64::from(source_height)) as u32
+        & !1)
+        .max(2);
+    (output_width, output_height)
+}
+
 fn build_microphone_publish_options(opts: &MicrophoneOptions) -> napi::Result<TrackPublishOptions> {
     let audio_encoding = audio::normalize_microphone_max_bitrate_bps(opts.max_bitrate_bps)
         .map_err(napi::Error::from_reason)?
@@ -5724,6 +5831,9 @@ mod tests {
         let options = build_camera_publish_options(
             &CameraOptions {
                 device_id: None,
+                capture_width: None,
+                capture_height: None,
+                capture_frame_rate: None,
                 width: None,
                 height: None,
                 frame_rate: None,
@@ -5746,6 +5856,46 @@ mod tests {
     }
 
     #[test]
+    fn device_capture_output_preserves_actual_ultrawide_aspect_ratio() {
+        let mut options = camera_options_for_tests(Some("capture-card"));
+        options.capture_width = Some(3440);
+        options.capture_height = Some(1440);
+        options.width = Some(2580);
+        options.height = Some(1080);
+        assert_eq!(
+            camera_capture_output_dimensions(
+                camera::OpenedCamera {
+                    width: 3440,
+                    height: 1440,
+                    fps: 60,
+                },
+                &options,
+            ),
+            (2580, 1080),
+        );
+    }
+
+    #[test]
+    fn device_capture_output_uses_actual_ratio_when_device_falls_back() {
+        let mut options = camera_options_for_tests(Some("capture-card"));
+        options.capture_width = Some(3440);
+        options.capture_height = Some(1440);
+        options.width = Some(2580);
+        options.height = Some(1080);
+        assert_eq!(
+            camera_capture_output_dimensions(
+                camera::OpenedCamera {
+                    width: 1920,
+                    height: 1080,
+                    fps: 60,
+                },
+                &options,
+            ),
+            (1920, 1080),
+        );
+    }
+
+    #[test]
     fn camera_publish_options_can_publish_as_screen_share() {
         assert_eq!(
             CameraPublicationKind::ScreenShare.track_name(),
@@ -5755,6 +5905,9 @@ mod tests {
         let options = build_camera_publish_options(
             &CameraOptions {
                 device_id: Some("studio-display-camera".to_string()),
+                capture_width: None,
+                capture_height: None,
+                capture_frame_rate: None,
                 width: Some(1280),
                 height: Some(720),
                 frame_rate: Some(24),
@@ -6679,6 +6832,9 @@ mod tests {
     fn camera_options_for_tests(device_id: Option<&str>) -> CameraOptions {
         CameraOptions {
             device_id: device_id.map(str::to_string),
+            capture_width: None,
+            capture_height: None,
+            capture_frame_rate: None,
             width: None,
             height: None,
             frame_rate: None,

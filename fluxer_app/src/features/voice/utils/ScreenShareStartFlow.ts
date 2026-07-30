@@ -44,6 +44,7 @@ import {
 	buildScreenShareOptions,
 	normaliseResolutionForContext,
 	normaliseStreamingModeForContext,
+	resolveDeviceSourceCaptureResolution,
 	resolveStreamingModeSettings,
 	type ScreenShareContext,
 } from '@app/features/voice/utils/ScreenShareOptions';
@@ -544,7 +545,10 @@ async function runConfiguredDisplayScreenShare(
 			}
 			if (!useWaylandPortal && sourceId) {
 				setDesktopSourceIntent({sourceId, includeAudio: false});
-				ActiveScreenShareSource.setSourceId(sourceId, {isOwnWindow: isOwnWindowShare});
+				ActiveScreenShareSource.setSourceId(sourceId, {
+					isOwnWindow: isOwnWindowShare,
+					sourceDimensions: options?.sourceDimensions,
+				});
 			}
 			let operationSucceeded = false;
 			if (mode === 'switch' && !restartWaylandPortalForSwitch) {
@@ -684,7 +688,7 @@ async function attemptDxgiFallbackCapture(
 	await MediaEngine.startNativeDisplayScreenShare(nativeShareOptions, undefined, publishOptions);
 	const succeeded = didScreenShareStart();
 	if (succeeded) {
-		ActiveScreenShareSource.setSourceId(sourceId, {isOwnWindow});
+		ActiveScreenShareSource.setSourceId(sourceId, {isOwnWindow, sourceDimensions});
 		logger.info('DXGI fallback capture succeeded', {sourceId});
 	}
 	return succeeded;
@@ -712,21 +716,39 @@ export async function switchConfiguredDisplayScreenShare(
 	return didSwitch;
 }
 
-export async function startConfiguredDeviceScreenShare(videoDeviceId: string): Promise<boolean> {
+export interface ConfiguredDeviceScreenShareOptions {
+	sourceDimensions?: {width: number; height: number};
+	sourceFrameRate?: number;
+}
+
+export async function startConfiguredDeviceScreenShare(
+	videoDeviceId: string,
+	options: ConfiguredDeviceScreenShareOptions = {},
+): Promise<boolean> {
 	normaliseDeviceScreenShareSettings();
 	const {captureOptions, publishOptions, includeAudio, audioDeviceId} = getConfiguredScreenShareOptions(
 		'device',
 		'desktop-custom',
+		options.sourceDimensions,
+	);
+	const sourceResolution = resolveDeviceSourceCaptureResolution(
+		captureOptions.resolution,
+		options.sourceDimensions,
+		options.sourceFrameRate,
 	);
 	try {
 		await MediaEngine.startDeviceScreenShare(
 			{
 				videoDeviceId,
 				audioDeviceId: includeAudio ? audioDeviceId : undefined,
+				sourceResolution,
 				resolution: captureOptions.resolution,
 			},
 			publishOptions,
 		);
+		if (didScreenShareStart()) {
+			ActiveScreenShareSource.setSourceId(videoDeviceId, {sourceDimensions: options.sourceDimensions});
+		}
 	} catch (error) {
 		logger.error('Failed to start device screen share', {
 			error,
@@ -736,21 +758,35 @@ export async function startConfiguredDeviceScreenShare(videoDeviceId: string): P
 	return didScreenShareStart();
 }
 
-export async function switchConfiguredDeviceScreenShare(videoDeviceId: string): Promise<boolean> {
+export async function switchConfiguredDeviceScreenShare(
+	videoDeviceId: string,
+	options: ConfiguredDeviceScreenShareOptions = {},
+): Promise<boolean> {
 	normaliseDeviceScreenShareSettings();
 	const {captureOptions, publishOptions, includeAudio, audioDeviceId} = getConfiguredScreenShareOptions(
 		'device',
 		'desktop-custom',
+		options.sourceDimensions,
+	);
+	const sourceResolution = resolveDeviceSourceCaptureResolution(
+		captureOptions.resolution,
+		options.sourceDimensions,
+		options.sourceFrameRate,
 	);
 	try {
-		return await MediaEngine.replaceActiveDeviceScreenShare(
+		const didSwitch = await MediaEngine.replaceActiveDeviceScreenShare(
 			{
 				videoDeviceId,
 				audioDeviceId: includeAudio ? audioDeviceId : undefined,
+				sourceResolution,
 				resolution: captureOptions.resolution,
 			},
 			publishOptions,
 		);
+		if (didSwitch) {
+			ActiveScreenShareSource.setSourceId(videoDeviceId, {sourceDimensions: options.sourceDimensions});
+		}
+		return didSwitch;
 	} catch (error) {
 		logger.error('Failed to switch device screen share source', {
 			error,
@@ -891,7 +927,10 @@ async function runConfiguredNativeDisplayScreenShare(
 			}
 		}
 		if (succeeded && desktopSourceId) {
-			ActiveScreenShareSource.setSourceId(desktopSourceId, {isOwnWindow: options.isOwnWindow === true});
+			ActiveScreenShareSource.setSourceId(desktopSourceId, {
+				isOwnWindow: options.isOwnWindow === true,
+				sourceDimensions: {width: source.width, height: source.height},
+			});
 		} else if (!succeeded) {
 			ActiveScreenShareSource.clear();
 		}

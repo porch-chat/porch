@@ -9,6 +9,7 @@ import {modal} from '@app/features/ui/commands/ModalCommands';
 import {Combobox} from '@app/features/ui/components/form/FormCombobox';
 import {openExternalUrl} from '@app/features/ui/utils/NativeUtils';
 import styles from '@app/features/updater/commands/UpdaterModalCommands.module.css';
+import {formatDesktopBuildVersion} from '@app/features/updater/utils/DesktopBuildVersion';
 import {i18n} from '@lingui/core';
 import {msg} from '@lingui/core/macro';
 import {useMemo, useState} from 'react';
@@ -160,13 +161,17 @@ const UNSUPPORTED_KEY = 'updater-unsupported';
 const ERROR_KEY = 'updater-error';
 
 export function pushUpdateAvailableModal(version: string | null, onDownload: () => void | Promise<void>): void {
+	const displayVersion = formatDesktopBuildVersion(version, i18n.locale);
 	ModalCommands.pushWithKey(
 		modal(() => (
 			<ConfirmModal
 				title={i18n._(DESKTOP_UPDATE_AVAILABLE_DESCRIPTOR)}
 				description={
-					version
-						? i18n._(DESKTOP_VERSION_IS_READY_TO_DOWNLOAD_DESCRIPTOR, {version, productName: PRODUCT_NAME})
+					displayVersion
+						? i18n._(DESKTOP_VERSION_IS_READY_TO_DOWNLOAD_DESCRIPTOR, {
+								version: displayVersion,
+								productName: PRODUCT_NAME,
+							})
 						: i18n._(A_NEW_DESKTOP_VERSION_IS_READY_TO_DOWNLOAD_DESCRIPTOR, {productName: PRODUCT_NAME})
 				}
 				primaryText={i18n._(DOWNLOAD_INSTALLER_DESCRIPTOR)}
@@ -189,6 +194,8 @@ interface ManualUpdateAvailableModalProps {
 }
 
 function ManualUpdateAvailableModal({currentVersion, version, options, onDownload}: ManualUpdateAvailableModalProps) {
+	const displayCurrentVersion = formatDesktopBuildVersion(currentVersion, i18n.locale);
+	const displayVersion = formatDesktopBuildVersion(version, i18n.locale);
 	const [selectedFormat, setSelectedFormat] = useState<UpdaterDownloadOption['format'] | null>(
 		options[0]?.format ?? null,
 	);
@@ -214,13 +221,13 @@ function ManualUpdateAvailableModal({currentVersion, version, options, onDownloa
 							{i18n._(INSTALLED_VERSION_LABEL_DESCRIPTOR)}
 						</dt>
 						<dd className={styles.versionValue} data-flx="updater.manual-update.installed-value">
-							{currentVersion ?? i18n._(UNKNOWN_VERSION_DESCRIPTOR)}
+							{displayCurrentVersion ?? i18n._(UNKNOWN_VERSION_DESCRIPTOR)}
 						</dd>
 						<dt className={styles.versionLabel} data-flx="updater.manual-update.available-label">
 							{i18n._(AVAILABLE_VERSION_LABEL_DESCRIPTOR)}
 						</dt>
 						<dd className={styles.versionValue} data-flx="updater.manual-update.available-value">
-							{version ?? i18n._(NEW_VERSION_DESCRIPTOR)}
+							{displayVersion ?? i18n._(NEW_VERSION_DESCRIPTOR)}
 						</dd>
 					</dl>
 					<Combobox
@@ -263,13 +270,14 @@ export function pushManualUpdateAvailableModal(options: ManualUpdateAvailableMod
 }
 
 export function pushUpToDateModal(currentVersion: string | null): void {
+	const displayVersion = formatDesktopBuildVersion(currentVersion, i18n.locale);
 	ModalCommands.pushWithKey(
 		modal(() => (
 			<ConfirmModal
 				title={i18n._(DESKTOP_APP_IS_UP_TO_DATE_DESCRIPTOR)}
 				description={
-					currentVersion
-						? i18n._(INSTALLED_VERSION_IS_CURRENT_DESCRIPTOR, {currentVersion})
+					displayVersion
+						? i18n._(INSTALLED_VERSION_IS_CURRENT_DESCRIPTOR, {currentVersion: displayVersion})
 						: i18n._(NO_DESKTOP_UPDATE_IS_AVAILABLE_DESCRIPTOR)
 				}
 				secondaryText={i18n._(CLOSE_DESCRIPTOR)}
@@ -321,13 +329,17 @@ export function pushUnsupportedUpdateModal(
 }
 
 export function pushUpdateReadyModal(version: string | null, onInstall: () => void | Promise<void>): void {
+	const displayVersion = formatDesktopBuildVersion(version, i18n.locale);
 	ModalCommands.pushWithKey(
 		modal(() => (
 			<ConfirmModal
 				title={i18n._(DESKTOP_UPDATE_READY_DESCRIPTOR)}
 				description={
-					version
-						? i18n._(DESKTOP_VERSION_HAS_BEEN_DOWNLOADED_DESCRIPTOR, {version, productName: PRODUCT_NAME})
+					displayVersion
+						? i18n._(DESKTOP_VERSION_HAS_BEEN_DOWNLOADED_DESCRIPTOR, {
+								version: displayVersion,
+								productName: PRODUCT_NAME,
+							})
 						: i18n._(THE_DESKTOP_UPDATE_HAS_BEEN_DOWNLOADED_DESCRIPTOR, {productName: PRODUCT_NAME})
 				}
 				primaryText={i18n._(RESTART_FLUXER_DESCRIPTOR, {productName: PRODUCT_NAME})}

@@ -252,11 +252,7 @@
 			"status": "active",
 			"category": "security",
 			"reason": "Allow the configured Turnstile client script and challenge iframe to load while preserving backend Siteverify enforcement.",
-			"paths": [
-				"docs/porch/BRANDING.md",
-				"fluxer_app_proxy/src/csp.rs",
-				"scripts/validate-porch-branding.mjs"
-			],
+			"paths": ["docs/porch/BRANDING.md", "fluxer_app_proxy/src/csp.rs", "scripts/validate-porch-branding.mjs"],
 			"tests": [
 				"app-proxy CSP unit test",
 				"Porch branding contract validation",
@@ -407,16 +403,18 @@
 			"title": "Ship Windows native screen capture and reuse sender frames for device previews",
 			"status": "active",
 			"category": "media-capture",
-			"reason": "Porch's unsigned Windows workflow omitted the native capture module, which made every display and window share fail with disabled-by-launch. Device shares also opened the selected capture card twice and LiveKit silently fell back to the webcam when the second open failed. Windows builds now include native capture, and local device previews consume the native sender's existing frames.",
+			"reason": "Porch's unsigned Windows workflow omitted the native capture module, which made every display and window share fail with disabled-by-launch. Device shares also opened the selected capture card twice and LiveKit silently fell back to the webcam when the second open failed. Windows builds now include native capture, native sidecar packaging honors the workflow's Cargo target directory, and local device previews consume the native sender's existing frames.",
 			"paths": [
 				".github/workflows/build-porch-desktop.yaml",
 				".porch/downstream-patches.json",
 				"fluxer_app/src/features/voice/engine/v2/VoiceEngineV2AppScreenSharePreviewTracking.test.ts",
 				"fluxer_app/src/features/voice/engine/v2/VoiceEngineV2AppScreenSharePreviewTracking.ts",
-				"fluxer_desktop/scripts/validate-porch-workflow.mjs"
+				"fluxer_desktop/scripts/validate-porch-workflow.mjs",
+				"tools/ci/src/desktop_native.rs"
 			],
 			"tests": [
 				"native device screen-share sender-preview regression tests",
+				"native sidecar Cargo output path regression tests",
 				"Porch desktop workflow validation",
 				"app TypeScript typecheck",
 				"Biome formatting and lint checks",
@@ -425,6 +423,69 @@
 			"conflict_risk": "medium",
 			"upstream_status": "permanently-downstream",
 			"removal_condition": "Remove if Porch stops shipping the Windows desktop client or upstream provides an unsigned-compatible native display capture build and renders local device-share previews from the active native sender."
+		},
+		{
+			"id": "porch-source-native-screen-share-0014",
+			"title": "Source-native capture-card and ultrawide screen sharing",
+			"status": "active",
+			"category": "media-quality",
+			"reason": "Porch needs capture-card sharing and unusual display aspect ratios without distortion. Source capture format is now separate from outgoing stream dimensions, presets use a height ceiling while preserving the actual aspect ratio, Source uses native dimensions, FPS remains selectable up to 60, and the native sender scales I420 frames only when necessary.",
+			"paths": [
+				".porch/downstream-patches.json",
+				"fluxer_app/src/features/voice/components/StreamSettingsMenuContent.tsx",
+				"fluxer_app/src/features/voice/components/VoiceCallLayoutContent.tsx",
+				"fluxer_app/src/features/voice/components/modals/ScreenSharePickerModal.module.css",
+				"fluxer_app/src/features/voice/components/modals/ScreenSharePickerModal.tsx",
+				"fluxer_app/src/features/voice/components/modals/screen_share_picker_modal",
+				"fluxer_app/src/features/voice/engine/AdaptiveScreenShareEngine.ts",
+				"fluxer_app/src/features/voice/engine/MediaEngineFacade.ts",
+				"fluxer_app/src/features/voice/engine/native_voice_engine/NativeVoiceEngine.ts",
+				"fluxer_app/src/features/voice/engine/v2/VoiceEngineV2AppNativeCameraDeviceMapping.ts",
+				"fluxer_app/src/features/voice/engine/v2/VoiceEngineV2AppScreenShareCaptureCoordinator.ts",
+				"fluxer_app/src/features/voice/engine/voice_screen_share_manager",
+				"fluxer_app/src/features/voice/state/ActiveScreenShareSource.ts",
+				"fluxer_app/src/features/voice/state/VoiceSettings.ts",
+				"fluxer_app/src/features/voice/utils/ScreenShareOptions.ts",
+				"fluxer_app/src/features/voice/utils/ScreenShareStartFlow.ts",
+				"fluxer_desktop/native/webrtc-sender",
+				"packages/voice_engine_v2"
+			],
+			"tests": [
+				"screen-share preset, Source, ultrawide, bitrate, and capture/output separation tests",
+				"native camera device-format mapping tests",
+				"native sender ultrawide output and fallback-aspect tests",
+				"voice engine v2 bridge contract tests",
+				"screen-share state, migration, picker, codec, and preview regression suite",
+				"app and desktop TypeScript typechecks",
+				"Biome and Rust formatting",
+				"git diff --check"
+			],
+			"conflict_risk": "high",
+			"upstream_status": "permanently-downstream",
+			"removal_condition": "Remove if upstream provides equivalent source-native capture-card selection, non-distorting preset scaling, Source resolution, 60 FPS control, ultrawide rendering, adaptive quality, and native diagnostics."
+		},
+		{
+			"id": "porch-readable-desktop-build-version-0015",
+			"title": "Render timestamp desktop builds as readable dates",
+			"status": "active",
+			"category": "desktop-updater",
+			"reason": "Porch desktop versions are immutable timestamp identifiers such as 2026.729.135314. Updater dialogs retain that exact identifier while also explaining it as a readable UTC build date.",
+			"paths": [
+				".porch/downstream-patches.json",
+				"fluxer_app/src/features/updater/commands/UpdaterModalCommands.tsx",
+				"fluxer_app/src/features/updater/utils/DesktopBuildVersion.test.ts",
+				"fluxer_app/src/features/updater/utils/DesktopBuildVersion.ts"
+			],
+			"tests": [
+				"compact and legacy timestamp formatter tests",
+				"semantic-version and invalid-timestamp fallback tests",
+				"app TypeScript typecheck",
+				"Biome formatting",
+				"git diff --check"
+			],
+			"conflict_risk": "low",
+			"upstream_status": "permanently-downstream",
+			"removal_condition": "Remove if Porch stops using timestamp desktop versions or upstream displays them with equivalent human-readable context."
 		}
 	]
 }

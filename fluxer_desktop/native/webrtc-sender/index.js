@@ -160,6 +160,9 @@ function probeAudioDeviceModule() {
 function normalizeCameraOptions(opts = {}) {
 	return {
 		deviceId: opts.deviceId,
+		captureWidth: opts.captureWidth,
+		captureHeight: opts.captureHeight,
+		captureFrameRate: opts.captureFrameRate,
 		width: opts.width,
 		height: opts.height,
 		frameRate: opts.frameRate,

@@ -34,7 +34,7 @@ export const NONE_BACKGROUND_ID = 'none';
 export const BLUR_BACKGROUND_ID = 'blur';
 
 export type CameraResolution = 'low' | 'medium' | 'high';
-export type ScreenshareResolution = 'low_240p' | 'low_480p' | 'medium' | 'high' | 'ultra' | 'source';
+export type ScreenshareResolution = 'low_240p' | 'low_480p' | 'medium' | 'high' | 'ultra' | 'uhd' | 'source';
 export type StreamingMode = 'gaming' | 'screenshare' | 'custom';
 export type LastScreenShareSourceKind = 'app' | 'display' | 'device' | 'game';
 
@@ -43,13 +43,16 @@ export interface LastScreenShareSource {
 	sourceId: string | null;
 	title: string;
 	updatedAt: number;
+	sourceWidth?: number;
+	sourceHeight?: number;
+	sourceFrameRate?: number;
 }
 
 const logger = new Logger('VoiceSettings');
 
 const MAX_VOICE_PROCESSING_DEVICE_OVERRIDES = 16;
 const VIDEO_FRAME_RATE_MIN = 15;
-const VIDEO_FRAME_RATE_MAX = 120;
+const VIDEO_FRAME_RATE_MAX = 60;
 const VIDEO_FRAME_RATE_DEFAULT = 30;
 export const CAMERA_EFFECT_STRENGTH_MIN = 0;
 export const CAMERA_EFFECT_STRENGTH_MAX = 100;
@@ -1102,13 +1105,22 @@ class VoiceSettings {
 			'medium',
 			'high',
 			'ultra',
+			'uhd',
 			'source',
 		];
 		if (!validScreenshareResolutions.includes(screenshareResolution)) {
 			screenshareResolution = 'medium';
 		}
+		if (screenshareResolution === 'low_240p') {
+			screenshareResolution = 'low_480p';
+		}
 		if (!hasHigherQuality) {
-			if (screenshareResolution === 'high' || screenshareResolution === 'ultra' || screenshareResolution === 'source') {
+			if (
+				screenshareResolution === 'high' ||
+				screenshareResolution === 'ultra' ||
+				screenshareResolution === 'uhd' ||
+				screenshareResolution === 'source'
+			) {
 				screenshareResolution = 'medium';
 			}
 			if (cameraResolution === 'high') {
@@ -1228,11 +1240,25 @@ function validateLastScreenShareSource(value: unknown): LastScreenShareSource | 
 	if (!title) return null;
 	const updatedAt =
 		typeof value.updatedAt === 'number' && Number.isFinite(value.updatedAt) ? value.updatedAt : Date.now();
+	const sourceWidth =
+		typeof value.sourceWidth === 'number' && Number.isFinite(value.sourceWidth) && value.sourceWidth > 0
+			? Math.max(2, Math.floor(value.sourceWidth) & ~1)
+			: undefined;
+	const sourceHeight =
+		typeof value.sourceHeight === 'number' && Number.isFinite(value.sourceHeight) && value.sourceHeight > 0
+			? Math.max(2, Math.floor(value.sourceHeight) & ~1)
+			: undefined;
+	const sourceFrameRate =
+		typeof value.sourceFrameRate === 'number' && Number.isFinite(value.sourceFrameRate) && value.sourceFrameRate > 0
+			? Math.max(1, Math.min(60, Math.round(value.sourceFrameRate)))
+			: undefined;
 	return {
 		kind,
 		sourceId,
 		title,
 		updatedAt,
+		...(sourceWidth !== undefined && sourceHeight !== undefined ? {sourceWidth, sourceHeight} : {}),
+		...(sourceFrameRate !== undefined ? {sourceFrameRate} : {}),
 	};
 }
 

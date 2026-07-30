@@ -4,6 +4,7 @@ import type {Channel} from '@app/features/channel/models/Channel';
 import {Scroller} from '@app/features/ui/components/Scroller';
 import FocusRing from '@app/features/ui/focus_ring/FocusRing';
 import {Tooltip} from '@app/features/ui/tooltip/Tooltip';
+import {useStreamTrackInfo} from '@app/features/voice/components/useStreamTrackInfo';
 import {
 	createVoiceCallLayoutPresentationSnapshot,
 	selectVoiceCallLayoutPresentationModel,
@@ -92,6 +93,8 @@ const COMPACT_FOCUS_STYLE: FocusLayoutStyle = {
 	'--focus-mini-grid-gap': '0.5rem',
 };
 const DEFAULT_FOCUS_MAIN_ASPECT_RATIO = 16 / 9;
+const MIN_FOCUS_MAIN_ASPECT_RATIO = 1 / 2;
+const MAX_FOCUS_MAIN_ASPECT_RATIO = 5;
 export const VoiceCallLayoutContent = observer(function VoiceCallLayoutContent({
 	channel,
 	layoutMode,
@@ -108,7 +111,16 @@ export const VoiceCallLayoutContent = observer(function VoiceCallLayoutContent({
 }: VoiceCallLayoutContentProps) {
 	const {i18n} = useLingui();
 	const focusLayoutStyle = useMemo(() => (compact ? COMPACT_FOCUS_STYLE : undefined), [compact]);
-	const focusMainAspectRatio = DEFAULT_FOCUS_MAIN_ASPECT_RATIO;
+	const focusMainTrackInfo = useStreamTrackInfo(focusMainTrack);
+	const focusMainAspectRatio = useMemo(() => {
+		if (!focusMainTrackInfo || focusMainTrackInfo.width <= 0 || focusMainTrackInfo.height <= 0) {
+			return DEFAULT_FOCUS_MAIN_ASPECT_RATIO;
+		}
+		return Math.min(
+			MAX_FOCUS_MAIN_ASPECT_RATIO,
+			Math.max(MIN_FOCUS_MAIN_ASPECT_RATIO, focusMainTrackInfo.width / focusMainTrackInfo.height),
+		);
+	}, [focusMainTrackInfo]);
 	const focusMainStyle = useMemo<FocusMainStyle>(() => {
 		return {
 			'--focus-main-aspect-ratio-value': `${focusMainAspectRatio}`,

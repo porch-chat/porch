@@ -255,6 +255,7 @@ import {ChannelTypes} from '@fluxer/constants/src/ChannelConstants';
 import {VOICE_CHANNEL_CAMERA_USER_LIMIT} from '@fluxer/constants/src/LimitConstants';
 import type {
 	VoiceEngineV2AudioMode,
+	VoiceEngineV2BridgeCameraDeviceFormat,
 	VoiceEngineV2CameraOptions,
 	VoiceEngineV2Command,
 	VoiceEngineV2Controller,
@@ -395,7 +396,9 @@ function nativeCameraDeviceIdFromResolution(resolution: VoiceEngineV2NativeCamer
 	}
 }
 
-async function resolveNativeCameraDeviceId(deviceId?: string): Promise<string | undefined> {
+async function resolveNativeCameraDevice(
+	deviceId?: string,
+): Promise<VoiceEngineV2NativeCameraDeviceResolution | undefined> {
 	if (!deviceId || deviceId === 'default') return undefined;
 	const trimmedDeviceId = deviceId.trim();
 	try {
@@ -409,11 +412,16 @@ async function resolveNativeCameraDeviceId(deviceId?: string): Promise<string | 
 			browserDevices: browserDeviceState.videoDevices,
 			nativeDevices,
 		});
-		return nativeCameraDeviceIdFromResolution(resolution);
+		return resolution;
 	} catch (error) {
 		logger.warn('Failed to map browser camera device to native camera device', {deviceId, error});
 		return undefined;
 	}
+}
+
+async function resolveNativeCameraDeviceId(deviceId?: string): Promise<string | undefined> {
+	const resolution = await resolveNativeCameraDevice(deviceId);
+	return resolution ? nativeCameraDeviceIdFromResolution(resolution) : undefined;
 }
 
 function isCameraPermissionDeniedCommandFailure(error: unknown): boolean {
@@ -3920,6 +3928,29 @@ class MediaEngineFacade extends Store {
 			...(options?.videoDeviceId ? {previewVideoDeviceId: options.videoDeviceId} : {}),
 			...(nativeVideoDeviceId ? {videoDeviceId: nativeVideoDeviceId} : {}),
 		};
+	}
+
+	async getDeviceScreenShareSourceFormats(
+		videoDeviceId: string,
+	): Promise<Array<VoiceEngineV2BridgeCameraDeviceFormat>> {
+		const resolution = await resolveNativeCameraDevice(videoDeviceId);
+		const formats = resolution?.nativeDevice?.formats ?? [];
+		return formats
+			.filter(
+				(format) =>
+					Number.isFinite(format.width) &&
+					format.width > 0 &&
+					Number.isFinite(format.height) &&
+					format.height > 0 &&
+					Number.isFinite(format.frameRate) &&
+					format.frameRate > 0,
+			)
+			.sort(
+				(left, right) =>
+					right.width * right.height - left.width * left.height ||
+					right.frameRate - left.frameRate ||
+					left.pixelFormat.localeCompare(right.pixelFormat),
+			);
 	}
 
 	private clearNativeCameraLocalPreviewTrack(trackSid: string): void {

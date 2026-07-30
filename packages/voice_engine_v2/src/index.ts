@@ -6,6 +6,7 @@ export type {
 	VoiceEngineV2BridgeAudioInputDevice,
 	VoiceEngineV2BridgeAudioOutputDevice,
 	VoiceEngineV2BridgeCameraDevice,
+	VoiceEngineV2BridgeCameraDeviceFormat,
 	VoiceEngineV2BridgeCapabilities,
 	VoiceEngineV2BridgeConnectionQuality,
 	VoiceEngineV2BridgeConnectOptions,

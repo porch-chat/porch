@@ -17,7 +17,7 @@ import type {
 	VoiceEngineV2VideoCodec,
 } from '../protocol';
 
-export const VOICE_ENGINE_V2_BRIDGE_VERSION = 18;
+export const VOICE_ENGINE_V2_BRIDGE_VERSION = 19;
 
 export type VoiceEngineV2BridgeMethodName =
 	| 'isSupported'
@@ -292,6 +292,14 @@ export interface VoiceEngineV2BridgeCameraDevice {
 	description: string;
 	index?: number | null;
 	deviceIdAliases?: Array<string>;
+	formats?: Array<VoiceEngineV2BridgeCameraDeviceFormat>;
+}
+
+export interface VoiceEngineV2BridgeCameraDeviceFormat {
+	width: number;
+	height: number;
+	frameRate: number;
+	pixelFormat: string;
 }
 
 export const VOICE_ENGINE_V2_CAMERA_EFFECT_STRENGTH_MIN = 0;
@@ -340,6 +348,9 @@ export interface VoiceEngineV2BridgeProcessedCameraFrame {
 
 export interface VoiceEngineV2BridgePublishDeviceScreenShareOptions {
 	deviceId?: string;
+	captureWidth?: number;
+	captureHeight?: number;
+	captureFrameRate?: number;
 	width?: number;
 	height?: number;
 	frameRate?: number;

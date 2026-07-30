@@ -11,6 +11,7 @@ interface PickerCardButtonProps {
 	card: PickerCard;
 	isDeviceCard: boolean;
 	isPending: boolean;
+	isSelected?: boolean;
 	isAnyPending: boolean;
 	ariaLabel: string;
 	onSelect: () => void;
@@ -21,6 +22,7 @@ export const PickerCardButton: React.FC<PickerCardButtonProps> = ({
 	card,
 	isDeviceCard,
 	isPending,
+	isSelected = false,
 	isAnyPending,
 	ariaLabel,
 	onSelect,
@@ -31,10 +33,11 @@ export const PickerCardButton: React.FC<PickerCardButtonProps> = ({
 		<FocusRing key={card.id} offset={-2} data-flx="voice.screen-share-picker-modal.focus-ring">
 			<button
 				type="button"
-				className={clsx(styles.card, isPending && styles.cardPending)}
+				className={clsx(styles.card, isPending && styles.cardPending, isSelected && styles.cardSelected)}
 				onClick={onSelect}
 				disabled={isAnyPending}
 				aria-label={ariaLabel}
+				aria-pressed={isSelected}
 				data-flx="voice.screen-share-picker-modal.card.button"
 			>
 				<div

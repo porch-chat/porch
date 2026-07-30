@@ -21,6 +21,7 @@ import {
 	isVoiceEngineV2BridgeKnownEventType,
 	isVoiceEngineV2BridgeProcessedCameraFrame,
 	isVoiceEngineV2BridgePublishCameraOptions,
+	isVoiceEngineV2BridgePublishDeviceScreenShareOptions,
 	isVoiceEngineV2BridgePublishProcessedCameraOptions,
 	isVoiceEngineV2BridgeReadiness,
 	resetVoiceEngineV2BridgeDroppedEventCounts,
@@ -284,8 +285,8 @@ describe('voice engine v2 video frame invariants', () => {
 });
 
 describe('voice engine v2 bridge schema version literal', () => {
-	it('pins the TS bridge version to the literal 18 to pair with the native addon bridge', () => {
-		expect(VOICE_ENGINE_V2_BRIDGE_VERSION).toBe(18);
+	it('pins the TS bridge version to the literal 19 to pair with the native addon bridge', () => {
+		expect(VOICE_ENGINE_V2_BRIDGE_VERSION).toBe(19);
 	});
 
 	it('reuses the schema-version airlock helper from bridge exports', () => {
@@ -360,6 +361,26 @@ describe('voice engine v2 bridge translator airlock', () => {
 });
 
 describe('voice engine v2 processed camera bridge airlock', () => {
+	it('accepts separate capture-card source and output dimensions', () => {
+		expect(
+			isVoiceEngineV2BridgePublishDeviceScreenShareOptions({
+				deviceId: 'elgato-4k-x',
+				captureWidth: 3440,
+				captureHeight: 1440,
+				captureFrameRate: 60,
+				width: 2580,
+				height: 1080,
+				frameRate: 60,
+			}),
+		).toBe(true);
+	});
+
+	it('rejects invalid capture-card source dimensions', () => {
+		expect(isVoiceEngineV2BridgePublishDeviceScreenShareOptions({captureWidth: 0})).toBe(false);
+		expect(isVoiceEngineV2BridgePublishDeviceScreenShareOptions({captureHeight: Number.NaN})).toBe(false);
+		expect(isVoiceEngineV2BridgePublishDeviceScreenShareOptions({captureFrameRate: '60'})).toBe(false);
+	});
+
 	it('accepts native camera background modes', () => {
 		expect(isVoiceEngineV2BridgePublishCameraOptions({backgroundMode: 'none'})).toBe(true);
 		expect(isVoiceEngineV2BridgePublishCameraOptions({backgroundMode: 'non'})).toBe(true);

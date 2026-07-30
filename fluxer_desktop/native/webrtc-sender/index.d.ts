@@ -215,6 +215,9 @@ export interface VoiceEngineV2BridgeRemoteTrackSubscriptionOptions {
 
 export interface PublishCameraOptions {
 	deviceId?: string;
+	captureWidth?: number;
+	captureHeight?: number;
+	captureFrameRate?: number;
 	width?: number;
 	height?: number;
 	frameRate?: number;
@@ -254,6 +257,14 @@ export interface CameraDeviceInfo {
 	description: string;
 	index?: number | null;
 	deviceIdAliases: Array<string>;
+	formats: Array<CameraDeviceFormatInfo>;
+}
+
+export interface CameraDeviceFormatInfo {
+	width: number;
+	height: number;
+	frameRate: number;
+	pixelFormat: string;
 }
 
 export interface HardwareEncoderCapability {

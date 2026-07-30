@@ -30,13 +30,23 @@ describe('resolveVoiceEngineV2NativeCameraDeviceId', () => {
 	});
 
 	it('accepts native camera ids directly, including non-numeric ids', () => {
+		const formats = [{width: 3440, height: 1440, frameRate: 60, pixelFormat: 'mjpeg'}];
 		expect(
 			resolveVoiceEngineV2NativeCameraDeviceId({
 				requestedDeviceId: 'native-studio',
 				browserDevices: [browserCamera('browser-studio', 'Studio Display Camera')],
-				nativeDevices: [nativeCamera('native-studio', 'Studio Display Camera')],
+				nativeDevices: [
+					{
+						...nativeCamera('native-studio', 'Studio Display Camera'),
+						formats,
+					},
+				],
 			}),
-		).toMatchObject({status: 'direct', deviceId: 'native-studio'});
+		).toMatchObject({
+			status: 'direct',
+			deviceId: 'native-studio',
+			nativeDevice: {formats},
+		});
 	});
 
 	it('maps native camera aliases to the canonical native camera id', () => {

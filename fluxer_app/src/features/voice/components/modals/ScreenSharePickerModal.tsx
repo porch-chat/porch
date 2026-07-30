@@ -12,7 +12,6 @@ import {Spinner} from '@app/features/ui/components/Spinner';
 import {type TabItem, Tabs} from '@app/features/ui/tabs/Tabs';
 import {getElectronAPI} from '@app/features/ui/utils/NativeUtils';
 import PrivacyPreferences from '@app/features/user/state/PrivacyPreferences';
-import * as VoiceSettingsCommands from '@app/features/voice/commands/VoiceSettingsCommands';
 import styles from '@app/features/voice/components/modals/ScreenSharePickerModal.module.css';
 import {
 	loadScreenShareDesktopSourceList,
@@ -178,9 +177,21 @@ const STREAM_SETTINGS_DESCRIPTOR = msg({
 	message: 'Stream settings',
 	comment: 'Toolbar / menu button label in the screen-share picker. Opens the stream quality settings popover.',
 });
-const MIRROR_CAMERA_DESCRIPTOR = msg({
-	message: 'Mirror camera',
-	comment: 'Switch label in the screen-share device picker for flipping shared camera/device video horizontally.',
+const DEVICE_SOURCE_FORMAT_DESCRIPTOR = msg({
+	message: 'Source format',
+	comment: 'Label for the native capture format selector in the screen-share device picker.',
+});
+const DEVICE_SOURCE_FORMAT_LOADING_DESCRIPTOR = msg({
+	message: 'Loading formats…',
+	comment: 'Temporary option while native capture-card formats are loading.',
+});
+const DEVICE_SOURCE_FORMAT_DEFAULT_DESCRIPTOR = msg({
+	message: 'Default device format',
+	comment: 'Fallback option when a capture device does not report its native formats.',
+});
+const DEVICE_SOURCE_FORMAT_OPTION_DESCRIPTOR = msg({
+	message: '{width} × {height} · up to {frameRate} FPS',
+	comment: 'Capture-card source format option. Width, height, and frameRate are numbers; FPS is a technical token.',
 });
 const SCREEN_SHARE_PREVIEWS_ENABLED_DESCRIPTOR = msg({
 	message: 'Screen share previews are enabled.',
@@ -257,12 +268,20 @@ let screenSharePickerPreloadCache: {
 	promise: Promise<ScreenSharePickerPreload>;
 } | null = null;
 
-function recordLastScreenShareSource(kind: LastScreenShareSourceKind, sourceId: string | null, title: string): void {
+function recordLastScreenShareSource(
+	kind: LastScreenShareSourceKind,
+	sourceId: string | null,
+	title: string,
+	sourceDimensions?: {width: number; height: number},
+	sourceFrameRate?: number,
+): void {
 	VoiceSettings.setLastScreenShareSource({
 		kind,
 		sourceId,
 		title,
 		updatedAt: Date.now(),
+		...(sourceDimensions ? {sourceWidth: sourceDimensions.width, sourceHeight: sourceDimensions.height} : {}),
+		...(sourceFrameRate !== undefined ? {sourceFrameRate} : {}),
 	});
 }
 
@@ -360,16 +379,34 @@ async function tryStartLastDesktopScreenShareSource(lastSource: LastScreenShareS
 		});
 	}
 	if (didStart) {
-		recordLastScreenShareSource(lastSource.kind, source.id, source.name || lastSource.title);
+		recordLastScreenShareSource(
+			lastSource.kind,
+			source.id,
+			source.name || lastSource.title,
+			getDesktopSourceDimensions(source),
+		);
 	}
 	return didStart;
 }
 
 async function tryStartLastDeviceScreenShareSource(lastSource: LastScreenShareSource): Promise<boolean> {
 	if (!lastSource.sourceId) return false;
-	const didStart = await startConfiguredDeviceScreenShare(lastSource.sourceId);
+	const sourceDimensions =
+		lastSource.sourceWidth && lastSource.sourceHeight
+			? {width: lastSource.sourceWidth, height: lastSource.sourceHeight}
+			: undefined;
+	const didStart = await startConfiguredDeviceScreenShare(lastSource.sourceId, {
+		sourceDimensions,
+		sourceFrameRate: lastSource.sourceFrameRate,
+	});
 	if (didStart) {
-		recordLastScreenShareSource('device', lastSource.sourceId, lastSource.title);
+		recordLastScreenShareSource(
+			'device',
+			lastSource.sourceId,
+			lastSource.title,
+			sourceDimensions,
+			lastSource.sourceFrameRate,
+		);
 	}
 	return didStart;
 }
@@ -471,6 +508,13 @@ export async function openScreenShareSourceSwitcherModal(
 
 type ScreenSharePickerMode = 'start' | 'switch';
 type ScreenSharePreviewCallContext = 'guild' | 'group_dm' | 'dm';
+
+interface DeviceSourceMode {
+	key: string;
+	width: number;
+	height: number;
+	maxFrameRate: number;
+}
 
 function getScreenSharePreviewCallContext(channelId: string | null): ScreenSharePreviewCallContext {
 	const channel = channelId ? Channels.getChannel(channelId) : undefined;
@@ -770,6 +814,10 @@ const ScreenSharePickerModalLoadedContent = observer(
 		);
 		const [loadError, setLoadError] = useState<string | null>(null);
 		const [pendingSelectionId, setPendingSelectionId] = useState<string | null>(null);
+		const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
+		const [deviceSourceModes, setDeviceSourceModes] = useState<Array<DeviceSourceMode>>([]);
+		const [selectedDeviceSourceKey, setSelectedDeviceSourceKey] = useState<string | null>(null);
+		const [deviceFormatsLoading, setDeviceFormatsLoading] = useState(false);
 		const [invalidThumbnailIds, setInvalidThumbnailIds] = useState<ReadonlySet<string>>(() => new Set());
 		const [nativeAudioAvailability, setNativeAudioAvailability] = useState<NativeAudioAvailability | null>(null);
 		const [nativeScreenAvailable, setNativeScreenAvailable] = useState<boolean | null>(null);
@@ -1054,6 +1102,56 @@ const ScreenSharePickerModalLoadedContent = observer(
 				placeholderIcon: VideoCameraIcon,
 			}));
 		}, [videoDevices, i18n.locale]);
+		useEffect(() => {
+			if (!selectedDeviceId) {
+				setDeviceSourceModes([]);
+				setSelectedDeviceSourceKey(null);
+				setDeviceFormatsLoading(false);
+				return;
+			}
+			let cancelled = false;
+			setDeviceFormatsLoading(true);
+			void MediaEngine.getDeviceScreenShareSourceFormats(selectedDeviceId)
+				.then((formats) => {
+					if (cancelled) return;
+					const modesByDimensions = new Map<string, DeviceSourceMode>();
+					for (const format of formats) {
+						const key = `${format.width}x${format.height}`;
+						const previous = modesByDimensions.get(key);
+						if (!previous || format.frameRate > previous.maxFrameRate) {
+							modesByDimensions.set(key, {
+								key,
+								width: format.width,
+								height: format.height,
+								maxFrameRate: format.frameRate,
+							});
+						}
+					}
+					const modes = [...modesByDimensions.values()].sort(
+						(left, right) => right.width * right.height - left.width * left.height || right.width - left.width,
+					);
+					const preferredFrameRate = VoiceSettings.getVideoFrameRate();
+					const preferredMode = modes.find((mode) => mode.maxFrameRate >= preferredFrameRate - 1) ?? modes[0];
+					setDeviceSourceModes(modes);
+					setSelectedDeviceSourceKey((current) =>
+						current && modes.some((mode) => mode.key === current) ? current : (preferredMode?.key ?? null),
+					);
+				})
+				.catch((error) => {
+					logger.warn('Failed to load native device source formats', {error, selectedDeviceId});
+					if (!cancelled) {
+						setDeviceSourceModes([]);
+						setSelectedDeviceSourceKey(null);
+					}
+				})
+				.finally(() => {
+					if (!cancelled) setDeviceFormatsLoading(false);
+				});
+			return () => {
+				cancelled = true;
+			};
+		}, [selectedDeviceId]);
+		const selectedDeviceSourceMode = deviceSourceModes.find((mode) => mode.key === selectedDeviceSourceKey) ?? null;
 		const tabCards = useMemo<Record<ScreenSharePickerTab, Array<PickerCard>>>(
 			() => ({
 				apps: appCards,
@@ -1143,8 +1241,14 @@ const ScreenSharePickerModalLoadedContent = observer(
 					if (activeTab === 'devices') {
 						didSelect =
 							mode === 'switch'
-								? await switchConfiguredDeviceScreenShare(cardId)
-								: await startConfiguredDeviceScreenShare(cardId);
+								? await switchConfiguredDeviceScreenShare(cardId, {
+										sourceDimensions: selectedDeviceSourceMode ?? undefined,
+										sourceFrameRate: selectedDeviceSourceMode?.maxFrameRate,
+									})
+								: await startConfiguredDeviceScreenShare(cardId, {
+										sourceDimensions: selectedDeviceSourceMode ?? undefined,
+										sourceFrameRate: selectedDeviceSourceMode?.maxFrameRate,
+									});
 					} else if (nativeSource) {
 						didSelect =
 							mode === 'switch'
@@ -1176,6 +1280,8 @@ const ScreenSharePickerModalLoadedContent = observer(
 							kind,
 							activeTab === 'devices' ? cardId : (selectedSource?.id ?? cardId),
 							selectedCard?.title ?? selectedSource?.name ?? cardId,
+							activeTab === 'devices' ? (selectedDeviceSourceMode ?? undefined) : sourceDimensions,
+							activeTab === 'devices' ? selectedDeviceSourceMode?.maxFrameRate : undefined,
 						);
 						ModalCommands.pop();
 					} else if (activeTab !== 'devices') {
@@ -1201,6 +1307,7 @@ const ScreenSharePickerModalLoadedContent = observer(
 				nativeScreenShareCodec,
 				pendingSelectionId,
 				platform,
+				selectedDeviceSourceMode,
 				tabCards,
 				usesNativeDisplayPicker,
 			],
@@ -1322,7 +1429,14 @@ const ScreenSharePickerModalLoadedContent = observer(
 							activeTab={activeTab}
 							activeShareLabel={activeShareLabel}
 							pendingSelectionId={pendingSelectionId}
-							onSelect={(cardId) => void handleStartSelection(cardId)}
+							selectedCardId={activeTab === 'devices' ? selectedDeviceId : null}
+							onSelect={(cardId) => {
+								if (activeTab === 'devices') {
+									setSelectedDeviceId(cardId);
+									return;
+								}
+								void handleStartSelection(cardId);
+							}}
 							onPreviewImageError={handlePreviewImageError}
 							data-flx="voice.screen-share-picker-modal.screen-share-picker-modal-loaded-content.picker-grid"
 						/>
@@ -1331,17 +1445,45 @@ const ScreenSharePickerModalLoadedContent = observer(
 				<Modal.Footer className={styles.footer} data-flx="voice.screen-share-picker-modal.footer">
 					<div className={styles.footerStart} data-flx="voice.screen-share-picker-modal.footer-start">
 						<ScreenSharePreviewFooterNotice data-flx="voice.screen-share-picker-modal.screen-share-picker-modal-loaded-content.screen-share-preview-footer-notice" />
-						{activeTab === 'devices' && (
-							<Switch
-								compact
-								className={styles.footerMirrorSwitch}
-								label={i18n._(MIRROR_CAMERA_DESCRIPTOR)}
-								value={VoiceSettings.mirrorCamera}
-								onChange={(value) => VoiceSettingsCommands.update({mirrorCamera: value})}
-								data-flx="voice.screen-share-picker-modal.screen-share-picker-modal-loaded-content.footer-mirror-switch.update"
-							/>
+						{activeTab === 'devices' && selectedDeviceId && (
+							<div className={styles.deviceFormatControl}>
+								<label className={styles.deviceFormatLabel} htmlFor="screen-share-device-format">
+									{i18n._(DEVICE_SOURCE_FORMAT_DESCRIPTOR)}
+								</label>
+								<select
+									id="screen-share-device-format"
+									className={styles.deviceFormatSelect}
+									value={selectedDeviceSourceKey ?? ''}
+									disabled={deviceFormatsLoading || deviceSourceModes.length === 0}
+									onChange={(event) => setSelectedDeviceSourceKey(event.currentTarget.value)}
+								>
+									{deviceFormatsLoading ? (
+										<option value="">{i18n._(DEVICE_SOURCE_FORMAT_LOADING_DESCRIPTOR)}</option>
+									) : deviceSourceModes.length === 0 ? (
+										<option value="">{i18n._(DEVICE_SOURCE_FORMAT_DEFAULT_DESCRIPTOR)}</option>
+									) : (
+										deviceSourceModes.map((sourceMode) => (
+											<option key={sourceMode.key} value={sourceMode.key}>
+												{i18n._(DEVICE_SOURCE_FORMAT_OPTION_DESCRIPTOR, {
+													width: sourceMode.width,
+													height: sourceMode.height,
+													frameRate: Math.min(60, sourceMode.maxFrameRate),
+												})}
+											</option>
+										))
+									)}
+								</select>
+							</div>
 						)}
 					</div>
+					{activeTab === 'devices' && (
+						<Button
+							disabled={!selectedDeviceId || deviceFormatsLoading}
+							onClick={selectedDeviceId ? () => void handleStartSelection(selectedDeviceId) : undefined}
+						>
+							{activeShareLabel}
+						</Button>
+					)}
 					<Button
 						variant="secondary"
 						onClick={() => ModalCommands.pop()}

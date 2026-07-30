@@ -471,6 +471,9 @@ export function isVoiceEngineV2BridgePublishDeviceScreenShareOptions(
 	if (!isRecord(value)) return false;
 	return (
 		isOptionalString(value.deviceId) &&
+		isOptionalPositiveFiniteNumber(value.captureWidth) &&
+		isOptionalPositiveFiniteNumber(value.captureHeight) &&
+		isOptionalPositiveFiniteNumber(value.captureFrameRate) &&
 		isOptionalPositiveFiniteNumber(value.width) &&
 		isOptionalPositiveFiniteNumber(value.height) &&
 		isOptionalPositiveFiniteNumber(value.frameRate) &&

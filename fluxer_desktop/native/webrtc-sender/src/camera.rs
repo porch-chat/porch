@@ -32,6 +32,15 @@ pub struct CameraDevice {
     pub description: String,
     pub index: Option<u32>,
     pub device_id_aliases: Vec<String>,
+    pub formats: Vec<CameraDeviceFormat>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub struct CameraDeviceFormat {
+    pub width: u32,
+    pub height: u32,
+    pub frame_rate: u32,
+    pub pixel_format: String,
 }
 
 fn push_camera_device_alias(aliases: &mut Vec<String>, alias: &str) {
@@ -318,6 +327,21 @@ mod camera_native_tests {
     }
 
     #[test]
+    fn capture_card_format_selection_prefers_exact_ultrawide_mode_and_frame_rate() {
+        let formats = vec![
+            CameraFormat::new(Resolution::new(3840, 2160), FrameFormat::MJPEG, 60),
+            CameraFormat::new(Resolution::new(3440, 1440), FrameFormat::MJPEG, 30),
+            CameraFormat::new(Resolution::new(3440, 1440), FrameFormat::MJPEG, 60),
+            CameraFormat::new(Resolution::new(2560, 1440), FrameFormat::NV12, 60),
+        ];
+
+        let selected = select_best_camera_format(&formats, &request(3440, 1440, 60)).unwrap();
+
+        assert_eq!(selected.resolution(), Resolution::new(3440, 1440));
+        assert_eq!(selected.frame_rate(), 60);
+    }
+
+    #[test]
     fn camera_frame_to_i420_accepts_raw_nv12_without_rgb_decode() {
         let data = [1u8, 2, 3, 4, 10, 20];
         let frame = Buffer::new(Resolution::new(2, 2), &data, FrameFormat::NV12);
@@ -370,6 +394,8 @@ pub type LocalVideoFrameSinkActive = Box<dyn Fn() -> bool + Send>;
 #[cfg(feature = "publisher")]
 pub struct CameraCaptureSinks {
     pub source: livekit::webrtc::video_source::native::NativeVideoSource,
+    pub output_width: u32,
+    pub output_height: u32,
     pub frame_sink: LocalVideoFrameSink,
     pub frame_sink_active: LocalVideoFrameSinkActive,
 }
@@ -640,6 +666,7 @@ mod live {
             .map(|device| {
                 let misc = device.misc();
                 let index_string = device.index().as_string();
+                let formats = list_device_formats(device.index().clone());
                 let device_id = if misc.trim().is_empty() {
                     index_string.clone()
                 } else {
@@ -651,9 +678,33 @@ mod live {
                     label: device.human_name(),
                     description: device.description().to_string(),
                     index: device.index().as_index().ok(),
+                    formats,
                 }
             })
             .collect())
+    }
+
+    fn list_device_formats(index: CameraIndex) -> Vec<super::CameraDeviceFormat> {
+        let requested = RequestedFormat::new::<RgbFormat>(RequestedFormatType::None);
+        let Ok(camera) = Camera::new(index, requested) else {
+            return Vec::new();
+        };
+        let Ok(formats) = camera.compatible_camera_formats() else {
+            return Vec::new();
+        };
+        let mut result: Vec<super::CameraDeviceFormat> = formats
+            .into_iter()
+            .filter(|format| super::accepted_camera_formats().contains(&format.format()))
+            .map(|format| super::CameraDeviceFormat {
+                width: format.resolution().width() & !1,
+                height: format.resolution().height() & !1,
+                frame_rate: format.frame_rate(),
+                pixel_format: format!("{:?}", format.format()).to_ascii_lowercase(),
+            })
+            .collect();
+        result.sort();
+        result.dedup();
+        result
     }
 
     pub fn spawn_capture_worker(
@@ -723,7 +774,7 @@ mod live {
         stop: &AtomicBool,
     ) {
         let start = Instant::now();
-        let fps = opened.fps.max(1);
+        let fps = opened.fps.max(1).min(request.fps.max(1));
         assert!(fps >= 1);
         let mut deadline = Instant::now();
         let mut background_stage =
@@ -765,6 +816,8 @@ mod live {
             };
             if !request.mirror
                 && !background_stage.is_enabled()
+                && fw == sinks.output_width
+                && fh == sinks.output_height
                 && try_publish_raw_camera_frame(sinks, &frame, fw, fh, timestamp_us, converter)
             {
                 pace_camera_frame(fps, &mut deadline);
@@ -779,8 +832,14 @@ mod live {
             if request.mirror {
                 super::mirror_i420_in_place(i420);
             }
-            capture_i420(&sinks.source, i420, timestamp_us);
             (sinks.frame_sink)(i420, timestamp_us);
+            capture_i420(
+                &sinks.source,
+                i420,
+                sinks.output_width,
+                sinks.output_height,
+                timestamp_us,
+            );
 
             pace_camera_frame(fps, &mut deadline);
         }
@@ -873,7 +932,15 @@ mod live {
         true
     }
 
-    fn capture_i420(source: &NativeVideoSource, frame: &yuv::I420, timestamp_us: i64) {
+    fn capture_i420(
+        source: &NativeVideoSource,
+        frame: &yuv::I420,
+        output_width: u32,
+        output_height: u32,
+        timestamp_us: i64,
+    ) {
+        assert!(output_width >= 2);
+        assert!(output_height >= 2);
         let mut buffer = I420Buffer::new(frame.width, frame.height);
         let (stride_y, stride_u, stride_v) = buffer.strides();
         {
@@ -890,11 +957,16 @@ mod live {
             copy_plane(du, &frame.u, cw, stride_u as usize, ch);
             copy_plane(dv, &frame.v, cw, stride_v as usize, ch);
         }
+        let output_buffer = if frame.width == output_width && frame.height == output_height {
+            buffer
+        } else {
+            buffer.scale(output_width as i32, output_height as i32)
+        };
         let video_frame = VideoFrame {
             rotation: VideoRotation::VideoRotation0,
             timestamp_us,
             frame_metadata: None,
-            buffer,
+            buffer: output_buffer,
         };
         source.capture_frame(&video_frame);
     }

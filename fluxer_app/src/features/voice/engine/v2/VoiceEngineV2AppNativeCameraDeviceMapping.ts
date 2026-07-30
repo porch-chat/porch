@@ -20,6 +20,7 @@ export interface VoiceEngineV2NativeCameraDeviceResolution {
 	requestedDeviceId?: string;
 	browserLabel?: string;
 	nativeLabel?: string;
+	nativeDevice?: VoiceEngineV2BridgeCameraDevice;
 	nativeDeviceCount: number;
 	matchCount: number;
 }
@@ -148,6 +149,7 @@ export function resolveVoiceEngineV2NativeCameraDeviceId(
 			deviceId: directNativeDevice.deviceId,
 			requestedDeviceId,
 			nativeLabel: directNativeDevice.label,
+			nativeDevice: directNativeDevice,
 			nativeDeviceCount,
 			matchCount: 1,
 		};
@@ -168,6 +170,7 @@ export function resolveVoiceEngineV2NativeCameraDeviceId(
 		requestedDeviceId,
 		browserLabel,
 		nativeLabel: match.device.label,
+		nativeDevice: match.device,
 		nativeDeviceCount,
 		matchCount,
 	};

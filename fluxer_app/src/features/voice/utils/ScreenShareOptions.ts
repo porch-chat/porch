@@ -15,6 +15,7 @@ const DIMENSIONS: Record<
 	medium: {width: 1280, height: 720},
 	high: {width: 1920, height: 1080},
 	ultra: {width: 2560, height: 1440},
+	uhd: {width: 3840, height: 2160},
 	source: {width: 3840, height: 2160},
 };
 const BASE_BITRATE_BPS: Record<ScreenshareResolution, number> = {
@@ -23,6 +24,7 @@ const BASE_BITRATE_BPS: Record<ScreenshareResolution, number> = {
 	medium: 4000000,
 	high: 8000000,
 	ultra: 16000000,
+	uhd: 40000000,
 	source: 80000000,
 };
 export const SCREEN_SHARE_MAX_VIDEO_BITRATE_BPS = 100000000;
@@ -33,13 +35,11 @@ export const SCREEN_SHARE_DEFAULT_DEGRADATION_PREFERENCE: NonNullable<TrackPubli
 export const SCREEN_SHARE_DEGRADATION_PREFERENCE: NonNullable<TrackPublishOptions['degradationPreference']> =
 	SCREEN_SHARE_DEFAULT_DEGRADATION_PREFERENCE;
 export const SCREEN_SHARE_CONTENT_HINT: NonNullable<ScreenShareCaptureOptions['contentHint']> = 'motion';
-export const SUPPORTED_SCREEN_SHARE_FRAME_RATES = [15, 30, 60, 90, 120] as const;
+export const SUPPORTED_SCREEN_SHARE_FRAME_RATES = [15, 30, 60] as const;
 
 export type SupportedScreenShareFrameRate = (typeof SUPPORTED_SCREEN_SHARE_FRAME_RATES)[number];
 
 export function resolveScreenShareFrameRate(frameRate: number): SupportedScreenShareFrameRate {
-	if (frameRate >= 120) return 120;
-	if (frameRate >= 90) return 90;
 	if (frameRate >= 60) return 60;
 	if (frameRate >= 30) return 30;
 	return 15;
@@ -56,19 +56,27 @@ function getScreenShareMaxBitrate(
 	resolution: ScreenshareResolution,
 	frameRate: number,
 	maxBitrateBps = SCREEN_SHARE_MAX_VIDEO_BITRATE_BPS,
+	effectiveDimensions?: {width: number; height: number},
 ): number {
-	const frameRateMultiplier =
-		frameRate >= 120 ? 2.5 : frameRate >= 90 ? 2 : frameRate >= 60 ? 1.5 : frameRate >= 30 ? 1 : 0.7;
-	return Math.min(Math.round(BASE_BITRATE_BPS[resolution] * frameRateMultiplier), maxBitrateBps);
+	const frameRateMultiplier = frameRate >= 60 ? 1.5 : frameRate >= 30 ? 1 : 0.7;
+	const presetDimensions = getScreenShareDimensions(resolution);
+	const pixelMultiplier = effectiveDimensions
+		? Math.max(
+				0.5,
+				(effectiveDimensions.width * effectiveDimensions.height) / (presetDimensions.width * presetDimensions.height),
+			)
+		: 1;
+	return Math.min(Math.round(BASE_BITRATE_BPS[resolution] * frameRateMultiplier * pixelMultiplier), maxBitrateBps);
 }
 
 export function getScreenShareEncoding(
 	resolution: ScreenshareResolution,
 	frameRate: number,
 	maxBitrateBps = SCREEN_SHARE_MAX_VIDEO_BITRATE_BPS,
+	effectiveDimensions?: {width: number; height: number},
 ): VideoEncoding {
 	return {
-		maxBitrate: getScreenShareMaxBitrate(resolution, frameRate, maxBitrateBps),
+		maxBitrate: getScreenShareMaxBitrate(resolution, frameRate, maxBitrateBps, effectiveDimensions),
 		maxFramerate: frameRate,
 		priority: 'high',
 	};
@@ -135,11 +143,48 @@ export function resolveEffectiveScreenShareDimensions(
 	height: number;
 } {
 	const preset = getScreenShareDimensions(resolution);
-	if (resolution !== 'source' || !sourceDimensions) return preset;
-	if (sourceDimensions.width <= 0 || sourceDimensions.height <= 0) return preset;
+	if (!sourceDimensions || sourceDimensions.width <= 0 || sourceDimensions.height <= 0) return preset;
+	const sourceWidth = Math.max(2, Math.floor(sourceDimensions.width) & ~1);
+	const sourceHeight = Math.max(2, Math.floor(sourceDimensions.height) & ~1);
+	if (resolution === 'source') {
+		return {width: sourceWidth, height: sourceHeight};
+	}
+	const scale = Math.min(1, preset.height / sourceHeight);
 	return {
-		width: Math.min(preset.width, sourceDimensions.width),
-		height: Math.min(preset.height, sourceDimensions.height),
+		width: Math.max(2, Math.floor(sourceWidth * scale) & ~1),
+		height: Math.max(2, Math.floor(sourceHeight * scale) & ~1),
+	};
+}
+
+export function resolveDeviceSourceCaptureResolution(
+	outputResolution: {width: number; height: number; frameRate?: number} | undefined,
+	sourceDimensions: {width: number; height: number} | undefined,
+	sourceFrameRate?: number,
+): {width: number; height: number; frameRate: number} | undefined {
+	if (
+		!sourceDimensions ||
+		!Number.isFinite(sourceDimensions.width) ||
+		!Number.isFinite(sourceDimensions.height) ||
+		sourceDimensions.width < 2 ||
+		sourceDimensions.height < 2
+	) {
+		return undefined;
+	}
+	const candidateOutputFrameRate = outputResolution?.frameRate;
+	const outputFrameRate =
+		typeof candidateOutputFrameRate === 'number' &&
+		Number.isFinite(candidateOutputFrameRate) &&
+		candidateOutputFrameRate > 0
+			? candidateOutputFrameRate
+			: 30;
+	const sourceFrameRateLimit =
+		typeof sourceFrameRate === 'number' && Number.isFinite(sourceFrameRate) && sourceFrameRate > 0
+			? sourceFrameRate
+			: outputFrameRate;
+	return {
+		width: Math.max(2, Math.floor(sourceDimensions.width) & ~1),
+		height: Math.max(2, Math.floor(sourceDimensions.height) & ~1),
+		frameRate: Math.max(1, Math.min(60, Math.round(outputFrameRate), Math.round(sourceFrameRateLimit))),
 	};
 }
 
@@ -177,7 +222,10 @@ export function buildScreenShareOptions(
 		},
 		publishOptions: {
 			degradationPreference,
-			screenShareEncoding: getScreenShareEncoding(config.resolution, resolvedFrameRate, config.maxBitrateBps),
+			screenShareEncoding: getScreenShareEncoding(config.resolution, resolvedFrameRate, config.maxBitrateBps, {
+				width,
+				height,
+			}),
 		},
 	};
 }
@@ -235,14 +283,11 @@ export function normaliseStreamingModeForContext(mode: StreamingMode, context: S
 
 export function normaliseResolutionForContext(
 	resolution: ScreenshareResolution,
-	context: ScreenShareContext,
+	_context: ScreenShareContext,
 	hasHigherQuality: boolean,
 ): ScreenshareResolution {
 	if (!hasHigherQuality && !isFreeTierResolution(resolution)) {
 		return FREE_TIER_FALLBACK_RESOLUTION;
-	}
-	if (context === 'device' && resolution === 'source') {
-		return hasHigherQuality ? 'ultra' : FREE_TIER_FALLBACK_RESOLUTION;
 	}
 	return resolution;
 }
