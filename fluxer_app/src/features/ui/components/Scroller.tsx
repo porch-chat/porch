@@ -417,7 +417,6 @@ export const Scroller = forwardRef<ScrollerHandle, ScrollerProps>(function Scrol
 		contentObserver.observe(contentEl);
 		syncChildObservers();
 		childListObserver.observe(contentEl, {childList: true});
-		refreshThumbState();
 		return () => {
 			cancelScheduledThumbRefresh();
 			if (childSyncRafId != null) {
@@ -430,12 +429,11 @@ export const Scroller = forwardRef<ScrollerHandle, ScrollerProps>(function Scrol
 			childListObserver.disconnect();
 			observedChildren.clear();
 		};
-	}, [cancelScheduledThumbRefresh, refreshThumbState, scheduleThumbRefresh]);
+	}, [cancelScheduledThumbRefresh, scheduleThumbRefresh]);
 	useEffect(() => {
-		refreshThumbState();
 		scheduleThumbRefresh();
 		return cancelScheduledThumbRefresh;
-	}, [cancelScheduledThumbRefresh, refreshThumbState, scheduleThumbRefresh]);
+	}, [cancelScheduledThumbRefresh, scheduleThumbRefresh]);
 	useEffect(() => {
 		return () => cancelAnimation();
 	}, [cancelAnimation]);

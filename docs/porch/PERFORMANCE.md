@@ -379,3 +379,89 @@ every two seconds while the client requeued the same diagnostics batch forever.
 - Treat recursive display sharing and software-rendered resize as known heavy
   paths. Further changes should be driven by a repeatable browser/GPU trace or
   a user-visible regression rather than speculative Chromium switches.
+
+## 2026-07-31 — full client trace audit
+
+### Harness and initial baselines
+
+- Added an isolated Chrome DevTools performance target for repeatable Stable
+  and Canary web traces. Raw source maps and subsequent trace artifacts are
+  kept outside the public source repository under the local
+  `porch-perf-evidence` directory so production data or sessions cannot be
+  committed accidentally.
+- A cache-bypassed Canary login navigation measured 1,617 ms LCP and 0.01 CLS.
+  TTFB was 42 ms; 1,575 ms, or roughly 97 percent of LCP, was client-side
+  render delay rather than backend or edge latency.
+- The same navigation transferred 3,405,478 bytes and decoded 15,003,674 bytes
+  across 32 resources. It reached `DOMContentLoaded` at 1,055 ms and completed
+  the load event at 1,309 ms. The page used about 40.3 MB of JavaScript heap
+  after load.
+- The largest startup application asset transferred 1,776,481 bytes and
+  decoded to 7,797,193 bytes. Its source map contains about 14.1 million source
+  characters: voice accounts for roughly 2.46 million, user features 2.02
+  million, channel features 1.43 million, messaging 1.23 million, and UI 1.17
+  million. A standalone login route therefore still pays for most of the
+  authenticated communication client.
+- The trace recorded 169 ms of forced layout work and 76 ms of style
+  recalculation affecting 402 elements. Source-map correlation places the
+  work inside React scheduling and the general application bundle; minified
+  inlining makes individual mapped child frames too coarse to assign an exact
+  component without an authenticated interaction trace.
+- A fresh, authenticated, hardware-accelerated Canary Desktop process tree
+  settled at 461.6 MB private memory and 640.1 MB working set across six
+  processes. A ten-second idle sample consumed 0.062 CPU-seconds, or 0.6
+  percent of one logical core. This distinguishes the current bursty
+  startup/navigation concern from an always-running idle loop.
+- Six unauthenticated viewport changes between 760×850 and 1600×900 produced
+  15 ms of attributed forced reflow in total. The largest resize style passes
+  were 45–48 ms across about 450 elements. This lightweight shell is the
+  control case; a materially slower authenticated resize points to the channel
+  tree rather than Electron or the base auth layout.
+- A separately isolated, cache-bypassed Stable login run measured 1,868 ms LCP
+  with 53 ms TTFB and 1,815 ms render delay. Stable and Canary both reported
+  app version `2026.731.155010` and loaded the identical 3,405,478 transferred
+  and 15,003,674 decoded resource bytes. The 251 ms LCP difference is therefore
+  run variance, not a release-channel bundle difference; both channels share
+  the same startup diagnosis.
+
+### Current diagnosis and next measurements
+
+- `index.tsx` waits for native voice selection and imports the full `App`
+  before it mounts any route. `App` statically owns LiveKit, media-engine,
+  incoming-call, drag-and-drop, global-overlay, and authenticated layout
+  dependencies even for login. `AccountManager` also statically imports the
+  media engine although ordinary account bootstrap only initializes stored
+  sessions.
+- Preserve the healthy idle path. Prioritize an authenticated navigation,
+  search, scrolling, settings, and resize trace before changing shared render
+  behavior, then prototype a measured standalone/authenticated bootstrap
+  boundary so login and registration do not parse the communication client.
+- Repeat the identical traces after any change, then run the existing
+  accelerated/software-rendered voice, camera, display-share, and capture-card
+  matrix to ensure delayed loading does not regress call readiness.
+
+### Authenticated interaction baseline
+
+- Reused the already-authorized local Canary session in the isolated profiler
+  without printing credentials or writing them to the repository. The
+  authenticated Friends view completed a cache-bypassed navigation at 1,994 ms
+  LCP: 47 ms TTFB and 1,946 ms client render delay. It loaded the same roughly
+  3.41 MB transferred and 15.10 MB decoded graph as login, confirming that the
+  public and authenticated routes currently share the full startup cost.
+- A focused Friends-to-DM interaction measured 163 ms INP: 10 ms input delay,
+  135 ms processing, and 19 ms presentation delay. It remains inside the
+  200 ms good threshold but leaves little headroom for a populated message
+  history or slower client.
+- A focused DM-to-community interaction measured 230 ms INP: 4 ms input delay,
+  191 ms processing, and 35 ms presentation delay. This reproduces a
+  user-visible navigation miss on an otherwise idle, local, unthrottled client.
+- Source-map correlation identifies synchronous custom-scroller measurement
+  in both navigation paths. `getAxisScrollMetrics` forced about 25–44 ms of
+  layout and `getScrollerState` added up to 10 ms in the community transition.
+  Opening the group-DM modal immediately after a DM transition amplified the
+  same pattern to 271 ms total forced reflow, including 183 ms in
+  `getScrollerState`.
+- Six community-channel viewport changes forced 62–91 ms style recalculation
+  passes across about 712–795 elements. The DOM itself was moderate at 754
+  elements, so reducing redundant synchronous measurement is a safer first
+  target than removing visible channel or member content.

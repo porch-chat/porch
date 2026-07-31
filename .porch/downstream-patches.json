@@ -502,7 +502,7 @@
 			"title": "Preserve warm caches and reduce renderer event churn",
 			"status": "active",
 			"category": "client-performance",
-			"reason": "Porch navigation and live window resizing intermittently stalled because normal desktop starts discarded Chromium code and shader caches, self-hosted spellcheck attempted unavailable downloads before falling back, scroll components performed redundant observation and layout work, the desktop channel view observed every pixel of a resize, and failed voice-debug uploads retried and logged without backoff. The performance record also preserves the acceleration and media benchmark evidence behind the selected defaults.",
+			"reason": "Porch navigation and live window resizing intermittently stalled because normal desktop starts discarded Chromium code and shader caches, self-hosted spellcheck attempted unavailable downloads before falling back, scroll components performed redundant observation and synchronous thumb layout work, the desktop channel view observed every pixel of a resize, and failed voice-debug uploads retried and logged without backoff. The performance record also preserves the acceleration and media benchmark evidence behind the selected defaults.",
 			"paths": [
 				".porch/downstream-patches.json",
 				"docs/porch/PERFORMANCE.md",
@@ -510,6 +510,7 @@
 				"fluxer_app/src/features/channel/components/channel_view/GuildChannelView.tsx",
 				"fluxer_app/src/features/member/hooks/useMemberListVisible.ts",
 				"fluxer_app/src/features/ui/components/Scroller.tsx",
+				"fluxer_app/src/features/ui/scroller/useScrollerThumb.ts",
 				"fluxer_app/src/features/voice/engine/v2/VoiceEngineV2AppDebugLoggingHostAdapter.retry.test.ts",
 				"fluxer_app/src/features/voice/engine/v2/VoiceEngineV2AppDebugLoggingHostAdapter.ts",
 				"fluxer_app/src/features/voice/commands/VoiceDebugEventSinkCommands.ts",
@@ -529,7 +530,7 @@
 				"fluxer_desktop/src/main/Window.ts"
 			],
 			"tests": [
-				"scroll-indicator state-machine regression tests",
+				"scroll-indicator state-machine tests and deferred scrollbar measurement live acceptance trace",
 				"window observable publication and duplicate-listener regression tests",
 				"voice-debug upload classification and exponential-backoff tests",
 				"Rspack initial vendor-chunk policy test and production bundle audit",
@@ -542,7 +543,7 @@
 			],
 			"conflict_risk": "medium",
 			"upstream_status": "permanently-downstream",
-			"removal_condition": "Remove individual changes only when upstream preserves normal warm caches, avoids unavailable self-hosted dictionary downloads, and provides equivalent coalesced scroll, resize, breakpoint, and diagnostics-upload behavior without navigation or memory regressions."
+			"removal_condition": "Remove individual changes only when upstream preserves normal warm caches, avoids unavailable self-hosted dictionary downloads, and provides equivalent deferred/coalesced scroll, resize, breakpoint, and diagnostics-upload behavior without navigation or memory regressions."
 		},
 		{
 			"id": "porch-native-media-control-state-0017",

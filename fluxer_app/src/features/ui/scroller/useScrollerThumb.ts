@@ -176,7 +176,6 @@ export function useScrollerThumb({
 					observer.observe(element);
 					trackResizeObserverRef.current = observer;
 				}
-				refreshThumbState();
 			}
 		},
 		[refreshThumbState],
