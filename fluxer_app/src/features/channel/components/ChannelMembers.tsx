@@ -8,6 +8,7 @@ import {CompactMemberCustomStatus} from '@app/features/channel/components/Compac
 import {MemberListContainer} from '@app/features/channel/components/MemberListContainer';
 import {MemberListItem} from '@app/features/channel/components/MemberListItem';
 import memberItemStyles from '@app/features/channel/components/MemberListItem.module.css';
+import {getMemberListViewportHeight} from '@app/features/channel/components/MemberListViewportMetrics';
 import {MemberListUnavailableFallback} from '@app/features/channel/components/shared/MemberListUnavailableFallback';
 import type {Channel} from '@app/features/channel/models/Channel';
 import type {Guild} from '@app/features/guild/models/Guild';
@@ -337,6 +338,7 @@ const LazyMemberList = observer(function LazyMemberList({guild, channel}: LazyMe
 	const avatarDeferTimerRef = useRef<number | null>(null);
 	const avatarDeferDeadlineRef = useRef(0);
 	const pendingScrollMetricsRef = useRef<{scrollTop: number; clientHeight: number} | null>(null);
+	const latestViewportMetricsRef = useRef<{scrollTop: number; clientHeight: number} | null>(null);
 	const scrollerRef = useRef<ScrollerHandle | null>(null);
 	const frozenSnapshotRef = useRef<FrozenMemberListSnapshot | null>(null);
 	const wasSubscriptionPausedRef = useRef(false);
@@ -484,7 +486,9 @@ const LazyMemberList = observer(function LazyMemberList({guild, channel}: LazyMe
 	}, [commitRangeUpdate]);
 	const scheduleRangeUpdate = useCallback(
 		(scrollTop: number, clientHeight: number) => {
-			pendingScrollMetricsRef.current = {scrollTop, clientHeight};
+			const metrics = {scrollTop, clientHeight};
+			latestViewportMetricsRef.current = metrics;
+			pendingScrollMetricsRef.current = metrics;
 			if (scrollFrameRef.current != null) {
 				return;
 			}
@@ -492,12 +496,10 @@ const LazyMemberList = observer(function LazyMemberList({guild, channel}: LazyMe
 		},
 		[flushScrollRangeUpdate],
 	);
-	const scheduleRangeUpdateFromScroller = useCallback(() => {
-		const scrollerState = scrollerRef.current?.getScrollerState();
-		if (!scrollerState) {
-			return;
-		}
-		scheduleRangeUpdate(scrollerState.scrollTop, scrollerState.offsetHeight);
+	const scheduleRangeUpdateFromCachedViewport = useCallback(() => {
+		const metrics = latestViewportMetricsRef.current;
+		if (!metrics) return;
+		scheduleRangeUpdate(metrics.scrollTop, metrics.clientHeight);
 	}, [scheduleRangeUpdate]);
 	const handleScroll = useCallback(
 		(event: UIEvent<HTMLDivElement>) => {
@@ -507,9 +509,16 @@ const LazyMemberList = observer(function LazyMemberList({guild, channel}: LazyMe
 		},
 		[markAvatarLoadingDeferred, scheduleRangeUpdate],
 	);
-	const handleResize = useCallback(() => {
-		scheduleRangeUpdateFromScroller();
-	}, [scheduleRangeUpdateFromScroller]);
+	const handleResize = useCallback(
+		(entry: ResizeObserverEntry, type: 'container' | 'content') => {
+			const clientHeight = getMemberListViewportHeight(entry, type);
+			if (clientHeight == null) return;
+			const scrollTop =
+				scrollerRef.current?.getScrollerNode()?.scrollTop ?? latestViewportMetricsRef.current?.scrollTop ?? 0;
+			scheduleRangeUpdate(scrollTop, clientHeight);
+		},
+		[scheduleRangeUpdate],
+	);
 	useEffect(() => {
 		const initialSubscriptionRanges = INITIAL_SUBSCRIPTION_RANGES;
 		const initialRenderRanges = INITIAL_RENDER_RANGES;
@@ -523,8 +532,8 @@ const LazyMemberList = observer(function LazyMemberList({guild, channel}: LazyMe
 		if (isSubscriptionPaused) {
 			return;
 		}
-		scheduleRangeUpdateFromScroller();
-	}, [isSubscriptionPaused, scheduleRangeUpdateFromScroller, totalRows]);
+		scheduleRangeUpdateFromCachedViewport();
+	}, [isSubscriptionPaused, scheduleRangeUpdateFromCachedViewport, totalRows]);
 	useEffect(() => {
 		if (isSubscriptionPaused) {
 			wasSubscriptionPausedRef.current = true;
@@ -557,6 +566,7 @@ const LazyMemberList = observer(function LazyMemberList({guild, channel}: LazyMe
 			}
 			avatarDeferDeadlineRef.current = 0;
 			pendingScrollMetricsRef.current = null;
+			latestViewportMetricsRef.current = null;
 		};
 	}, [memberListIdentityKey, guild.id]);
 	if (lacksMemberViewPermission) {
