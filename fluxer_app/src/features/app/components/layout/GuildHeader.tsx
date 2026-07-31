@@ -62,6 +62,7 @@ export const GuildHeader = observer(({guild}: {guild: Guild}) => {
 		typeof window !== 'undefined' ? window.innerHeight : 0,
 	);
 	useLayoutEffect(() => {
+		if (!showIntegratedBanner) return;
 		const measure = () => {
 			const width = headerContainerRef.current?.clientWidth;
 			if (width) setContainerWidth((prev) => (prev === width ? prev : width));
@@ -81,7 +82,7 @@ export const GuildHeader = observer(({guild}: {guild: Guild}) => {
 			visualViewport?.removeEventListener('resize', measure);
 			resizeObserver?.disconnect();
 		};
-	}, []);
+	}, [showIntegratedBanner]);
 	const {bannerMaxHeight, centerCrop} = (() => {
 		if (!showIntegratedBanner || !bannerURL || !containerWidth) {
 			return {bannerMaxHeight: HEADER_MIN_HEIGHT, centerCrop: false};

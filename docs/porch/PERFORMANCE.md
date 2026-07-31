@@ -507,3 +507,9 @@ every two seconds while the client requeued the same diagnostics batch forever.
   92 ms trigger was the settings sidebar visibility loop. This candidate is a
   meaningful improvement but remains above the 200 ms interaction target, so
   the follow-up candidate proceeds before final acceptance.
+- A repeat DM-to-community transition measured 280 ms INP and 54 ms of forced
+  layout. Custom-scroller metrics had fallen to 4 ms, but source mapping
+  assigned 49 ms to `GuildHeader` reading `clientWidth` even though this
+  community has no integrated banner and cannot use that geometry. The final
+  candidate now installs that measurement and its resize observers only when
+  an integrated banner exists.

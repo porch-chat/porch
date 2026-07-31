@@ -502,10 +502,11 @@
 			"title": "Preserve warm caches and reduce renderer event churn",
 			"status": "active",
 			"category": "client-performance",
-			"reason": "Porch navigation, settings, and live window resizing intermittently stalled because normal desktop starts discarded Chromium code and shader caches, self-hosted spellcheck attempted unavailable downloads before falling back, scroll components performed redundant observation and synchronous thumb layout work, textareas measured row constraints inside modal commits, settings navigation queried computed style for every item, the desktop channel view observed every pixel of a resize, and failed voice-debug uploads retried and logged without backoff. The performance record also preserves the acceleration and media benchmark evidence behind the selected defaults.",
+			"reason": "Porch navigation, settings, and live window resizing intermittently stalled because normal desktop starts discarded Chromium code and shader caches, self-hosted spellcheck attempted unavailable downloads before falling back, scroll components performed redundant observation and synchronous thumb layout work, plain community headers measured banner geometry they did not use, textareas measured row constraints inside modal commits, settings navigation queried computed style for every item, the desktop channel view observed every pixel of a resize, and failed voice-debug uploads retried and logged without backoff. The performance record also preserves the acceleration and media benchmark evidence behind the selected defaults.",
 			"paths": [
 				".porch/downstream-patches.json",
 				"docs/porch/PERFORMANCE.md",
+				"fluxer_app/src/features/app/components/layout/GuildHeader.tsx",
 				"fluxer_app/src/features/app/components/layout/ScrollIndicatorOverlay.tsx",
 				"fluxer_app/src/features/channel/components/channel_view/GuildChannelView.tsx",
 				"fluxer_app/src/features/member/hooks/useMemberListVisible.ts",
@@ -545,7 +546,7 @@
 			],
 			"conflict_risk": "medium",
 			"upstream_status": "permanently-downstream",
-			"removal_condition": "Remove individual changes only when upstream preserves normal warm caches, avoids unavailable self-hosted dictionary downloads, and provides equivalent deferred/coalesced scroll, textarea, settings-navigation, resize, breakpoint, and diagnostics-upload behavior without navigation or memory regressions."
+			"removal_condition": "Remove individual changes only when upstream preserves normal warm caches, avoids unavailable self-hosted dictionary downloads, and provides equivalent deferred/coalesced scroll, conditional banner measurement, textarea, settings-navigation, resize, breakpoint, and diagnostics-upload behavior without navigation or memory regressions."
 		},
 		{
 			"id": "porch-native-media-control-state-0017",
