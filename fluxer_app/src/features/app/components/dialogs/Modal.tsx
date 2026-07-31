@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import styles from '@app/features/app/components/dialogs/Modal.module.css';
+import {resolveModalExitTransition} from '@app/features/app/components/dialogs/ModalTransitionUtils';
 import {useModalBackHandler} from '@app/features/app/hooks/useModalBackHandler';
 import {CLOSE_DESCRIPTOR} from '@app/features/i18n/utils/CommonMessageDescriptors';
 import * as PopoutCommands from '@app/features/ui/commands/PopoutCommands';
@@ -148,6 +149,11 @@ const RootComponent = React.forwardRef<HTMLDivElement, ModalProps>(
 								damping: 30,
 								mass: 0.8,
 							};
+		const rootExitTransition = resolveModalExitTransition({
+			prefersReducedMotion,
+			isFullscreenOnMobile,
+			transitionPreset,
+		});
 		const handleBackdropClickEvent = useCallback(
 			(event: React.MouseEvent) => {
 				if (event.target === event.currentTarget) {
@@ -232,7 +238,7 @@ const RootComponent = React.forwardRef<HTMLDivElement, ModalProps>(
 						style={{zIndex: backdropZIndex}}
 						initial={{opacity: shouldInstantBackdrop || isInstantTransition ? 0.85 : 0}}
 						animate={{opacity: 0.85}}
-						exit={{opacity: 0}}
+						exit={{opacity: 0, transition: rootExitTransition}}
 						transition={
 							prefersReducedMotion || isInstantTransition
 								? {duration: 0}
@@ -326,6 +332,7 @@ const RootComponent = React.forwardRef<HTMLDivElement, ModalProps>(
 											)}
 											data-flx="app.modal.root"
 											{...animations}
+											exit={{...animations.exit, transition: rootExitTransition}}
 											transition={rootTransition}
 											onAnimationStart={handleAnimationStart}
 											onAnimationComplete={handleAnimationComplete}

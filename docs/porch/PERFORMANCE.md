@@ -761,3 +761,59 @@ every two seconds while the client requeued the same diagnostics batch forever.
   all 34 locale catalogs and compiles strictly without uncompiled-message
   warnings. Login, registration, forgot-password, and invalid-reset states
   remain visually accepted at desktop and true mobile sizes.
+
+### Authenticated surface audit candidate
+
+- A focused, foreground Canary audit measured the first cold DM-to-community
+  navigation at 338 ms of long-task time. Once the route and guild data were
+  warm, repeated community-to-DM and DM-to-community transitions settled in
+  28--70 ms with zero layout shift. Route mutation itself took 1.5--5.4 ms.
+  Earlier synthetic two-second results were rejected after proving that the
+  test window was occluded and Chromium had throttled its animation frames to
+  1 Hz; foreground-window measurements are the accepted evidence.
+- Fifteen repeated route cycles plateaued at roughly 5,462 DOM nodes and 1,366
+  listeners. A forced garbage collection left about 42 MB of renderer heap,
+  roughly 1.7 MB above the starting sample rather than exhibiting unbounded
+  growth. The full seven-process desktop used about 603 MB of private memory
+  in this development-instrumented run, so the earlier 6 GB incident remains
+  non-reproducible outside DevTools retention.
+- Native window changes through 820 by 640, 1,240 by 880, and the original
+  998 by 808 painted their second frame within 0--6 ms. Four large changes
+  accumulated 187.462 ms of task time, including 53.571 ms style, 15.879 ms
+  layout, and 23.287 ms script. The delayed resize-content symptom did not
+  reproduce.
+- Settings mounted in 56--81 ms warm and settled in 83--100 ms. A
+  representative panel sweep settled between 45.6 and 124.6 ms, including
+  Profile, Appearance, Messages, Notifications, Voice & video,
+  Accessibility, Language, Windows app, Developer options, Applications, and
+  Audio. The sidebar retained one roving tab stop and Escape remained the
+  supported close path.
+- A real message context menu opened in 156 ms with nine focused actions;
+  Escape dismissed it. Composer source and interaction testing confirm Enter
+  submits while Shift+Enter inserts a line break. No production message was
+  sent during the audit. The read-only desktop updater check resolved without
+  error, and hardware acceleration was confirmed through the Intel Arc B580
+  D3D11 ANGLE path.
+
+### Modal exit and authenticated recovery candidate
+
+- The shared default modal inherited its spring entrance transition during
+  exit and consistently remained mounted for 483--489 ms. Porch now assigns
+  bounded exit transitions: instant for reduced motion, 100 ms for profile
+  and fullscreen variants, and 120 ms for the default variant. Three local
+  signed-in production-bundle settings exits detached in 217--220 ms end to
+  end, more than halving the retained-modal interval while preserving the
+  existing entrance spring and pointer-focus policy.
+- The offline-recovery audit exposed a production hard crash with
+  `Cannot access 'g' before initialization`. Source-map resolution traced the
+  first evaluated consumer to `EmbedDebuggerTab`, where an eagerly created
+  synthetic `Channel` entered the settings/channel dependency cycle before
+  the `Channel` export was initialized. The developer preview channel is now
+  constructed only when its preview renders.
+- The exact signed-in failure sequence was replayed against the fixed
+  production bundle: force offline, reload, restore the network, and reload
+  online. It returned to My friends without the crash screen; the only console
+  failure was the expected `ERR_INTERNET_DISCONNECTED` from the offline leg.
+  A normal authenticated cold load also reached My friends without a module
+  evaluation error. The test deliberately did not use Reset app data, so the
+  real desktop profile and session were preserved.

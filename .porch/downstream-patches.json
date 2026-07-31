@@ -123,6 +123,7 @@
 				"fluxer_app/index.html",
 				"fluxer_app/scripts/build/rspack/static-files.mjs",
 				"fluxer_app/scripts/GenerateColorSystem.ts",
+				"fluxer_app/src/features/theme/variables/ThemeVariableManifest.ts",
 				"fluxer_app/src/features/app/components/layout/AuthLayout.tsx",
 				"fluxer_app/src/features/app/config/ProductConstants.ts",
 				"fluxer_app/src/features/app/config/I18nDisplayConstants.ts",
@@ -762,6 +763,34 @@
 			"conflict_risk": "high",
 			"upstream_status": "permanently-downstream",
 			"removal_condition": "Remove when upstream provides an equivalent logged-out runtime boundary that does not initialize or download authenticated communication and media state, preserves every public auth route, and includes a transitive regression guard."
+		},
+		{
+			"id": "porch-authenticated-runtime-resilience-0023",
+			"title": "Shorten modal exits and remove an authenticated startup cycle",
+			"status": "active",
+			"category": "client-performance",
+			"reason": "The shared modal reused its spring-based entrance transition during exit, making every settings close retain the full modal tree for roughly half a second. Porch now uses short deterministic exit transitions while preserving its entrance motion. The eagerly registered embed-debugger settings tab also constructed a synthetic Channel at module evaluation time; after an offline reload this could enter the Channel/settings import cycle before Channel initialization and hard-crash an otherwise healthy signed-in client. The preview model is now created only when that developer tab actually renders.",
+			"paths": [
+				".porch/downstream-patches.json",
+				"docs/porch/PERFORMANCE.md",
+				"fluxer_app/src/features/app/components/dialogs/Modal.tsx",
+				"fluxer_app/src/features/app/components/dialogs/ModalTransitionUtils.test.ts",
+				"fluxer_app/src/features/app/components/dialogs/ModalTransitionUtils.ts",
+				"fluxer_app/src/features/user/components/modals/tabs/EmbedDebuggerTab.tsx"
+			],
+			"tests": [
+				"modal exit-transition unit tests",
+				"authenticated local production-bundle startup",
+				"signed-in offline reload followed by online recovery reload",
+				"three settings modal open/exit measurements",
+				"application TypeScript typecheck",
+				"production application build",
+				"Biome formatting and lint checks",
+				"git diff --check"
+			],
+			"conflict_risk": "medium",
+			"upstream_status": "permanently-downstream",
+			"removal_condition": "Remove the modal transition override when upstream gives closing modals a bounded exit independent of their entrance spring. Remove the embed-debugger deferral when the settings graph no longer evaluates preview models during authenticated startup or an equivalent cycle-safe lazy settings boundary exists."
 		}
 	]
 }

@@ -49,29 +49,32 @@ const UNABLE_TO_UNFURL_URL_DESCRIPTOR = msg({
 });
 
 const EMBED_DEBUGGER_PREVIEW_CHANNEL_ID = '0';
-const EMBED_DEBUGGER_PREVIEW_CHANNEL = new Channel({
-	id: EMBED_DEBUGGER_PREVIEW_CHANNEL_ID,
-	type: ChannelTypes.DM_PERSONAL_NOTES,
-	name: undefined,
-	topic: null,
-	url: null,
-	icon: null,
-	owner_id: null,
-	last_message_id: null,
-	last_pin_timestamp: null,
-	recipients: undefined,
-	parent_id: null,
-	bitrate: null,
-	user_limit: null,
-	voice_connection_limit: null,
-	rtc_region: null,
-	nsfw: false,
-	nsfw_override: null,
-	content_warning_level: 0,
-	content_warning_text: null,
-	rate_limit_per_user: 0,
-	nicks: {},
-});
+
+function createEmbedDebuggerPreviewChannel(): Channel {
+	return new Channel({
+		id: EMBED_DEBUGGER_PREVIEW_CHANNEL_ID,
+		type: ChannelTypes.DM_PERSONAL_NOTES,
+		name: undefined,
+		topic: null,
+		url: null,
+		icon: null,
+		owner_id: null,
+		last_message_id: null,
+		last_pin_timestamp: null,
+		recipients: undefined,
+		parent_id: null,
+		bitrate: null,
+		user_limit: null,
+		voice_connection_limit: null,
+		rtc_region: null,
+		nsfw: false,
+		nsfw_override: null,
+		content_warning_level: 0,
+		content_warning_text: null,
+		rate_limit_per_user: 0,
+		nicks: {},
+	});
+}
 
 function withPreviewAuthorFallback<T extends EmbedAuthorResponse | null | undefined>(author: T): T {
 	if (!author || author.proxy_icon_url || !author.icon_url) return author;
@@ -169,9 +172,10 @@ const EmbedJsonCodeBlock: React.FC<{json: string}> = ({json}) => {
 };
 
 const EmbedDebuggerPreview: React.FC<{message: Message}> = observer(({message}) => {
+	const channel = useMemo(createEmbedDebuggerPreviewChannel, []);
 	const contextValue = useMemo(
 		() => ({
-			channel: EMBED_DEBUGGER_PREVIEW_CHANNEL,
+			channel,
 			message,
 			shouldGroup: false,
 			isHovering: false,
@@ -180,7 +184,7 @@ const EmbedDebuggerPreview: React.FC<{message: Message}> = observer(({message}) 
 			readonlyPreview: true,
 			handleDelete: () => {},
 		}),
-		[message],
+		[channel, message],
 	);
 	return (
 		<MessageViewContextProvider value={contextValue} data-flx="user.embed-debugger-tab.message-view-context-provider">
