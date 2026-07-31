@@ -260,3 +260,42 @@ every two seconds while the client requeued the same diagnostics batch forever.
   with display sharing, and with capture-card sharing
 - Hardware acceleration enabled and disabled, including CPU, memory, frame
   cadence, media stats, and cleanup after each workload
+
+### Canary acceptance results
+
+- Canary app-proxy version `2026.731.135319` passed the complete public live
+  verification and smoke suites. Its initial route fell from 4,052,918 to
+  2,880,079 compressed bytes (3.87 to 2.75 MiB), a 28.9% transfer reduction.
+- With hardware acceleration enabled, fresh idle measured 527 MB private and
+  625 MB working set. Voice measured 591/693 MB and 20% of one logical core;
+  live Elgato video measured 802/909 MB and 28%; a 3840x2160/60 Elgato share
+  measured 1,533/1,574 MB and 67%. Resizing and navigating during that share
+  measured 118% of one core. The intentionally recursive whole-display share
+  was the heaviest workload at 186% of one core.
+- With hardware acceleration disabled, fresh idle measured 326 MB private and
+  704 MB working set. Voice measured 376/786 MB and 16% of one logical core;
+  live Elgato video measured 545/974 MB and 24%; the same 3840x2160/60 share
+  measured 1,083/1,594 MB and 57%. Lower private allocation did not make this
+  mode faster: live-video resize increased from 63% to 92% of one core,
+  capture-share resize increased from 118% to 130%, and recursive display
+  sharing increased from 186% to 245%.
+- Camera, display, and capture-card controls remained responsive through snap
+  resizing and navigation in both modes. Elgato capture used the exact
+  3840x2160 source format at up to 60 FPS and retained its aspect ratio. The
+  physical Anker camera remained unavailable to Chromium on this host, while
+  the Elgato path supplied live frames; that is a device/privacy-path result,
+  not a Porch rendering failure.
+- Ending the hardware-accelerated media call released roughly 626 MB after the
+  first stress cycle. A fresh repeated 4K60 call/share cycle settled to 700 MB
+  private after teardown, below the earlier 837 MB reading. The evidence is
+  consistent with bounded reusable Chromium/GPU frame pools rather than an
+  unbounded per-call leak. Hardware acceleration remains enabled by default;
+  disabling it remains a compatibility fallback.
+- The isolated local-account matrix does not validate a remote receiver's
+  decode quality or network adaptation. That requires a separately authorized
+  second client and remains explicit future acceptance work.
+- Desktop workflow `30636088425` produced Windows Canary
+  `2026.731.135052`. The prior installed Canary discovered the update, reported
+  download progress, applied the exact published package, restarted at the new
+  file version, and exposed the new diagnostics-popout bridge. DevTools was
+  closed after this acceptance check.
