@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import {observeResize} from '@app/features/platform/utils/SharedResizeObserver';
+import {scheduleAfterNextPaint} from '@app/features/ui/utils/AnimationFrameScheduling';
 import {type RefObject, useEffect, useState} from 'react';
 
 interface UseTextOverflowOptions {
@@ -98,13 +99,13 @@ export function useTextOverflow(
 			setIsOverflowing(false);
 			return;
 		}
-		let frameId: number | null = null;
+		let cancelScheduledCheck: (() => void) | null = null;
 		let disposed = false;
 		const updateOverflowing = (next: boolean) => {
 			setIsOverflowing((previous) => (previous === next ? previous : next));
 		};
 		const checkOverflow = () => {
-			frameId = null;
+			cancelScheduledCheck = null;
 			if (
 				isMeaningfullyGreater(element.scrollWidth, element.clientWidth) ||
 				(checkVertical && isMeaningfullyGreater(element.scrollHeight, element.clientHeight))
@@ -125,12 +126,13 @@ export function useTextOverflow(
 			updateOverflowing(false);
 		};
 		const scheduleOverflowCheck = () => {
-			if (disposed || frameId != null) {
+			if (disposed || cancelScheduledCheck != null) {
 				return;
 			}
-			frameId = window.requestAnimationFrame(checkOverflow);
+			const frameId = window.requestAnimationFrame(checkOverflow);
+			cancelScheduledCheck = () => window.cancelAnimationFrame(frameId);
 		};
-		scheduleOverflowCheck();
+		cancelScheduledCheck = scheduleAfterNextPaint(window, checkOverflow);
 		const unobserveResize =
 			typeof ResizeObserver !== 'undefined' ? observeResize(element, scheduleOverflowCheck) : undefined;
 		let mutationObserver: MutationObserver | null = null;
@@ -151,9 +153,7 @@ export function useTextOverflow(
 		fontSet?.addEventListener?.('loadingdone', scheduleOverflowCheck);
 		return () => {
 			disposed = true;
-			if (frameId != null) {
-				window.cancelAnimationFrame(frameId);
-			}
+			cancelScheduledCheck?.();
 			unobserveResize?.();
 			mutationObserver?.disconnect();
 			element.removeEventListener('load', scheduleOverflowCheck, true);
