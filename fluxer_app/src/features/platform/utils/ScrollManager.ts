@@ -1176,11 +1176,7 @@ export class ScrollManager {
 		const prevFocusId = this.props.focusId;
 		const pinPreUpdateState = this.pinTakePreUpdateState();
 		this.props = {...nextProps};
-		const {offsetHeight, scrollHeight} = this.scrollGetState();
-		const heightChanged = this.layoutIsHeightChange(offsetHeight, scrollHeight);
 		const shouldForceBottom = pinPreUpdateState?.isPinned ?? false;
-		this.cacheOffsetHeight = offsetHeight;
-		this.cacheScrollHeight = scrollHeight;
 		this.loadIsActive = nextProps.messages.loadingMore;
 		if (this.lifecycleIsInitialized() || this.lifecycleIsReady()) {
 			if (!this.lifecycleIsInitialized()) {
@@ -1239,6 +1235,14 @@ export class ScrollManager {
 				return;
 			}
 		}
+		// Initial restoration and the branches above either do not need viewport
+		// geometry or perform their own targeted measurement. Reading the full
+		// scroller state before them flushes the newly mounted channel layout and
+		// delays its first paint even though the values are discarded.
+		const {offsetHeight, scrollHeight} = this.scrollGetState();
+		const heightChanged = this.layoutIsHeightChange(offsetHeight, scrollHeight);
+		this.cacheOffsetHeight = offsetHeight;
+		this.cacheScrollHeight = scrollHeight;
 		if (heightChanged) {
 			this.scrollFixPosition(offsetHeight, scrollHeight, shouldForceBottom);
 		}
