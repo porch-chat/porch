@@ -6,7 +6,6 @@ import type {Account} from '@app/features/platform/state/AuthSession';
 import {MockAvatar} from '@app/features/ui/components/MockAvatar';
 import * as AvatarUtils from '@app/features/user/utils/AvatarUtils';
 import {getCurrentLocale} from '@app/features/user/utils/LocaleUtils';
-import * as NicknameUtils from '@app/features/user/utils/NicknameUtils';
 import {formatLastActive} from '@fluxer/date_utils/src/DateFormatting';
 import {msg} from '@lingui/core/macro';
 import {Trans, useLingui} from '@lingui/react/macro';
@@ -42,7 +41,9 @@ export const getAccountAvatarUrl = (account: Account): string | undefined => {
 	}
 };
 export const getAccountDisplayName = (account: Account, fallback: string): string => {
-	return account.userData ? NicknameUtils.getDisplayName(account.userData) : fallback;
+	const user = account.userData;
+	if (!user) return fallback;
+	return user.globalName || user.username || fallback;
 };
 export const AccountListItem = ({
 	account,

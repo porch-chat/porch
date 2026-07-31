@@ -6,7 +6,6 @@ import {Logger} from '@app/features/platform/utils/AppLogger';
 import {getElectronAPI, isDesktop} from '@app/features/ui/utils/NativeUtils';
 import type {DesktopInfo} from '@app/types/electron.d';
 import Bowser from 'bowser';
-import {isE2EESupported} from 'livekit-client';
 
 const logger = new Logger('ClientInfoUtils');
 
@@ -377,7 +376,7 @@ export function installFluxerConfigDebugApi(): void {
 	}
 }
 
-function isLiveKitE2EECapable(): boolean {
+async function isLiveKitE2EECapable(): Promise<boolean> {
 	if (typeof window === 'undefined' || typeof Worker === 'undefined') {
 		return false;
 	}
@@ -385,6 +384,7 @@ function isLiveKitE2EECapable(): boolean {
 		return false;
 	}
 	try {
+		const {isE2EESupported} = await import('livekit-client');
 		return isE2EESupported();
 	} catch (error) {
 		logger.warn('Failed to detect LiveKit E2EE support', error);
@@ -409,7 +409,7 @@ export async function getGatewayClientProperties(geo?: {latitude?: string | null
 		desktop_app_variant: info.desktopBuildVariant ?? null,
 		desktop_arch: info.desktopArch ?? info.arch ?? null,
 		desktop_os: info.desktopOS ?? info.osName ?? null,
-		e2ee_capable: isLiveKitE2EECapable(),
+		e2ee_capable: await isLiveKitE2EECapable(),
 		...(geo?.latitude ? {latitude: geo.latitude} : {}),
 		...(geo?.longitude ? {longitude: geo.longitude} : {}),
 	};

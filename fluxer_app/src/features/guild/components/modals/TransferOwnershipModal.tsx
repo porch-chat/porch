@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import * as Modal from '@app/features/app/components/dialogs/Modal';
-import {isAbortError} from '@app/features/auth/state/SudoPrompt';
+import {isAbortError} from '@app/features/auth/utils/AuthErrorUtils';
 import * as GuildCommands from '@app/features/guild/commands/GuildCommands';
 import {GroupOwnershipTransferFailedModal} from '@app/features/guild/components/alerts/GroupOwnershipTransferFailedModal';
 import styles from '@app/features/guild/components/modals/TransferOwnershipModal.module.css';

@@ -1,14 +1,19 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import * as LinkChannelCommands from '@app/features/channel/commands/LinkChannelCommands';
-import Channels from '@app/features/channel/state/Channels';
 import {ME} from '@fluxer/constants/src/AppConstants';
-import {ChannelTypes} from '@fluxer/constants/src/ChannelConstants';
 
 export interface ChannelNavigationTarget {
 	guildId: string | null;
 	channelId: string;
 	messageId: string | null;
+}
+
+export type ChannelNavigationInterceptor = (target: ChannelNavigationTarget) => boolean;
+
+let authenticatedInterceptor: ChannelNavigationInterceptor | null = null;
+
+export function setAuthenticatedChannelNavigationInterceptor(interceptor: ChannelNavigationInterceptor): void {
+	authenticatedInterceptor = interceptor;
 }
 
 export function parseChannelNavigationPath(path: string): ChannelNavigationTarget | null {
@@ -41,26 +46,5 @@ export function parseChannelNavigationPath(path: string): ChannelNavigationTarge
 
 export function tryInterceptChannelNavigationPath(path: string): boolean {
 	const target = parseChannelNavigationPath(path);
-	if (!target) {
-		return false;
-	}
-	const channel = Channels.getChannel(target.channelId);
-	if (!channel || channel.isPrivate()) {
-		return false;
-	}
-	if (
-		target.guildId !== '@favorites' &&
-		target.guildId !== ME &&
-		channel.guildId &&
-		channel.guildId !== target.guildId
-	) {
-		return false;
-	}
-	if (channel.type === ChannelTypes.GUILD_CATEGORY) {
-		return false;
-	}
-	if (channel.type === ChannelTypes.GUILD_LINK) {
-		return LinkChannelCommands.openLinkChannel(channel);
-	}
-	return false;
+	return target ? (authenticatedInterceptor?.(target) ?? false) : false;
 }

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import {isAbortError} from '@app/features/auth/state/SudoPrompt';
+import {isAbortError} from '@app/features/auth/utils/AuthErrorUtils';
 import type {RestResponse} from '@app/features/platform/types/TransportTypes';
 import * as FormUtils from '@app/lib/forms';
 import {useLingui} from '@lingui/react/macro';

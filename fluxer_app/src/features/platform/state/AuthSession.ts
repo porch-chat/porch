@@ -8,8 +8,12 @@ import accountStorage, {
 	type StoredAccount,
 	type UserData,
 } from '@app/features/auth/state/AccountStorage';
-import Sudo from '@app/features/auth/state/AuthSudo';
-import GatewayConnection from '@app/features/gateway/transport/GatewayConnection';
+import {
+	cleanupAuthenticatedGatewaySession,
+	clearAuthenticatedSudoToken,
+	closeAuthenticatedLayers,
+	sendAuthenticatedInvisiblePresence,
+} from '@app/features/platform/state/AuthenticatedSessionRuntimeBridge';
 import {
 	type Account,
 	type AuthSessionMachineEvent,
@@ -28,8 +32,7 @@ import {
 import AppStorage from '@app/features/platform/state/PersistentStorage';
 import {http} from '@app/features/platform/transport/RestTransport';
 import {Logger} from '@app/features/platform/utils/AppLogger';
-import LocalPresence from '@app/features/presence/state/LocalPresence';
-import LayerManager from '@app/features/ui/state/LayerManager';
+import {captureLocalPresenceIntent, restoreLocalPresenceIntent} from '@app/features/presence/state/LocalPresenceBridge';
 import {DEFAULT_API_VERSION} from '@fluxer/constants/src/AppConstants';
 import {action, makeAutoObservable} from 'mobx';
 
@@ -93,17 +96,17 @@ function createDefaultAuthSessionDependencies(): AuthSessionDependencies {
 		http,
 		getRuntimeSnapshot: () => RuntimeConfig.getSnapshot(),
 		applyRuntimeSnapshot: (snapshot) => RuntimeConfig.applySnapshot(snapshot),
-		closeLayers: () => LayerManager.closeAll(),
-		clearSudoToken: () => Sudo.clearToken(),
-		sendInvisiblePresence: (reason) => GatewayConnection.sendInvisiblePresenceForCurrentSession(reason),
-		cleanupGatewaySession: () => GatewayConnection.logout(),
+		closeLayers: closeAuthenticatedLayers,
+		clearSudoToken: clearAuthenticatedSudoToken,
+		sendInvisiblePresence: sendAuthenticatedInvisiblePresence,
+		cleanupGatewaySession: cleanupAuthenticatedGatewaySession,
 		resetSyncedUserSettings: () => {
 			void import('@app/features/user/state/UserSettings').then((module) => {
 				module.default.handleAccountTransition();
 			});
 		},
-		captureLocalPresenceIntent: () => LocalPresence.captureIntent(),
-		restoreLocalPresenceIntent: (intent) => LocalPresence.restoreIntent(intent),
+		captureLocalPresenceIntent,
+		restoreLocalPresenceIntent,
 		now: () => Date.now(),
 	};
 }

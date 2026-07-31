@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import styles from '@app/features/app/components/shared/ExternalLink.module.css';
-import {openOAuthAuthorizeModalFromUrl} from '@app/features/auth/commands/OAuthAuthorizeModalCommands';
 import FocusRing from '@app/features/ui/focus_ring/FocusRing';
 import {openExternalUrl} from '@app/features/ui/utils/NativeUtils';
 import {clsx} from 'clsx';
@@ -20,7 +19,10 @@ export const ExternalLink: FC<ExternalLinkProps> = observer(({href, children, cl
 		if (event.button !== 0) return;
 		event.preventDefault();
 		event.stopPropagation();
-		if (openOAuthAuthorizeModalFromUrl(href)) return;
+		if (href.includes('/oauth2/authorize')) {
+			const {openOAuthAuthorizeModalFromUrl} = await import('@app/features/auth/commands/OAuthAuthorizeModalCommands');
+			if (openOAuthAuthorizeModalFromUrl(href)) return;
+		}
 		await openExternalUrl(href);
 	};
 	const handleAuxClick: MouseEventHandler<HTMLAnchorElement> = async (event) => {

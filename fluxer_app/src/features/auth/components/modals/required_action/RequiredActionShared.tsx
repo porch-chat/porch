@@ -32,7 +32,7 @@ import type {
 	NewEmailFormInputs,
 	SubmitCallback,
 } from '@app/features/auth/components/modals/required_action/RequiredActionTypes';
-import {isAbortError} from '@app/features/auth/state/SudoPrompt';
+import {isAbortError} from '@app/features/auth/utils/AuthErrorUtils';
 import {
 	CANCEL_DESCRIPTOR,
 	GO_BACK_DESCRIPTOR,

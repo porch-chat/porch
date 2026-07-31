@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import {GenericErrorModal} from '@app/features/app/components/alerts/GenericErrorModal';
-import {isAbortError} from '@app/features/auth/state/SudoPrompt';
+import {isAbortError} from '@app/features/auth/utils/AuthErrorUtils';
 import type {HttpError} from '@app/features/platform/types/EndpointError';
 import type {RestResponse} from '@app/features/platform/types/TransportTypes';
 import * as ModalCommands from '@app/features/ui/commands/ModalCommands';

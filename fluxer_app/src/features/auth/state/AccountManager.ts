@@ -2,14 +2,10 @@
 
 import {Routes} from '@app/app/Routes';
 import type {UserData} from '@app/features/auth/state/AccountStorage';
-import GatewayConnection from '@app/features/gateway/transport/GatewayConnection';
 import * as RouterUtils from '@app/features/navigation/utils/RouterUtils';
-import * as NotificationUtils from '@app/features/notification/utils/NotificationUtils';
-import * as PushSubscriptionService from '@app/features/platform/push/PushSubscriptionService';
 import SessionManager, {type Account, SessionExpiredError} from '@app/features/platform/state/AuthSession';
 import {Logger} from '@app/features/platform/utils/AppLogger';
 import {isInstalledPwa} from '@app/features/ui/utils/PwaUtils';
-import MediaEngine from '@app/features/voice/engine/MediaEngineFacade';
 import {computed, makeAutoObservable} from 'mobx';
 
 const logger = new Logger('AccountManager');
@@ -97,6 +93,7 @@ class AccountManager {
 
 	private async leaveActiveVoiceChannel(context: 'account switch' | 'logout'): Promise<void> {
 		try {
+			const {default: MediaEngine} = await import('@app/features/voice/engine/MediaEngineFacade');
 			await MediaEngine.disconnectFromVoiceChannel('user');
 		} catch (err) {
 			logger.warn(`Failed to leave active voice channel before ${context}`, err);
@@ -108,16 +105,22 @@ class AccountManager {
 			SessionManager.prepareForAccountTransition('account-switch');
 		}
 		if (this.shouldManagePushSubscriptions()) {
+			const PushSubscriptionService = await import('@app/features/platform/push/PushSubscriptionService');
 			await PushSubscriptionService.unregisterAllPushSubscriptions();
 		}
 		await this.leaveActiveVoiceChannel('account switch');
 		await SessionManager.switchAccount(userId);
+		const {default: GatewayConnection} = await import('@app/features/gateway/transport/GatewayConnection');
 		GatewayConnection.startSession(SessionManager.token ?? undefined);
 		if (redirectPath !== null) {
 			RouterUtils.replaceWith(redirectPath);
 		}
 		if (this.shouldManagePushSubscriptions()) {
 			void (async () => {
+				const [NotificationUtils, PushSubscriptionService] = await Promise.all([
+					import('@app/features/notification/utils/NotificationUtils'),
+					import('@app/features/platform/push/PushSubscriptionService'),
+				]);
 				if (await NotificationUtils.isGranted()) {
 					await PushSubscriptionService.registerPushSubscription();
 				}
@@ -131,17 +134,27 @@ class AccountManager {
 		userData?: UserData,
 		redirectPath: string | null = Routes.ME,
 	): Promise<void> {
+		const hadActiveSession = SessionManager.isAuthenticated;
 		if (SessionManager.userId && SessionManager.userId !== userId) {
 			SessionManager.prepareForAccountTransition('account-switch');
 		}
-		await this.leaveActiveVoiceChannel('account switch');
+		if (hadActiveSession) {
+			await this.leaveActiveVoiceChannel('account switch');
+		}
 		await SessionManager.login(token, userId, userData);
-		GatewayConnection.startSession(token);
+		if (hadActiveSession) {
+			const {default: GatewayConnection} = await import('@app/features/gateway/transport/GatewayConnection');
+			GatewayConnection.startSession(token);
+		}
 		if (redirectPath !== null) {
 			RouterUtils.replaceWith(redirectPath);
 		}
 		if (this.shouldManagePushSubscriptions()) {
 			void (async () => {
+				const [NotificationUtils, PushSubscriptionService] = await Promise.all([
+					import('@app/features/notification/utils/NotificationUtils'),
+					import('@app/features/platform/push/PushSubscriptionService'),
+				]);
 				if (await NotificationUtils.isGranted()) {
 					await PushSubscriptionService.registerPushSubscription();
 				}

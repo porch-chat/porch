@@ -669,3 +669,39 @@ every two seconds while the client requeued the same diagnostics batch forever.
   passkeys, both desktop feeds, all 25 service states, and immutable pins.
   The settings natural-width target is accepted; public-auth bootstrap is the
   next active structural performance target.
+
+### Public authentication runtime candidate
+
+- The logged-out bootstrap now mounts a dedicated public shell and router.
+  Channel, guild, gateway, search, messaging-state, settings, voice, and media
+  initialization moves behind the authenticated session boundary. Session
+  restoration still loads the full application before rendering an
+  authenticated route.
+- Static graph inspection reduced the public shell from 2,292 reachable source
+  modules to 174. Login fell from 2,263 to 189 modules and registration from
+  2,253 to 153. A regression test traverses real static imports from the entry,
+  public shell, login, registration, forgot-password, and reset-password roots
+  and fails if authenticated communication modules become reachable again.
+- The production login navigation fetched 3,405,231 decoded bytes of local
+  JS and CSS, versus the 11.77 MB decoded production baseline, a roughly 71
+  percent reduction. The Rspack initial entry remains 949,922 bytes; the public
+  shell is 671,585 bytes and the login page chunk used by the public runtime is
+  359,686 bytes. Source-map inspection confirms the media engine remains in
+  authenticated chunks.
+- An unthrottled local production navigation measured 518 ms LCP and 0.01 CLS.
+  This is structural candidate evidence rather than a production comparison:
+  the local audit server intentionally has near-zero TTFB and no compression or
+  immutable caching. Production acceptance must repeat the same browser trace
+  through Canary after deployment.
+- Desktop and true mobile emulation rendered login, closed registration,
+  forgot-password, and invalid/expired reset-link states. Browser testing also
+  caught two circular-evaluation failures before deployment. Lazy message
+  previews now keep generic confirmations lightweight, stored-account labels no
+  longer initialize guild state, and ordinary legal links no longer initialize
+  the OAuth/community/settings graph. Auth route load failures now log their
+  underlying stack for actionable diagnostics.
+- The direct production build passes with 229 CSS-order warnings, down from 364
+  in the first isolated candidate. A broader all-chunk deduplication experiment
+  was rejected because it increased the initial entry from about 0.93 MiB to
+  5.96 MiB. Async authenticated chunk duplication remains a separate bundler
+  opportunity and is not mixed into this candidate.

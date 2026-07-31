@@ -2,6 +2,7 @@
 
 import type {AccountPresenceIntent} from '@app/features/auth/state/AccountStorage';
 import {deferUntilModulesLoaded} from '@app/features/platform/utils/DeferUntilModulesLoaded';
+import {registerLocalPresenceBridgeTarget} from '@app/features/presence/state/LocalPresenceBridge';
 import Idle from '@app/features/ui/state/Idle';
 import MobileLayout from '@app/features/ui/state/MobileLayout';
 import type {CustomStatus, GatewayCustomStatusPayload} from '@app/features/user/state/CustomStatus';
@@ -186,4 +187,6 @@ class LocalPresence {
 	}
 }
 
-export default new LocalPresence();
+const localPresence = new LocalPresence();
+registerLocalPresenceBridgeTarget(localPresence);
+export default localPresence;

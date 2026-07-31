@@ -3,12 +3,22 @@
 import {PRODUCT_NAME} from '@app/features/app/config/I18nDisplayConstants';
 import styles from '@app/features/auth/flow/AuthPageStyles.module.css';
 import type {LoadableErrorProps} from '@app/features/platform/components/loadable/LoadableComponent';
+import {Logger} from '@app/features/platform/utils/AppLogger';
 import {Button} from '@app/features/ui/button/Button';
 import {ph} from '@lingui/core/macro';
 import {Trans} from '@lingui/react/macro';
 import type React from 'react';
+import {useEffect} from 'react';
 
-export function AuthRouteLoadError({retry}: LoadableErrorProps): React.JSX.Element {
+const logger = new Logger('AuthRouteLoadError');
+
+export function AuthRouteLoadError({error, retry}: LoadableErrorProps): React.JSX.Element {
+	useEffect(() => {
+		logger.error(
+			'Failed to load authentication route',
+			error instanceof Error ? (error.stack ?? error.message) : error,
+		);
+	}, [error]);
 	return (
 		<div className={styles.errorContainer} data-flx="auth.flow.auth-route-load-error.container">
 			<div className={styles.errorTitle} data-flx="auth.flow.auth-route-load-error.title">

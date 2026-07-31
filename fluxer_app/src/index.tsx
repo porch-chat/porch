@@ -23,7 +23,6 @@ import {
 	preloadClientInfo,
 } from '@app/features/platform/utils/ClientInfo';
 import {loadLazyModule} from '@app/features/platform/utils/LazyModuleLoader';
-import {initializeNativeVoiceEngineSelectionForStartup} from '@app/features/voice/engine/native_voice_engine/NativeVoiceEngineSelection';
 import {i18n} from '@lingui/core';
 import {I18nProvider} from '@lingui/react';
 import {configure} from 'mobx';
@@ -127,57 +126,31 @@ async function bootstrapThemeStudio(): Promise<void> {
 }
 
 async function bootstrapApp(): Promise<void> {
-	await initializeNativeVoiceEngineSelectionForStartup();
 	const [
-		{App},
+		{AppBootstrap},
 		authenticationCommands,
 		{setupHttp},
 		{default: CaptchaInterceptor},
-		{initializeEmojiParser},
 		{registerServiceWorker},
 		{default: AccountManager},
-		{default: ChannelDisplayName},
-		_geoIp,
-		{default: Keybind},
-		{default: NewDeviceMonitoring},
-		{default: Notification},
-		{default: QuickSwitcher},
 		_runtimeConfig,
-		{default: StatusPage},
 		{getElectronAPI},
 	] = await Promise.all([
-		loadLazyModule(() => import('@app/app/App')),
+		loadLazyModule(() => import('@app/app/AppBootstrap')),
 		loadLazyModule(() => import('@app/features/auth/commands/AuthenticationCommands')),
 		loadLazyModule(() => import('@app/app/SetupHttp')),
 		loadLazyModule(() => import('@app/features/auth/components/CaptchaInterceptor')),
-		loadLazyModule(() => import('@app/features/messaging/utils/markdown/EmojiProviderSetup')),
 		loadLazyModule(() => import('@app/features/platform/service_worker/Register')),
 		loadLazyModule(() => import('@app/features/auth/state/AccountManager')),
-		loadLazyModule(() => import('@app/features/channel/state/ChannelDisplayName')),
-		loadLazyModule(() => import('@app/features/app/state/GeoIP')),
-		loadLazyModule(() => import('@app/features/input/state/InputKeybind')),
-		loadLazyModule(() => import('@app/features/auth/state/NewDeviceMonitoring')),
-		loadLazyModule(() => import('@app/features/ui/state/Notification')),
-		loadLazyModule(() => import('@app/features/search/state/QuickSwitcher')),
 		loadLazyModule(() => import('@app/features/app/state/RuntimeConfig')),
-		loadLazyModule(() => import('@app/features/user/state/StatusPage')),
 		loadLazyModule(() => import('@app/features/ui/utils/NativeUtils')),
 	]);
 	void preloadClientInfo();
-	QuickSwitcher.setI18n(reactiveI18n);
-	ChannelDisplayName.setI18n(reactiveI18n);
-	Keybind.setI18n(reactiveI18n);
-	NewDeviceMonitoring.setI18n(reactiveI18n);
-	Notification.setI18n(reactiveI18n);
 	CaptchaInterceptor.setI18n(reactiveI18n);
-	void StatusPage.checkIncidents();
-	StatusPage.startPolling();
 	await AccountManager.bootstrap();
 	setupHttp();
-	initializeEmojiParser();
 	await resumePendingDesktopHandoffLogin(getElectronAPI, authenticationCommands);
-	mountRoot(<App data-flx="index.bootstrap.app" />, 'index.bootstrap');
-	QuickSwitcher.preloadModal();
+	mountRoot(<AppBootstrap data-flx="index.bootstrap.app" />, 'index.bootstrap');
 	registerServiceWorker();
 }
 

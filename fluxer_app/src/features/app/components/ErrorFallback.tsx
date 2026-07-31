@@ -4,12 +4,9 @@ import errorFallbackStyles from '@app/features/app/components/ErrorFallback.modu
 import {NativeTitlebar} from '@app/features/app/components/layout/NativeTitlebar';
 import {useNativePlatform} from '@app/features/app/hooks/useNativePlatform';
 import AppStorage, {PRESERVED_RESET_STORAGE_KEYS} from '@app/features/platform/state/PersistentStorage';
-import {ensureLatestAssets} from '@app/features/platform/types/Versioning';
 import {Logger} from '@app/features/platform/utils/AppLogger';
 import {Button} from '@app/features/ui/button/Button';
-import {copy as copyText} from '@app/features/ui/commands/TextCopyCommands';
 import {FluxerIcon} from '@app/features/ui/components/icons/FluxerIcon';
-import LayerManager from '@app/features/ui/state/LayerManager';
 import {useNativeTitleBar} from '@app/features/window/hooks/useNativeTitleBar';
 import {msg} from '@lingui/core/macro';
 import {Trans, useLingui} from '@lingui/react/macro';
@@ -41,11 +38,12 @@ function getStackTraceText(error: Error | undefined, unknownErrorLabel: string):
 }
 
 async function cleanupRuntimeStateOnCrash(): Promise<void> {
-	LayerManager.closeAll();
-	const [{default: GatewayConnection}, {default: MediaEngine}] = await Promise.all([
+	const [{default: LayerManager}, {default: GatewayConnection}, {default: MediaEngine}] = await Promise.all([
+		import('@app/features/ui/state/LayerManager'),
 		import('@app/features/gateway/transport/GatewayConnection'),
 		import('@app/features/voice/engine/MediaEngineFacade'),
 	]);
+	LayerManager.closeAll();
 	GatewayConnection.logout();
 	MediaEngine.cleanup();
 }
@@ -68,6 +66,7 @@ export const ErrorFallback: React.FC<ErrorFallbackProps> = ({error}) => {
 		let isMounted = true;
 		const run = async () => {
 			try {
+				const {ensureLatestAssets} = await import('@app/features/platform/types/Versioning');
 				const {updateFound} = await ensureLatestAssets({force: true});
 				if (isMounted) {
 					setUpdateAvailable(updateFound);
@@ -88,6 +87,7 @@ export const ErrorFallback: React.FC<ErrorFallbackProps> = ({error}) => {
 	const handleUpdate = useCallback(async () => {
 		setIsUpdating(true);
 		try {
+			const {ensureLatestAssets} = await import('@app/features/platform/types/Versioning');
 			const {updateFound} = await ensureLatestAssets({force: true});
 			if (!updateFound) {
 				setIsUpdating(false);
@@ -104,6 +104,7 @@ export const ErrorFallback: React.FC<ErrorFallbackProps> = ({error}) => {
 		}
 		setIsCopyingStackTrace(true);
 		try {
+			const {copy: copyText} = await import('@app/features/ui/commands/TextCopyCommands');
 			await copyText(i18n, stackTraceText);
 		} finally {
 			setIsCopyingStackTrace(false);

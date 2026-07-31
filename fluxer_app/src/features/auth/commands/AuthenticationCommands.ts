@@ -4,13 +4,11 @@ import {Endpoints} from '@app/features/app/constants/Endpoints';
 import AccountManager from '@app/features/auth/state/AccountManager';
 import type {UserData} from '@app/features/auth/state/AccountStorage';
 import Authentication from '@app/features/auth/state/Authentication';
-import GatewayConnection from '@app/features/gateway/transport/GatewayConnection';
 import {http} from '@app/features/platform/transport/RestTransport';
 import {HttpError} from '@app/features/platform/types/EndpointError';
 import {Logger} from '@app/features/platform/utils/AppLogger';
 import {failureCode} from '@app/features/platform/utils/ResponseInspection';
 import {isDesktop} from '@app/features/ui/utils/NativeUtils';
-import UserSettings from '@app/features/user/state/UserSettings';
 import {APIErrorCodes} from '@fluxer/constants/src/ApiErrorCodes';
 import type {ValueOf} from '@fluxer/constants/src/ValueOf';
 import type {
@@ -21,13 +19,14 @@ import type {
 	SsoStartResponse,
 } from '@fluxer/schema/src/domains/auth/AuthSchemas';
 import type {UserPartial} from '@fluxer/schema/src/domains/user/UserResponseSchemas';
+import {i18n} from '@lingui/core';
 import type {AuthenticationResponseJSON, PublicKeyCredentialRequestOptionsJSON} from '@simplewebauthn/browser';
 
 const logger = new Logger('AuthService');
 const getPlatformHeaderValue = (): 'web' | 'desktop' | 'mobile' => (isDesktop() ? 'desktop' : 'web');
 const withPlatformHeader = (headers?: Record<string, string>): Record<string, string> => ({
 	'X-Fluxer-Platform': getPlatformHeaderValue(),
-	'Accept-Language': UserSettings.getLocale(),
+	'Accept-Language': i18n.locale || navigator.language || 'en-US',
 	...(headers ?? {}),
 });
 export const VerificationResult = {
@@ -571,7 +570,9 @@ export function startSession(
 	if (!startGateway) {
 		return;
 	}
-	GatewayConnection.startSession(token);
+	void import('@app/features/gateway/transport/GatewayConnection').then(({default: GatewayConnection}) => {
+		GatewayConnection.startSession(token);
+	});
 }
 
 let sessionStartInProgress = false;
@@ -586,6 +587,7 @@ export async function ensureSessionStarted(): Promise<void> {
 	if (!Authentication.isAuthenticated) {
 		return;
 	}
+	const {default: GatewayConnection} = await import('@app/features/gateway/transport/GatewayConnection');
 	if (GatewayConnection.isConnected || GatewayConnection.isConnecting) {
 		return;
 	}

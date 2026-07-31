@@ -2,21 +2,21 @@
 
 import styles from '@app/features/app/components/dialogs/ConfirmModal.module.css';
 import * as Modal from '@app/features/app/components/dialogs/Modal';
-import {useElementOverflow} from '@app/features/app/hooks/useTextOverflow';
-import {Message} from '@app/features/channel/components/ChannelMessage';
-import Channels from '@app/features/channel/state/Channels';
 import {CANCEL_DESCRIPTOR} from '@app/features/i18n/utils/CommonMessageDescriptors';
 import {SHIFT_KEY_LABEL} from '@app/features/input/utils/KeyboardUtils';
-import {Message as MessageModel} from '@app/features/messaging/models/MessagingMessage';
+import type {Message as MessageModel} from '@app/features/messaging/models/MessagingMessage';
 import {Button} from '@app/features/ui/button/Button';
 import * as ModalCommands from '@app/features/ui/commands/ModalCommands';
 import type {ModalProps} from '@app/features/ui/utils/ModalUtils';
-import {MessagePreviewContext} from '@fluxer/constants/src/ChannelConstants';
 import {msg} from '@lingui/core/macro';
 import {useLingui} from '@lingui/react/macro';
-import {clsx} from 'clsx';
 import {observer} from 'mobx-react-lite';
-import React, {useCallback, useMemo, useRef, useState} from 'react';
+import React, {lazy, Suspense, useCallback, useRef, useState} from 'react';
+
+const ConfirmModalMessagePreview = lazy(async () => {
+	const module = await import('@app/features/app/components/dialogs/ConfirmModalMessagePreview');
+	return {default: module.ConfirmModalMessagePreview};
+});
 
 const PRO_TIP_LABEL_DESCRIPTOR = msg({
 	message: 'Pro tip:',
@@ -86,29 +86,7 @@ export const ConfirmModal = observer(
 		const {i18n} = useLingui();
 		const [submitting, setSubmitting] = useState(false);
 		const [checkboxChecked, setCheckboxChecked] = useState(false);
-		const [messagePreviewElement, setMessagePreviewElement] = useState<HTMLDivElement | null>(null);
 		const initialFocusRef = useRef<HTMLButtonElement | null>(null);
-		const isMessagePreviewOverflowing = useElementOverflow(messagePreviewElement, 'vertical');
-		const previewBehaviorOverrides = useMemo(
-			() => ({
-				isEditing: false,
-				isHighlight: false,
-				disableContextMenu: true,
-				disableContextMenuTracking: true,
-				contextMenuOpen: false,
-			}),
-			[],
-		);
-		const messageSnapshot = useMemo(() => {
-			if (!message) return undefined;
-			return new MessageModel(message.toJSON(), {
-				skipUserCache: true,
-				missingReactions: 'preserve',
-				skipReactionHydration: true,
-				instanceId: message.instanceId,
-			});
-		}, [message?.id]);
-		const messageSnapshotChannel = messageSnapshot ? Channels.getChannel(messageSnapshot.channelId) : null;
 		const handlePrimaryClick = useCallback(async () => {
 			if (!onPrimary) {
 				return;
@@ -155,21 +133,10 @@ export const ConfirmModal = observer(
 								value: checkboxChecked,
 								onChange: (value: boolean) => setCheckboxChecked(value),
 							})}
-						{messageSnapshot && messageSnapshotChannel && (
-							<div
-								ref={setMessagePreviewElement}
-								className={clsx(styles.messagePreview, isMessagePreviewOverflowing && styles.messagePreviewOverflowing)}
-								data-flx="app.confirm-modal.message-preview"
-							>
-								<Message
-									channel={messageSnapshotChannel}
-									message={messageSnapshot}
-									previewContext={MessagePreviewContext.LIST_POPOUT}
-									removeTopSpacing={true}
-									behaviorOverrides={previewBehaviorOverrides}
-									data-flx="app.confirm-modal.message"
-								/>
-							</div>
+						{message && (
+							<Suspense fallback={null}>
+								<ConfirmModalMessagePreview message={message} />
+							</Suspense>
 						)}
 						{showShiftBypassConfirmationTip && (
 							<p className={styles.shiftBypassTip} data-flx="app.confirm-modal.shift-bypass-tip">

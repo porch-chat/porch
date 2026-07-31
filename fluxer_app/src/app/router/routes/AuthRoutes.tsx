@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import {Routes} from '@app/app/Routes';
-import {rootRoute} from '@app/app/router/routes/RootRoutes';
 import {AuthLayout} from '@app/features/app/components/layout/AuthLayout';
 import RuntimeConfig from '@app/features/app/state/RuntimeConfig';
 import {
@@ -136,7 +135,6 @@ const whenAuthenticated = (handler: AuthRedirectHandler) => {
 	};
 };
 const authLayoutRoute = createRoute({
-	getParentRoute: () => rootRoute,
 	id: 'authLayout',
 	layout: ({children}) => <AuthLayout data-flx="app.router.auth-routes.layout.auth-layout">{children}</AuthLayout>,
 });
