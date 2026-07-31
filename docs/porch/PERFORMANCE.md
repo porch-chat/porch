@@ -636,3 +636,36 @@ every two seconds while the client requeued the same diagnostics batch forever.
   position restored with a zero-pixel gap. Eight focused scroll-manager tests
   remain green. The navigation target is accepted; settings natural-width and
   public-auth bootstrap work remain active.
+
+### After-paint overflow scheduling acceptance
+
+- Porch source `1807b37ca3da51c973bcdcc4a4292067d1e41f89` is live as web
+  version `2026.731.205441` at immutable multi-platform app-proxy digest
+  `sha256:647907cd3e1da9b9708c1675652b67bb5a74975283ecb9be219d874800260468`.
+  GitHub Actions run `30664510542` built and pushed the image successfully;
+  its first release-fragment inspection encountered a transient 30-second
+  GHCR `HEAD` timeout, and rerunning only that failed job against the exact
+  same source, version, and architecture manifests succeeded.
+- Direct browser instrumentation observed the hidden natural-width clone
+  being appended 8.443 ms after the first paint. Unlike the rejected
+  animation-frame-plus-timer experiment, the two-animation-frame scheduler
+  therefore establishes the intended paint boundary before the tooltip-only
+  overflow measurement.
+- Three warm Settings opens measured 248, 80, and 80 ms INP with zero CLS.
+  Their 80 ms median is 28.6 percent lower than the immediate same-viewport
+  baseline median of 112 ms. Three independent post-reload opens measured
+  160, 144, and 176 ms INP, for a 160 ms median; this also improves on the
+  immediate 192 ms first-open baseline and the earlier 614 ms cold result.
+- The settings sidebar retained exactly one `tabIndex=0`; ArrowDown moved
+  selection from Invites to Account and Enter activated Account. Profile's
+  multiline field retained its 100 px minimum and maximum row constraints,
+  both visible custom scrollbar thumbs retained valid geometry, and synthetic
+  narrow text exercised the overflow branch without leaving a tooltip or DOM
+  mutation behind after natural width was restored.
+- Two focused frame-order and cancellation tests, the full application type
+  check, Biome, manifest and branding validation, both architecture builds,
+  and the complete production verifier passed. The verifier covered API,
+  Stable, Canary, metadata, CORS, gateway and LiveKit WebSockets and origins,
+  passkeys, both desktop feeds, all 25 service states, and immutable pins.
+  The settings natural-width target is accepted; public-auth bootstrap is the
+  next active structural performance target.
