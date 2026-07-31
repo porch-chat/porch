@@ -609,8 +609,30 @@ every two seconds while the client requeued the same diagnostics batch forever.
 - Reduce settings natural-width work and modal DOM cost directly. The rejected
   timer experiment proved that merely moving overflow reads between tasks is
   not a reliable paint boundary.
-- Remove the 65 ms synchronous `getScrollerState` boundary on
-  DM-to-community navigation without sacrificing per-channel scroll restore.
 - Split public authentication bootstrap from the full communication client.
   Login still downloads and parses the same large application graph as the
   authenticated client, so startup remains the largest structural opportunity.
+
+### Message scroller navigation acceptance
+
+- Authenticated source-mapped tracing narrowed the remaining mount-time stall
+  to `ScrollManager.propsApplyUpdate`, which read the newly mounted scroller's
+  complete geometry before branches that did not consume it. Source
+  `560e6edd51b5deb51f7ba6d12e4b556750d7cf35` defers that read until after
+  those early exits. Initial restore and the update branches that genuinely
+  need geometry retain their existing behavior.
+- Web version `2026.731.203058` was deployed at immutable multi-platform digest
+  `sha256:a1aef8a9cb8cae23a14c2bfb556421f1efe9da78a8a174f7b6b30440425674b1`.
+  The full production verifier passed API, Stable, Canary, metadata, CORS,
+  gateway and LiveKit WebSockets, passkeys, both desktop feeds, all 25 service
+  states, and immutable pins without restarting any backend or media service.
+- Three repeat DM-to-community transitions each measured 80 ms INP with zero
+  CLS. The targeted `getScrollerState` forced update fell from the fresh
+  baseline's 4.844 ms layout plus 3.049 ms style update to 0.381, 0.451, and
+  0.429 ms. A separate first post-deploy run measured 96 ms INP, versus 112 ms
+  in its fresh pre-change counterpart and 280 ms in the earlier broad audit.
+- A non-bottom DM scroll position restored within 8 px after a community
+  round trip, accounting for virtualized content settling, and a bottom-pinned
+  position restored with a zero-pixel gap. Eight focused scroll-manager tests
+  remain green. The navigation target is accepted; settings natural-width and
+  public-auth bootstrap work remain active.
