@@ -76,7 +76,11 @@ requireText('fluxer_app/scripts/GenerateColorSystem.ts', 'brand: {hue: 174, satu
 forbidText('fluxer_app/scripts/GenerateColorSystem.ts', 'brand: {hue: 242, saturation: 70');
 requireText(
 	'fluxer_app/src/features/theme/variables/ThemeVariableManifest.ts',
-	'"--brand-primary": "hsl(174, calc(72% * var(--saturation-factor)), 40%)"',
+	'"--brand-primary": "hsl(174, calc(72% * var(--saturation-factor)), 30%)"',
+);
+requireText(
+	'fluxer_app/src/features/theme/variables/ThemeVariableManifest.ts',
+	'"--brand-secondary": "hsl(174, calc(68% * var(--saturation-factor)), 28%)"',
 );
 forbidText(
 	'fluxer_app/src/features/theme/variables/ThemeVariableManifest.ts',
