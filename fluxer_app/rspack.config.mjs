@@ -561,6 +561,7 @@ export default () => {
 								},
 								name: 'vendor',
 								priority: 10,
+								chunks: 'initial',
 								reuseExistingChunk: true,
 							},
 						},

@@ -173,8 +173,7 @@ export const GuildChannelView = observer(({channelId, guildId}: GuildChannelView
 		defaultHiddenForChannel: memberListDefaultHiddenForChannel,
 	});
 	const {enabled: isMobileLayout} = MobileLayout;
-	const windowSize = Window.windowSize;
-	const isPwaVoiceTextSplitLayout = isMobileLayout && isPwaOnMobileOrTablet() && isPortraitDisplay(windowSize);
+	const isPwaVoiceTextSplitLayout = isMobileLayout && isPwaOnMobileOrTablet() && isPortraitDisplay(Window.windowSize);
 	const room = MediaEngine.room;
 	const connectedChannelId = MediaEngine.channelId;
 	const connectedGuildId = MediaEngine.guildId;

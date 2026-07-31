@@ -4,7 +4,7 @@ import FocusManager from '@app/features/platform/utils/FocusManager';
 import {createWindowFocusInteractionGuard} from '@app/features/ui/utils/WindowFocusInteractionGuard';
 import {useActivityRecorder} from '@app/features/voice/hooks/useActivityRecorder';
 import * as WindowCommands from '@app/features/window/commands/WindowCommands';
-import {useCallback, useEffect} from 'react';
+import {useCallback, useEffect, useRef} from 'react';
 
 interface WindowEventListenersOptions {
 	preventDocumentScroll: boolean;
@@ -14,7 +14,14 @@ export function useWindowEventListeners({preventDocumentScroll}: WindowEventList
 	const recordActivity = useActivityRecorder();
 	const handleUserActivity = useCallback(() => recordActivity(), [recordActivity]);
 	const handleImmediateActivity = useCallback(() => recordActivity(true), [recordActivity]);
-	const handleResize = useCallback(() => WindowCommands.resized(), []);
+	const resizeFrameRef = useRef<number | null>(null);
+	const handleResize = useCallback(() => {
+		if (resizeFrameRef.current !== null) return;
+		resizeFrameRef.current = window.requestAnimationFrame(() => {
+			resizeFrameRef.current = null;
+			WindowCommands.resized();
+		});
+	}, []);
 	useEffect(() => {
 		FocusManager.init();
 		const guard = createWindowFocusInteractionGuard({initiallyFocused: document.hasFocus()});
@@ -51,6 +58,10 @@ export function useWindowEventListeners({preventDocumentScroll}: WindowEventList
 			document.addEventListener('scroll', preventScroll);
 		}
 		return () => {
+			if (resizeFrameRef.current !== null) {
+				window.cancelAnimationFrame(resizeFrameRef.current);
+				resizeFrameRef.current = null;
+			}
 			FocusManager.destroy();
 			guard.destroy();
 			window.removeEventListener('focus', handleFocus);

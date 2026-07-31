@@ -174,3 +174,80 @@ appropriate fix.
 - Verify deployed hash-only JS, CSS, image, and WASM assets return
   `public, max-age=31536000, immutable`, while mutable metadata and application
   entry points retain their existing revalidation/no-store policies.
+
+## 2026-07-31 — resize responsiveness and bounded diagnostics uploads
+
+### Scope and baseline
+
+- Porch Canary Desktop `2026.731.33820` on Windows 11
+- Window resizing and Windows snap transitions while authenticated and idle
+- Fresh idle process tree with hardware acceleration enabled
+- Voice-debug upload failure behavior with DevTools open
+- OpenAsar, Vencord, Vesktop, and Electron performance guidance review
+
+A fresh idle client used approximately 546–562 MB of private memory across the
+Electron process tree. The previously observed 6 GB state was not a normal idle
+baseline: docked DevTools retained a new failed voice-debug upload error object
+every two seconds while the client requeued the same diagnostics batch forever.
+
+### Findings
+
+1. Window state installed resize, focus, blur, and visibility listeners when its
+   singleton was constructed, while the application root installed a second
+   authoritative listener set for the same events.
+2. Every resize event replaced the observable window-size object and emitted a
+   debug log, including duplicate or same-dimension notifications.
+3. The desktop guild channel view unconditionally read the observable window
+   size even though it only needed the value for a mobile PWA portrait layout.
+   Because the view is a MobX observer, this subscribed the full desktop
+   channel/voice subtree to every pixel of a live resize.
+4. Member-list fit checks used two raw resize subscriptions even though their
+   result changes only when the viewport crosses the 1024 px breakpoint.
+5. Failed voice-debug uploads requeued the same batch and logged a fresh error
+   object at the two-second upload interval with no backoff. This remained
+   bounded without DevTools, but DevTools console retention could amplify it
+   into multi-gigabyte renderer memory use.
+6. OpenAsar's aggressive Chromium switches are not safe defaults for Porch.
+   Forcing GPU blocklists, overlays, and high-performance adapters can trade a
+   local benchmark win for rendering faults, power use, or instability.
+   Vencord's broadly applicable lesson is to avoid eager work; Porch already
+   lazy-loads route pages, syntax highlighting, settings, and other large
+   feature modules. Vesktop globally disables background throttling, whereas
+   Porch intentionally bypasses it only for an active call or stream.
+7. The catch-all Rspack vendor cache group combined dependencies from initial
+   and asynchronous chunks under one fixed name. That promoted lazy-only
+   dependencies into the startup HTML. The eSpeak fallback alone became a
+   4.05 MB minified initial script; CodeMirror was also parsed before any
+   editor was opened.
+
+### Implemented
+
+- Keep one root-owned window event listener set and remove singleton-owned
+  duplicates and resize-event debug logging.
+- Coalesce observable window-size publication to one animation frame and avoid
+  replacing the observable value when dimensions did not change.
+- Prevent the desktop guild channel/call view from observing window size; the
+  mobile PWA portrait branch still subscribes when it is actually active.
+- Replace member-list raw resize handlers with a media-query breakpoint change
+  subscription.
+- Add bounded exponential voice-debug upload backoff up to one minute, retain
+  batches only for retryable network/server failures, discard permanently
+  rejected client-error payloads, and log only the first or changed failure
+  state without retaining raw error objects.
+- Restrict the catch-all vendor cache group to initial chunks. Feature-specific
+  lazy chunks may reuse dependencies already needed at startup, but a lazy-only
+  dependency can no longer turn the shared vendor chunk into an initial asset.
+  In a production build this removed eSpeak and CodeMirror from startup and
+  reduced the reported main entrypoint from 14.346 MiB to 11.589 MiB (2.757 MiB,
+  or 19.2%).
+
+### Validation matrix
+
+- Targeted resize-state and voice-debug retry-policy tests
+- Rspack vendor-chunk policy regression test and production entrypoint audit
+- App TypeScript check, scoped Biome check, production app build, and
+  `git diff --check`
+- Canary live resize and navigation checks while idle, in voice, with camera,
+  with display sharing, and with capture-card sharing
+- Hardware acceleration enabled and disabled, including CPU, memory, frame
+  cadence, media stats, and cleanup after each workload

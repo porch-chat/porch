@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import assert from 'node:assert/strict';
+import {HttpError} from '@app/features/platform/types/EndpointError';
 import {Logger} from '@app/features/platform/utils/AppLogger';
 import {getElectronAPI} from '@app/features/ui/utils/NativeUtils';
 import {
@@ -41,6 +42,7 @@ const DEFAULT_POLL_INTERVAL_MS = 10000;
 const DEFAULT_UPLOAD_INTERVAL_MS = 2000;
 const MAX_QUEUED_EVENTS = 1000;
 const MAX_UPLOAD_BATCH_EVENTS = 200;
+const MAX_UPLOAD_RETRY_BACKOFF_MS = 60_000;
 export const VOICE_ENGINE_V2_APP_DEBUG_EVENT_SINK_MAX_ENTRIES = 1000;
 export const VOICE_ENGINE_V2_APP_DEBUG_EVENT_SINK_MAX_LINE_CHARS = 262_144;
 const MAX_NATIVE_VIDEO_FIRST_FRAME_EVENTS = 64;
@@ -56,6 +58,25 @@ export const VOICE_DEBUG_EXCLUDED_NATIVE_ENGINE_EVENT_TYPES: ReadonlySet<string>
 	'speakingChanged',
 	'stats',
 ]);
+
+export function isRetryableVoiceDebugUploadError(error: unknown): boolean {
+	if (!(error instanceof HttpError)) return true;
+	if (error.status < 400 || error.status >= 500) return true;
+	return error.status === 408 || error.status === 425 || error.status === 429;
+}
+
+export function getVoiceDebugUploadRetryDelayMs(failureCount: number, uploadIntervalMs: number): number {
+	assert.ok(Number.isSafeInteger(failureCount) && failureCount > 0, 'failureCount must be a positive safe integer');
+	assertFiniteNumber(uploadIntervalMs, 'uploadIntervalMs');
+	const baseDelayMs = Math.max(DEFAULT_UPLOAD_INTERVAL_MS, uploadIntervalMs);
+	return Math.min(MAX_UPLOAD_RETRY_BACKOFF_MS, baseDelayMs * 2 ** Math.min(failureCount - 1, 8));
+}
+
+function voiceDebugUploadFailureSignature(error: unknown): string {
+	if (error instanceof HttpError) return `http:${error.status}`;
+	if (error instanceof Error) return error.name;
+	return typeof error;
+}
 
 class BoundedRing<T> {
 	private readonly items: Array<T | null>;
@@ -631,6 +652,9 @@ export class VoiceEngineV2AppDebugLoggingHostAdapter extends Store {
 		'voice debug event sink history',
 	);
 	private uploadInFlight = false;
+	private uploadFailureCount = 0;
+	private nextUploadAttemptAtMs = 0;
+	private lastUploadFailureSignature: string | null = null;
 	private generation = 0;
 	private eventSinkSequence = 0;
 	private eventSinkForwardFailureCount = 0;
@@ -748,6 +772,7 @@ export class VoiceEngineV2AppDebugLoggingHostAdapter extends Store {
 		this.queue.clear();
 		this.nativeVideoFirstFrameTrackSids.clear();
 		this.nativeVideoFirstFrameOverflowRecorded = false;
+		this.resetUploadFailureState();
 		this.update(() => {
 			this.active = false;
 			this.sessionId = null;
@@ -995,6 +1020,9 @@ export class VoiceEngineV2AppDebugLoggingHostAdapter extends Store {
 		const becameActive =
 			status.active && status.session_id !== null && (!previousActive || previousSessionId !== status.session_id);
 		const becameInactive = previousActive && (!status.active || status.session_id === null);
+		if (previousSessionId !== status.session_id || !status.active) {
+			this.resetUploadFailureState();
+		}
 		this.update(() => {
 			this.active = status.active && status.session_id !== null;
 			this.sessionId = status.session_id;
@@ -1090,6 +1118,7 @@ export class VoiceEngineV2AppDebugLoggingHostAdapter extends Store {
 
 	private async flush(reason: string): Promise<void> {
 		if (this.uploadInFlight) return;
+		if (this.now() < this.nextUploadAttemptAtMs) return;
 		const channelId = this.channelId;
 		const sessionId = this.sessionId;
 		if (!this.active || !channelId || !sessionId) return;
@@ -1108,15 +1137,45 @@ export class VoiceEngineV2AppDebugLoggingHostAdapter extends Store {
 			if (!response.accepted || !response.active) {
 				await this.refreshStatus('upload-rejected');
 			}
+			this.resetUploadFailureState();
+			this.update(() => {
+				this.lastError = null;
+			});
 		} catch (error) {
-			logger.debug('Failed to upload voice debug logging events', {error, channelId, reason, count: events.length});
-			this.queue.prependBatchDropBack(events);
+			const retryable = isRetryableVoiceDebugUploadError(error);
+			if (retryable) {
+				this.queue.prependBatchDropBack(events);
+			}
+			this.uploadFailureCount += 1;
+			this.nextUploadAttemptAtMs =
+				this.now() + getVoiceDebugUploadRetryDelayMs(this.uploadFailureCount, this.uploadIntervalMs);
+			const signature = voiceDebugUploadFailureSignature(error);
+			if (this.uploadFailureCount === 1 || signature !== this.lastUploadFailureSignature) {
+				logger.warn('Voice debug logging upload paused after failure', {
+					status: error instanceof HttpError ? error.status : null,
+					retryable,
+					channelId,
+					reason,
+					count: events.length,
+					retryDelayMs: this.nextUploadAttemptAtMs - this.now(),
+				});
+			}
+			this.lastUploadFailureSignature = signature;
 			this.update(() => {
 				this.lastError = error instanceof Error ? error.message : String(error);
 			});
+			if (!retryable) {
+				await this.refreshStatus('upload-client-error');
+			}
 		} finally {
 			this.uploadInFlight = false;
 		}
+	}
+
+	private resetUploadFailureState(): void {
+		this.uploadFailureCount = 0;
+		this.nextUploadAttemptAtMs = 0;
+		this.lastUploadFailureSignature = null;
 	}
 }
 
