@@ -6,6 +6,7 @@ import {
 	buildVoiceMediaGraphNativeScreenShareQualityCommand,
 	buildVoiceMediaGraphNativeScreenShareSubscriptionCommands,
 	createVoiceMediaGraphSnapshot,
+	FIRST_FRAME_TIMEOUT_MS,
 	getVoiceMediaGraphWatchIntentStateValue,
 	mergeVoiceMediaGraphTrackInfo,
 	normalizeVoiceMediaGraphViewerStreamKeys,
@@ -652,10 +653,50 @@ describe('VoiceMediaGraph deadlines', () => {
 		graph = transitionVoiceMediaGraph(graph, {
 			type: 'time.deadlineFired',
 			key: voiceMediaGraphWatchAttemptDeadlineKey(STREAM_A),
-			at: WATCH_ATTEMPT_TIMEOUT_MS,
+			at: 100 + FIRST_FRAME_TIMEOUT_MS,
 		});
 
 		expect(selectVoiceMediaGraphFailure(graph, {streamKey: STREAM_A})?.reason).toBe('first-frame-timeout');
+	});
+
+	it('grants a fresh first-frame deadline when screen-share subscription attachment completes', () => {
+		const participantIdentity = 'user_2_connection-a';
+		let graph = createVoiceMediaGraphSnapshot();
+		graph = transitionVoiceMediaGraph(graph, {type: 'watchIntent.add', key: STREAM_A});
+		graph = transitionVoiceMediaGraph(graph, {type: 'watch.started', streamKey: STREAM_A, at: 0});
+		graph = transitionVoiceMediaGraph(graph, {
+			type: 'watch.attemptEnsured',
+			streamKey: STREAM_A,
+			attemptKey: 'attempt-1',
+			startedAt: 0,
+		});
+		graph = transitionVoiceMediaGraph(graph, {
+			type: 'subscription.subscribe',
+			participantIdentity,
+			source: VoiceTrackSource.ScreenShare,
+			hasPublication: true,
+			context: 'focused',
+			observedElement: null,
+		});
+		graph = transitionVoiceMediaGraph(graph, {
+			type: 'subscription.actualChanged',
+			participantIdentity,
+			source: VoiceTrackSource.ScreenShare,
+			at: 10_000,
+			subscribed: true,
+			enabled: true,
+			trackSid: 'track-a',
+		});
+
+		expect(selectVoiceMediaGraphDeadline(graph, voiceMediaGraphWatchAttemptDeadlineKey(STREAM_A))?.dueAt).toBe(
+			10_000 + FIRST_FRAME_TIMEOUT_MS,
+		);
+		graph = transitionVoiceMediaGraph(graph, {
+			type: 'time.deadlineFired',
+			key: voiceMediaGraphWatchAttemptDeadlineKey(STREAM_A),
+			at: WATCH_ATTEMPT_TIMEOUT_MS,
+		});
+		expect(selectVoiceMediaGraphHasFailureForStreamKey(graph, STREAM_A)).toBe(false);
 	});
 
 	it('treats a stale deadline fire as a no-op aside from cleanup', () => {

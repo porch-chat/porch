@@ -2,6 +2,7 @@
 
 import assert from 'node:assert/strict';
 import {
+	FIRST_FRAME_TIMEOUT_MS,
 	PUBLICATION_MISSING_TIMEOUT_MS,
 	PUBLISHER_REPUBLISH_GRACE_MS,
 	VOICE_MEDIA_GRAPH_FIRST_FRAME_TIMEOUT_FAILURE,
@@ -68,6 +69,7 @@ export {
 	buildVoiceMediaGraphNativeScreenShareSubscriptionCommands,
 } from './VoiceMediaGraphCommands';
 export {
+	FIRST_FRAME_TIMEOUT_MS,
 	PUBLICATION_MISSING_TIMEOUT_MS,
 	PUBLISHER_REPUBLISH_GRACE_MS,
 	VOICE_MEDIA_GRAPH_REPUBLISH_TIMEOUT_FAILURE,
@@ -1028,7 +1030,23 @@ function transitionSubscriptionActualChanged<TFailure extends VoiceMediaGraphFai
 		actual,
 		publication,
 	});
-	return setVoiceMediaGraphSubscriptionEntry(snapshot, nextEntry);
+	const next = setVoiceMediaGraphSubscriptionEntry(snapshot, nextEntry);
+	if (event.source !== VOICE_MEDIA_GRAPH_SCREEN_SHARE_SOURCE) return next;
+	if (entry.actual.subscribed === true || nextEntry.actual.subscribed !== true) return next;
+	const streamKey = event.streamKey ?? resolveViewerStreamKeyForParticipantIdentity(next, event.participantIdentity);
+	if (!streamKey) return next;
+	const deadlineKey = voiceMediaGraphWatchAttemptDeadlineKey(streamKey);
+	const deadline = next.deadlinesByKey.get(deadlineKey);
+	const attempt = next.attemptsByStreamKey.get(streamKey);
+	if (!deadline || deadline.kind !== 'watchAttempt' || !attempt || attempt.hasRenderedVideoFrame) return next;
+	if (voiceMediaGraphAttemptKeyIsOperation(attempt.attemptKey)) return next;
+	return {
+		...next,
+		deadlinesByKey: mapSetBounded(next.deadlinesByKey, deadlineKey, {
+			...deadline,
+			dueAt: Math.max(deadline.dueAt, event.at + FIRST_FRAME_TIMEOUT_MS),
+		}),
+	};
 }
 
 function transitionSubscriptionCommandFailed<TFailure extends VoiceMediaGraphFailure>(
@@ -1226,6 +1244,7 @@ function transitionDeadlineFired<TFailure extends VoiceMediaGraphFailure>(
 ): VoiceMediaGraphSnapshot<TFailure> {
 	const deadline = snapshot.deadlinesByKey.get(key);
 	if (!deadline) return snapshot;
+	if (at < deadline.dueAt) return snapshot;
 	const base: VoiceMediaGraphSnapshot<TFailure> = {
 		...snapshot,
 		deadlinesByKey: mapDelete(snapshot.deadlinesByKey, key),
@@ -1396,6 +1415,7 @@ function voiceMediaGraphWatchAttemptDeadline(
 	attemptKey: string,
 	generation: number,
 	startedAt: number,
+	timeoutMs: number,
 ): VoiceMediaGraphDeadline {
 	return {
 		kind: 'watchAttempt',
@@ -1403,7 +1423,7 @@ function voiceMediaGraphWatchAttemptDeadline(
 		subscriptionKey: null,
 		generation,
 		attemptKey,
-		dueAt: startedAt + WATCH_ATTEMPT_TIMEOUT_MS,
+		dueAt: startedAt + timeoutMs,
 	};
 }
 
@@ -1413,6 +1433,8 @@ function ensureVoiceMediaGraphWatchAttempt<TFailure extends VoiceMediaGraphFailu
 ): VoiceMediaGraphSnapshot<TFailure> {
 	if (isStaleGenerationEvent(snapshot, event.streamKey, event.generation)) return snapshot;
 	const deadlineKey = voiceMediaGraphWatchAttemptDeadlineKey(event.streamKey);
+	const entry = findScreenShareEntryForStreamKey(snapshot, event.streamKey);
+	const timeoutMs = entry?.actual.subscribed === true ? FIRST_FRAME_TIMEOUT_MS : WATCH_ATTEMPT_TIMEOUT_MS;
 	const existing = snapshot.attemptsByStreamKey.get(event.streamKey);
 	if (existing?.attemptKey === event.attemptKey) {
 		if (existing.hasRenderedVideoFrame) return snapshot;
@@ -1420,7 +1442,13 @@ function ensureVoiceMediaGraphWatchAttempt<TFailure extends VoiceMediaGraphFailu
 		const deadlinesByKey = mapSetBounded(
 			snapshot.deadlinesByKey,
 			deadlineKey,
-			voiceMediaGraphWatchAttemptDeadline(event.streamKey, event.attemptKey, existing.generation, event.startedAt),
+			voiceMediaGraphWatchAttemptDeadline(
+				event.streamKey,
+				event.attemptKey,
+				existing.generation,
+				event.startedAt,
+				timeoutMs,
+			),
 		);
 		return {...snapshot, deadlinesByKey};
 	}
@@ -1434,7 +1462,7 @@ function ensureVoiceMediaGraphWatchAttempt<TFailure extends VoiceMediaGraphFailu
 	const deadlinesByKey = mapSetBounded(
 		snapshot.deadlinesByKey,
 		deadlineKey,
-		voiceMediaGraphWatchAttemptDeadline(event.streamKey, event.attemptKey, generation, event.startedAt),
+		voiceMediaGraphWatchAttemptDeadline(event.streamKey, event.attemptKey, generation, event.startedAt, timeoutMs),
 	);
 	return {
 		...snapshot,

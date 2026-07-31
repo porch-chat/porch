@@ -3,6 +3,7 @@
 import assert from 'node:assert/strict';
 
 export const WATCH_ATTEMPT_TIMEOUT_MS = 15000;
+export const FIRST_FRAME_TIMEOUT_MS = 30000;
 export const PUBLISHER_REPUBLISH_GRACE_MS = 4000;
 export const PUBLICATION_MISSING_TIMEOUT_MS = 15000;
 

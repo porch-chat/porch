@@ -299,3 +299,43 @@ every two seconds while the client requeued the same diagnostics batch forever.
   download progress, applied the exact published package, restarted at the new
   file version, and exposed the new diagnostics-popout bridge. DevTools was
   closed after this acceptance check.
+
+## 2026-07-31 — two-device receiver and ingress audit
+
+### Current evidence
+
+- A fresh warm Canary restart settled around 470–490 MB private memory and
+  799–819 MB working set. The earlier post-media idle process tree was about
+  789 MB private and 932 MB working set, confirming that Chromium retains
+  bounded reusable media pools but not reproducing the prior 6 GB DevTools
+  amplification.
+- A real two-device voice call between the isolated `Dylan` and `test_account`
+  accounts measured about 563–573 MB private and 904–916 MB working set on the
+  local client. Sampled process-tree CPU averaged roughly 34% of one logical
+  core, with individual one-second samples from 23% to 60%.
+- Watching one remote display share reproduced a temporary `-2303`
+  first-frame timeout. The same stream later rendered successfully without a
+  restart, proving that publication and attachment worked and that the failure
+  deadline—not the media path—was premature.
+- The watch graph now retains the 15-second missing-publication and attachment
+  limits, but grants a successfully attached screen share a fresh 30-second
+  first-frame window. Early callbacks from a superseded deadline are ignored.
+- During the transient shared connection-loss incident, the production API
+  answered its internal `/.well-known/fluxer` probe every minute in 1–7 ms,
+  the OVH host remained lightly loaded with ample memory, and Cloudflare's
+  authoritative DNS analytics showed only `NOERROR`. A subsequent public probe
+  timed out once before ten consecutive requests completed in 94–153 ms. The
+  evidence rules out an API-process crash and authoritative-DNS outage, but is
+  not sufficient to distinguish the shared client network, recursive DNS/TLS,
+  or the public OVH ingress path.
+
+### Next acceptance work
+
+- Publish the first-frame deadline fix to Canary and repeat remote display,
+  ultrawide, and capture-card receive tests.
+- Complete the two-device resize/navigation matrix while idle, in voice, with
+  camera, and while sending and receiving screen shares, both with hardware
+  acceleration enabled and disabled.
+- Add external-ingress visibility or a public synthetic probe before claiming
+  an exact cause for the transient outage; the current internal health probe
+  cannot observe every failure domain in front of the API container.

@@ -656,6 +656,30 @@
 			"conflict_risk": "high",
 			"upstream_status": "permanently-downstream",
 			"removal_condition": "Remove individual changes only when upstream enumerates native devices before calls, preserves Windows default and communications routes dynamically, refreshes active routes after endpoint changes, and exposes equivalent automatic camera semantics."
+		},
+		{
+			"id": "porch-screen-share-first-frame-deadline-0021",
+			"title": "Give attached screen shares a dedicated first-frame deadline",
+			"status": "active",
+			"category": "media-resilience",
+			"reason": "A single 15-second watch timer included publication discovery, subscription attachment, and first-frame decode. In a live two-device test, an attached display share produced a temporary -2303 failure before its valid first frame arrived and cleared the error. Porch now preserves the prompt missing/attachment limits while granting an attached share a separate decoder allowance and rejecting stale callbacks from the superseded timer.",
+			"paths": [
+				".porch/downstream-patches.json",
+				"docs/porch/PERFORMANCE.md",
+				"fluxer_app/src/features/voice/engine/VoiceMediaGraph.test.ts",
+				"fluxer_app/src/features/voice/engine/VoiceMediaGraph.ts",
+				"fluxer_app/src/features/voice/engine/VoiceMediaGraphDeadlines.ts"
+			],
+			"tests": [
+				"voice media graph deadline and scheduler regression suites",
+				"app TypeScript typecheck",
+				"Biome formatting and lint checks",
+				"git diff --check",
+				"two-device Canary delayed-first-frame acceptance test"
+			],
+			"conflict_risk": "medium",
+			"upstream_status": "permanently-downstream",
+			"removal_condition": "Remove when upstream assigns independent publication, attachment, and first-frame budgets and stale timer callbacks cannot report a superseded screen-share failure."
 		}
 	]
 }
