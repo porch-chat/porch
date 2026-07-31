@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import {CaptchaModal, type CaptchaType} from '@app/features/auth/components/modals/CaptchaModal';
+import type {CaptchaType} from '@app/features/auth/components/modals/CaptchaModal';
 import {http} from '@app/features/platform/transport/RestTransport';
 import type {RestResponse} from '@app/features/platform/types/TransportTypes';
 import {replyCode, replyMessage} from '@app/features/platform/utils/ResponseInspection';
@@ -69,7 +69,8 @@ class CaptchaInterceptorState {
 		return code === 'CAPTCHA_REQUIRED' || code === 'INVALID_CAPTCHA';
 	}
 
-	private showCaptchaModal(): Promise<CaptchaResult> {
+	private async showCaptchaModal(): Promise<CaptchaResult> {
+		const {CaptchaModal} = await import('@app/features/auth/components/modals/CaptchaModal');
 		if (this.pendingPromise) {
 			this.pendingPromise.reject(new Error('Captcha cancelled'));
 			this.pendingPromise = null;

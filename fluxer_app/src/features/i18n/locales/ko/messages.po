@@ -25721,8 +25721,8 @@ msgstr "등록"
 
 #: src/features/auth/flow/AuthMinimalRegisterFormCore.tsx:211
 #: src/features/auth/flow/AuthRegisterFormCore.tsx:312
-msgid "Registration is currently closed. Use a registration link from an admin to create an account."
-msgstr "현재 가입이 닫혀 있습니다. 계정을 만들려면 관리자가 제공한 가입 링크를 사용하세요."
+msgid "Registration is currently closed. Ask a Porch member for an account registration link."
+msgstr "현재 가입이 닫혀 있습니다. Porch 멤버에게 계정 가입 링크를 요청하세요."
 
 #. Short label in the typography tab. Keep it concise.
 #: src/features/user/components/modals/tabs/component_gallery_tab/TypographyTab.tsx:34
@@ -33035,8 +33035,8 @@ msgid "This removes every custom shortcut and re-enables all built-in shortcuts.
 msgstr "모든 사용자 지정 단축키를 제거하고 내장 단축키를 다시 활성화합니다. 이 작업은 되돌릴 수 없습니다."
 
 #: src/features/auth/components/pages/ResetPasswordPage.tsx:114
-msgid "This reset link has expired. Reset links last 24 hours. Request a new one."
-msgstr "이 재설정 링크가 만료되었습니다. 재설정 링크는 24시간 동안 유효합니다. 새 링크를 요청하세요."
+msgid "This reset link has expired. Reset links last 1 hour. Please request a new one."
+msgstr "이 재설정 링크가 만료되었습니다. 재설정 링크는 1시간 동안 유효합니다. 새 링크를 요청하세요."
 
 #. Fallback role name in a mass-mention warning title.
 #: src/features/channel/components/MentionEveryonePopout.tsx:14

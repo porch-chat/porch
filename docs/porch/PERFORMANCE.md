@@ -705,3 +705,59 @@ every two seconds while the client requeued the same diagnostics batch forever.
   was rejected because it increased the initial entry from about 0.93 MiB to
   5.96 MiB. Async authenticated chunk duplication remains a separate bundler
   opportunity and is not mixed into this candidate.
+
+### Public authentication runtime production acceptance
+
+- Porch source `ffbe83ec10c9821fe6e96e7e2f4a9d6b4efd2013` is live as web
+  version `2026.731.222254` at immutable multi-platform app-proxy digest
+  `sha256:bd8ba8962efc6901c7472edceada9e50225ae7dc0e0a3a8266d80f5efb2a9812`.
+  GitHub Actions run `30669644203` passed branding validation and both
+  architectures. Deployment changed only the shared app-proxy.
+- A cache-bypassed Canary login trace measured 640 ms LCP and zero CLS with a
+  40 ms TTFB. The navigation transferred 946,435 bytes and decoded 3,405,090
+  bytes across its document and resource entries, versus the prior 2.72 MB
+  wire and 11.77 MB decoded baseline. The structural split therefore retained
+  its roughly 71 percent decoded-byte reduction through the production edge.
+- Login rendered without console errors on Stable and Canary at the 500 by
+  844 mobile audit viewport. Canary closed registration, forgot-password, and
+  invalid/expired reset-link states rendered correctly, and neither login
+  exposed the self-host API field or Connect control.
+- The complete live verifier passed API, both browser origins, metadata, CORS,
+  gateway and LiveKit WebSockets and origins, passkeys, both desktop feeds,
+  all 25 service states, and immutable pins. The public-auth runtime split is
+  accepted.
+- Production tracing exposed two follow-ups for the broader surface audit:
+  the auth mount recorded 95 ms of forced reflow, and the closed-registration
+  and invalid-reset explanatory strings currently trigger uncompiled-message
+  warnings. An invalid reset token also produces the expected HTTP 400 and
+  AuthService error log. These findings are recorded rather than hidden in the
+  accepted runtime-split result.
+
+### Public authentication follow-up candidate
+
+- CAPTCHA and WebAuthn implementations now load only when their respective
+  challenge is requested. Source-map inspection of a normal login confirms
+  that neither `@hcaptcha/react-hcaptcha` nor `@simplewebauthn/browser` is in
+  the loaded script set. The public-auth isolation regression test protects
+  both package boundaries.
+- The final local production login loaded 3,376,783 decoded bytes across its
+  document and resources, roughly 28 KB below the deployed split candidate
+  and 71 percent below the original 11.77 MB decoded baseline. It retained 15
+  script requests and 434 DOM nodes at the 500 by 844 mobile audit viewport.
+- Source-mapped 4x CPU traces found synchronous auth-layout scrolling, the
+  full custom chat scroller, and initial carousel measurement on the startup
+  path. Auth routes now use native scrolling, skip their already-zero initial
+  scroll, measure stepped content after layout, and suppress the initial
+  height animation while preserving real step transitions. The forced-reflow
+  total fell from 402 ms to 93 ms at 4x CPU, and LCP fell from 2,894 to 1,982
+  ms. The final 1x trace measured 451 ms LCP, zero CLS, and no forced-reflow
+  insight.
+- Public authentication now exposes a real `main` landmark, allows browser
+  zoom, and provides a keyboard skip control that transfers focus to
+  `main#main-content`. The adjusted Porch primary color provides sufficient
+  white-text contrast. Lighthouse mobile snapshot scores improved from 70 to
+  100 for Accessibility while retaining 100 for Best Practices and SEO.
+- Closed-registration and expired-reset copy now uses Porch terminology in
+  all 34 locale catalogs and compiles strictly without uncompiled-message
+  warnings. Login, registration, forgot-password, and invalid-reset states
+  remain visually accepted at desktop and true mobile sizes.

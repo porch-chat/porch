@@ -2,6 +2,7 @@
 
 import styles from '@app/app/App.module.css';
 import {publicRouter} from '@app/app/PublicRouter';
+import {focusMainContent} from '@app/app/SkipLinkUtils';
 import {NekoSprite} from '@app/features/accessibility/components/NekoSprite';
 import Accessibility from '@app/features/accessibility/state/Accessibility';
 import {NativeTitlebar} from '@app/features/app/components/layout/NativeTitlebar';
@@ -92,14 +93,15 @@ const PublicAppShell = observer(function PublicAppShell(): React.ReactElement {
 			<SVGMasks data-flx="app.public-app.svg-masks" />
 			<div ref={ringsContainerRef} className={styles.appContainer} data-flx="app.public-app.app-container">
 				<FocusRingScope containerRef={ringsContainerRef} data-flx="app.public-app.focus-ring-scope">
-					<a
-						href="#main-content"
+					<button
+						type="button"
 						className={styles.skipLink}
 						onFocus={handleSkipLinkFocus}
+						onClick={focusMainContent}
 						data-flx="app.public-app.skip-link"
 					>
 						{i18n._(SKIP_TO_CONTENT_DESCRIPTOR)}
-					</a>
+					</button>
 					<NativeTrafficLightsBackdrop variant={layoutVariant} data-flx="app.public-app.traffic-lights" />
 					{isNative && !isMacOS && !useSystemTitleBar && !isRootDocumentFullscreen && (
 						<NativeTitlebar platform={platform} data-flx="app.public-app.native-titlebar" />

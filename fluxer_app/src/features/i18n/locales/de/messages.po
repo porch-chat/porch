@@ -26039,8 +26039,8 @@ msgstr "Registrierung"
 
 #: src/features/auth/flow/AuthMinimalRegisterFormCore.tsx:211
 #: src/features/auth/flow/AuthRegisterFormCore.tsx:312
-msgid "Registration is currently closed. Use a registration link from an admin to create an account."
-msgstr ""
+msgid "Registration is currently closed. Ask a Porch member for an account registration link."
+msgstr "Die Registrierung ist derzeit geschlossen. Bitte ein Porch-Mitglied um einen Link zur Kontoregistrierung."
 "Die Registrierung ist derzeit geschlossen. Verwende einen Registrierungslink "
 "von einem Admin, um einen Account zu erstellen."
 
@@ -33428,8 +33428,8 @@ msgid "This removes every custom shortcut and re-enables all built-in shortcuts.
 msgstr "Dadurch werden alle benutzerdefinierten Tastenkombinationen entfernt und alle integrierten Tastenkombinationen wieder aktiviert. Dies kann nicht rückgängig gemacht werden."
 
 #: src/features/auth/components/pages/ResetPasswordPage.tsx:114
-msgid "This reset link has expired. Reset links last 24 hours. Request a new one."
-msgstr ""
+msgid "This reset link has expired. Reset links last 1 hour. Please request a new one."
+msgstr "Dieser Link zum Zurücksetzen ist abgelaufen. Links zum Zurücksetzen sind 1 Stunde lang gültig. Bitte fordere einen neuen an."
 "Dieser Link zum Zurücksetzen ist abgelaufen. Zurücksetzungslinks sind 1 "
 "Stunde lang gültig. Bitte fordere einen neuen Link an."
 

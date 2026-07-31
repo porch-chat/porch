@@ -25721,8 +25721,8 @@ msgstr "Registracija"
 
 #: src/features/auth/flow/AuthMinimalRegisterFormCore.tsx:211
 #: src/features/auth/flow/AuthRegisterFormCore.tsx:312
-msgid "Registration is currently closed. Use a registration link from an admin to create an account."
-msgstr "Registracija šiuo metu uždaryta. Norėdami sukurti paskyrą, naudokite administratoriaus suteiktą registracijos nuorodą."
+msgid "Registration is currently closed. Ask a Porch member for an account registration link."
+msgstr "Registracija šiuo metu uždaryta. Paprašykite „Porch“ nario paskyros registracijos nuorodos."
 
 #. Short label in the typography tab. Keep it concise.
 #: src/features/user/components/modals/tabs/component_gallery_tab/TypographyTab.tsx:34
@@ -33035,8 +33035,8 @@ msgid "This removes every custom shortcut and re-enables all built-in shortcuts.
 msgstr "Tai pašalina visus pasirinktinius sparčiuosius klavišus ir iš naujo įgalina visus integruotus sparčiuosius klavišus. Šio veiksmo anuliuoti negalima."
 
 #: src/features/auth/components/pages/ResetPasswordPage.tsx:114
-msgid "This reset link has expired. Reset links last 24 hours. Request a new one."
-msgstr "Ši nuoroda nebegalioja. Nuorodos galioja 24 valandas. Prašykite naujos."
+msgid "This reset link has expired. Reset links last 1 hour. Please request a new one."
+msgstr "Šios nustatymo iš naujo nuorodos galiojimas baigėsi. Tokios nuorodos galioja 1 valandą. Paprašykite naujos."
 
 #. Fallback role name in a mass-mention warning title.
 #: src/features/channel/components/MentionEveryonePopout.tsx:14

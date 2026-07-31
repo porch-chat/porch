@@ -2,6 +2,7 @@
 
 import styles from '@app/app/App.module.css';
 import {router} from '@app/app/Router';
+import {focusMainContent} from '@app/app/SkipLinkUtils';
 import * as AccessibilityCommands from '@app/features/accessibility/commands/AccessibilityCommands';
 import {NekoSprite} from '@app/features/accessibility/components/NekoSprite';
 import Accessibility from '@app/features/accessibility/state/Accessibility';
@@ -194,14 +195,15 @@ export const AppWrapper = observer(({children}: AppWrapperProps) => {
 			<VoiceLiveKitRoot room={room} data-flx="app.app.app-wrapper.voice-live-kit-root">
 				<div ref={ringsContainerRef} className={styles.appContainer} data-flx="app.app.app-wrapper.app-container">
 					<FocusRingScope containerRef={ringsContainerRef} data-flx="app.app.app-wrapper.focus-ring-scope">
-						<a
-							href="#main-content"
+						<button
+							type="button"
 							className={styles.skipLink}
 							onFocus={handleSkipLinkFocus}
+							onClick={focusMainContent}
 							data-flx="app.app.app-wrapper.skip-link"
 						>
 							{i18n._(SKIP_TO_CONTENT_DESCRIPTOR)}
-						</a>
+						</button>
 						<NativeTrafficLightsBackdrop
 							variant={layoutVariant}
 							hidden={isVoiceCallFullscreenActive}

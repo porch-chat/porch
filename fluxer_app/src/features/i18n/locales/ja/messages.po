@@ -25722,8 +25722,8 @@ msgstr "登録"
 
 #: src/features/auth/flow/AuthMinimalRegisterFormCore.tsx:211
 #: src/features/auth/flow/AuthRegisterFormCore.tsx:312
-msgid "Registration is currently closed. Use a registration link from an admin to create an account."
-msgstr "現在、登録は停止されています。アカウントを作成するには、管理者から受け取った登録リンクを使用してください。"
+msgid "Registration is currently closed. Ask a Porch member for an account registration link."
+msgstr "現在、登録は受け付けていません。Porchのメンバーにアカウント登録リンクを依頼してください。"
 
 #. Short label in the typography tab. Keep it concise.
 #: src/features/user/components/modals/tabs/component_gallery_tab/TypographyTab.tsx:34
@@ -33036,8 +33036,8 @@ msgid "This removes every custom shortcut and re-enables all built-in shortcuts.
 msgstr "すべてのカスタムショートカットを削除し、組み込みのショートカットをすべて有効にします。この操作は元に戻せません。"
 
 #: src/features/auth/components/pages/ResetPasswordPage.tsx:114
-msgid "This reset link has expired. Reset links last 24 hours. Request a new one."
-msgstr "このリセットリンクは有効期限が切れています。リセットリンクの有効期間は24時間です。新しいリンクをリクエストしてください。"
+msgid "This reset link has expired. Reset links last 1 hour. Please request a new one."
+msgstr "このリセットリンクは期限切れです。リセットリンクの有効期限は1時間です。新しいリンクをリクエストしてください。"
 
 #. Fallback role name in a mass-mention warning title.
 #: src/features/channel/components/MentionEveryonePopout.tsx:14

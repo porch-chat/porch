@@ -25721,8 +25721,8 @@ msgstr "Rejestracja"
 
 #: src/features/auth/flow/AuthMinimalRegisterFormCore.tsx:211
 #: src/features/auth/flow/AuthRegisterFormCore.tsx:312
-msgid "Registration is currently closed. Use a registration link from an admin to create an account."
-msgstr "Rejestracja jest obecnie zamknięta. Aby utworzyć konto, użyj linku rejestracyjnego od administratora."
+msgid "Registration is currently closed. Ask a Porch member for an account registration link."
+msgstr "Rejestracja jest obecnie zamknięta. Poproś członka Porch o link do rejestracji konta."
 
 #. Short label in the typography tab. Keep it concise.
 #: src/features/user/components/modals/tabs/component_gallery_tab/TypographyTab.tsx:34
@@ -33035,8 +33035,8 @@ msgid "This removes every custom shortcut and re-enables all built-in shortcuts.
 msgstr "Spowoduje to usunięcie wszystkich niestandardowych skrótów i ponowne włączenie wszystkich wbudowanych skrótów. Tej operacji nie można cofnąć."
 
 #: src/features/auth/components/pages/ResetPasswordPage.tsx:114
-msgid "This reset link has expired. Reset links last 24 hours. Request a new one."
-msgstr "Ten link do resetowania hasła wygasł. Linki są ważne przez 24 godziny. Poproś o nowy."
+msgid "This reset link has expired. Reset links last 1 hour. Please request a new one."
+msgstr "Ten link do resetowania wygasł. Linki do resetowania są ważne przez 1 godzinę. Poproś o nowy."
 
 #. Fallback role name in a mass-mention warning title.
 #: src/features/channel/components/MentionEveryonePopout.tsx:14

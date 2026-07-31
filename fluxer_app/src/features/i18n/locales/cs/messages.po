@@ -25721,8 +25721,8 @@ msgstr "Registrace"
 
 #: src/features/auth/flow/AuthMinimalRegisterFormCore.tsx:211
 #: src/features/auth/flow/AuthRegisterFormCore.tsx:312
-msgid "Registration is currently closed. Use a registration link from an admin to create an account."
-msgstr "Registrace je momentálně uzavřena. K vytvoření účtu použijte registrační odkaz od administrátora."
+msgid "Registration is currently closed. Ask a Porch member for an account registration link."
+msgstr "Registrace je momentálně uzavřena. Požádejte člena Porch o odkaz k registraci účtu."
 
 #. Short label in the typography tab. Keep it concise.
 #: src/features/user/components/modals/tabs/component_gallery_tab/TypographyTab.tsx:34
@@ -33035,8 +33035,8 @@ msgid "This removes every custom shortcut and re-enables all built-in shortcuts.
 msgstr "Tímto se odstraní všechny vlastní zkratky a znovu se povolí všechny vestavěné zkratky. Tuto akci nelze vrátit zpět."
 
 #: src/features/auth/components/pages/ResetPasswordPage.tsx:114
-msgid "This reset link has expired. Reset links last 24 hours. Request a new one."
-msgstr "Platnost odkazu pro resetování vypršela. Odkazy pro resetování platí 24 hodin. Vyžádejte si nový."
+msgid "This reset link has expired. Reset links last 1 hour. Please request a new one."
+msgstr "Platnost tohoto odkazu pro obnovení vypršela. Odkazy pro obnovení platí 1 hodinu. Požádejte o nový."
 
 #. Fallback role name in a mass-mention warning title.
 #: src/features/channel/components/MentionEveryonePopout.tsx:14

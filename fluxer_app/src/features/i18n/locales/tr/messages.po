@@ -25721,8 +25721,8 @@ msgstr "Kayıt"
 
 #: src/features/auth/flow/AuthMinimalRegisterFormCore.tsx:211
 #: src/features/auth/flow/AuthRegisterFormCore.tsx:312
-msgid "Registration is currently closed. Use a registration link from an admin to create an account."
-msgstr "Kayıt şu anda kapalı. Hesap oluşturmak için bir yöneticiden aldığın kayıt bağlantısını kullan."
+msgid "Registration is currently closed. Ask a Porch member for an account registration link."
+msgstr "Kayıt şu anda kapalı. Bir Porch üyesinden hesap kayıt bağlantısı isteyin."
 
 #. Short label in the typography tab. Keep it concise.
 #: src/features/user/components/modals/tabs/component_gallery_tab/TypographyTab.tsx:34
@@ -33035,8 +33035,8 @@ msgid "This removes every custom shortcut and re-enables all built-in shortcuts.
 msgstr "Bu işlem tüm özel kısayolları kaldırır ve yerleşik kısayolların tümünü yeniden etkinleştirir. Bu işlem geri alınamaz."
 
 #: src/features/auth/components/pages/ResetPasswordPage.tsx:114
-msgid "This reset link has expired. Reset links last 24 hours. Request a new one."
-msgstr "Bu sıfırlama bağlantısının süresi doldu. Sıfırlama bağlantıları 24 saat geçerlidir. Yeni bir tane isteyin."
+msgid "This reset link has expired. Reset links last 1 hour. Please request a new one."
+msgstr "Bu sıfırlama bağlantısının süresi doldu. Sıfırlama bağlantıları 1 saat geçerlidir. Lütfen yeni bir bağlantı isteyin."
 
 #. Fallback role name in a mass-mention warning title.
 #: src/features/channel/components/MentionEveryonePopout.tsx:14

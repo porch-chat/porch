@@ -25739,8 +25739,8 @@ msgstr "Rekisteröinti"
 
 #: src/features/auth/flow/AuthMinimalRegisterFormCore.tsx:211
 #: src/features/auth/flow/AuthRegisterFormCore.tsx:312
-msgid "Registration is currently closed. Use a registration link from an admin to create an account."
-msgstr "Rekisteröityminen on tällä hetkellä suljettu. Luo tili käyttämällä ylläpitäjältä saatua rekisteröitymislinkkiä."
+msgid "Registration is currently closed. Ask a Porch member for an account registration link."
+msgstr "Rekisteröityminen on tällä hetkellä suljettu. Pyydä Porch-jäseneltä tilin rekisteröintilinkki."
 
 #. Short label in the typography tab. Keep it concise.
 #: src/features/user/components/modals/tabs/component_gallery_tab/TypographyTab.tsx:34
@@ -33055,8 +33055,8 @@ msgid "This removes every custom shortcut and re-enables all built-in shortcuts.
 msgstr "Tämä poistaa kaikki mukautetut pikanäppäimet ja ottaa käyttöön kaikki sisäänrakennetut pikanäppäimet uudelleen. Tätä toimintoa ei voi kumota."
 
 #: src/features/auth/components/pages/ResetPasswordPage.tsx:114
-msgid "This reset link has expired. Reset links last 24 hours. Request a new one."
-msgstr "Tämä nollauslinkki on vanhentunut. Nollauslinkit ovat voimassa 24 tuntia. Pyydä uusi linkki."
+msgid "This reset link has expired. Reset links last 1 hour. Please request a new one."
+msgstr "Tämä palautuslinkki on vanhentunut. Palautuslinkit ovat voimassa 1 tunnin. Pyydä uusi linkki."
 
 #. Fallback role name in a mass-mention warning title.
 #: src/features/channel/components/MentionEveryonePopout.tsx:14

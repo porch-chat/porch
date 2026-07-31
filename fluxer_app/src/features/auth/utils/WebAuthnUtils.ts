@@ -4,15 +4,16 @@ import {promptForSecurityKeyPin} from '@app/features/auth/components/modals/Pass
 import {parsePasskeyPinFailure} from '@app/features/auth/utils/PasskeyPinErrors';
 import {Platform} from '@app/features/platform/types/Platform';
 import {getElectronAPI} from '@app/features/ui/utils/NativeUtils';
-import {
-	type AuthenticationResponseJSON,
-	browserSupportsWebAuthn,
-	type PublicKeyCredentialCreationOptionsJSON,
-	type PublicKeyCredentialRequestOptionsJSON,
-	type RegistrationResponseJSON,
-	startAuthentication,
-	startRegistration,
+import type {
+	AuthenticationResponseJSON,
+	PublicKeyCredentialCreationOptionsJSON,
+	PublicKeyCredentialRequestOptionsJSON,
+	RegistrationResponseJSON,
 } from '@simplewebauthn/browser';
+
+async function loadWebAuthn() {
+	return import('@simplewebauthn/browser');
+}
 
 async function runNativeCeremonyWithPinSupport<T>(run: (requestContext?: {pin?: string}) => Promise<T>): Promise<T> {
 	try {
@@ -26,6 +27,7 @@ async function runNativeCeremonyWithPinSupport<T>(run: (requestContext?: {pin?: 
 }
 
 export async function assertWebAuthnSupported(): Promise<void> {
+	const {browserSupportsWebAuthn} = await loadWebAuthn();
 	if (Platform.isElectron) {
 		const electronApi = getElectronAPI();
 		const nativeSupported = electronApi && (await electronApi.passkeyIsSupported?.());
@@ -54,6 +56,7 @@ export async function performRegistration(
 			return runNativeCeremonyWithPinSupport((requestContext) => passkeyRegister(options, requestContext));
 		}
 	}
+	const {startRegistration} = await loadWebAuthn();
 	return await startRegistration({optionsJSON: options});
 }
 
@@ -69,5 +72,6 @@ export async function performAuthentication(
 			return runNativeCeremonyWithPinSupport((requestContext) => passkeyAuthenticate(options, requestContext));
 		}
 	}
+	const {startAuthentication} = await loadWebAuthn();
 	return await startAuthentication({optionsJSON: options});
 }

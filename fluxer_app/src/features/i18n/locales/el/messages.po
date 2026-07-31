@@ -25721,8 +25721,8 @@ msgstr "Εγγραφή"
 
 #: src/features/auth/flow/AuthMinimalRegisterFormCore.tsx:211
 #: src/features/auth/flow/AuthRegisterFormCore.tsx:312
-msgid "Registration is currently closed. Use a registration link from an admin to create an account."
-msgstr "Οι εγγραφές είναι προς το παρόν κλειστές. Χρησιμοποίησε έναν σύνδεσμο εγγραφής από διαχειριστή για να δημιουργήσεις λογαριασμό."
+msgid "Registration is currently closed. Ask a Porch member for an account registration link."
+msgstr "Οι εγγραφές είναι προς το παρόν κλειστές. Ζητήστε από ένα μέλος του Porch έναν σύνδεσμο εγγραφής λογαριασμού."
 
 #. Short label in the typography tab. Keep it concise.
 #: src/features/user/components/modals/tabs/component_gallery_tab/TypographyTab.tsx:34
@@ -33035,8 +33035,8 @@ msgid "This removes every custom shortcut and re-enables all built-in shortcuts.
 msgstr "Αυτό καταργεί κάθε προσαρμοσμένη συντόμευση και ενεργοποιεί ξανά όλες τις ενσωματωμένες συντομεύσεις. Αυτό δεν μπορεί να αναιρεθεί."
 
 #: src/features/auth/components/pages/ResetPasswordPage.tsx:114
-msgid "This reset link has expired. Reset links last 24 hours. Request a new one."
-msgstr "Αυτός ο σύνδεσμος επαναφοράς έχει λήξει. Οι σύνδεσμοι επαναφοράς διαρκούν 24 ώρες. Ζητήστε έναν νέο."
+msgid "This reset link has expired. Reset links last 1 hour. Please request a new one."
+msgstr "Αυτός ο σύνδεσμος επαναφοράς έχει λήξει. Οι σύνδεσμοι επαναφοράς ισχύουν για 1 ώρα. Ζητήστε έναν νέο."
 
 #. Fallback role name in a mass-mention warning title.
 #: src/features/channel/components/MentionEveryonePopout.tsx:14

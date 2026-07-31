@@ -44,7 +44,7 @@ function resolveAppImport(importer: string, specifier: string): string | null {
 	return null;
 }
 
-function collectStaticAppGraph(entry: string): Set<string> {
+function collectStaticAppGraph(entry: string, externalImports: Set<string>): Set<string> {
 	const visited = new Set<string>([path.normalize(entry)]);
 	const queue = [path.normalize(entry)];
 	while (queue.length > 0) {
@@ -60,7 +60,11 @@ function collectStaticAppGraph(entry: string): Set<string> {
 		}
 		for (const specifier of specifiers) {
 			const resolved = resolveAppImport(current, specifier);
-			if (!resolved || visited.has(resolved)) continue;
+			if (!resolved) {
+				if (!specifier.startsWith('@app/') && !specifier.startsWith('.')) externalImports.add(specifier);
+				continue;
+			}
+			if (visited.has(resolved)) continue;
 			visited.add(resolved);
 			queue.push(resolved);
 		}
@@ -70,8 +74,11 @@ function collectStaticAppGraph(entry: string): Set<string> {
 
 describe('public bootstrap isolation', () => {
 	it('keeps authenticated communication and media modules behind dynamic boundaries', () => {
+		const externalImports = new Set<string>();
 		const graph = new Set(
-			[ENTRY, PUBLIC_APP_ENTRY, ...PUBLIC_AUTH_PAGE_ENTRIES].flatMap((entry) => [...collectStaticAppGraph(entry)]),
+			[ENTRY, PUBLIC_APP_ENTRY, ...PUBLIC_AUTH_PAGE_ENTRIES].flatMap((entry) => [
+				...collectStaticAppGraph(entry, externalImports),
+			]),
 		);
 		const relativePaths = [...graph].map((file) => path.relative(SRC_ROOT, file).replaceAll('\\', '/'));
 		const forbiddenPrefixes = [
@@ -92,6 +99,11 @@ describe('public bootstrap isolation', () => {
 			forbiddenPrefixes.some((prefix) => file === prefix || file.startsWith(prefix)),
 		);
 		expect(forbidden).toEqual([]);
+		expect(
+			[...externalImports].filter((specifier) =>
+				['@hcaptcha/react-hcaptcha', '@simplewebauthn/browser'].includes(specifier),
+			),
+		).toEqual([]);
 		// This is deliberately generous: it catches a broad registry leak while
 		// allowing focused public-shell growth without snapshot churn.
 		expect(graph.size).toBeLessThan(500);

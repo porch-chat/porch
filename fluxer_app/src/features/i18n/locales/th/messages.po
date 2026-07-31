@@ -25721,8 +25721,8 @@ msgstr "การลงทะเบียน"
 
 #: src/features/auth/flow/AuthMinimalRegisterFormCore.tsx:211
 #: src/features/auth/flow/AuthRegisterFormCore.tsx:312
-msgid "Registration is currently closed. Use a registration link from an admin to create an account."
-msgstr "ขณะนี้ปิดการลงทะเบียนอยู่ ใช้ลิงก์ลงทะเบียนจากผู้ดูแลระบบเพื่อสร้างบัญชี"
+msgid "Registration is currently closed. Ask a Porch member for an account registration link."
+msgstr "ขณะนี้ปิดการลงทะเบียน โปรดขอลิงก์ลงทะเบียนบัญชีจากสมาชิก Porch"
 
 #. Short label in the typography tab. Keep it concise.
 #: src/features/user/components/modals/tabs/component_gallery_tab/TypographyTab.tsx:34
@@ -33035,8 +33035,8 @@ msgid "This removes every custom shortcut and re-enables all built-in shortcuts.
 msgstr "การดำเนินการนี้จะลบทางลัดที่กำหนดเองทั้งหมดและเปิดใช้งานทางลัดในตัวทั้งหมดอีกครั้ง การดำเนินการนี้ไม่สามารถเลิกทำได้"
 
 #: src/features/auth/components/pages/ResetPasswordPage.tsx:114
-msgid "This reset link has expired. Reset links last 24 hours. Request a new one."
-msgstr "ลิงก์รีเซ็ตนี้หมดอายุแล้ว ลิงก์รีเซ็ตมีอายุ 24 ชั่วโมง โปรดขอลิงก์ใหม่"
+msgid "This reset link has expired. Reset links last 1 hour. Please request a new one."
+msgstr "ลิงก์รีเซ็ตนี้หมดอายุแล้ว ลิงก์รีเซ็ตมีอายุ 1 ชั่วโมง โปรดขอลิงก์ใหม่"
 
 #. Fallback role name in a mass-mention warning title.
 #: src/features/channel/components/MentionEveryonePopout.tsx:14

@@ -25721,8 +25721,8 @@ msgstr "Đăng ký"
 
 #: src/features/auth/flow/AuthMinimalRegisterFormCore.tsx:211
 #: src/features/auth/flow/AuthRegisterFormCore.tsx:312
-msgid "Registration is currently closed. Use a registration link from an admin to create an account."
-msgstr "Hiện tại đăng ký đang đóng. Hãy dùng liên kết đăng ký từ quản trị viên để tạo tài khoản."
+msgid "Registration is currently closed. Ask a Porch member for an account registration link."
+msgstr "Hiện tại đăng ký đang đóng. Hãy xin liên kết đăng ký tài khoản từ một thành viên Porch."
 
 #. Short label in the typography tab. Keep it concise.
 #: src/features/user/components/modals/tabs/component_gallery_tab/TypographyTab.tsx:34
@@ -33035,8 +33035,8 @@ msgid "This removes every custom shortcut and re-enables all built-in shortcuts.
 msgstr "Thao tác này sẽ xóa mọi phím tắt tùy chỉnh và bật lại tất cả phím tắt tích hợp. Không thể hoàn tác thao tác này."
 
 #: src/features/auth/components/pages/ResetPasswordPage.tsx:114
-msgid "This reset link has expired. Reset links last 24 hours. Request a new one."
-msgstr "Liên kết đặt lại này đã hết hạn. Liên kết đặt lại có hiệu lực trong 24 giờ. Vui lòng yêu cầu một liên kết mới."
+msgid "This reset link has expired. Reset links last 1 hour. Please request a new one."
+msgstr "Liên kết đặt lại này đã hết hạn. Liên kết đặt lại có hiệu lực trong 1 giờ. Vui lòng yêu cầu liên kết mới."
 
 #. Fallback role name in a mass-mention warning title.
 #: src/features/channel/components/MentionEveryonePopout.tsx:14

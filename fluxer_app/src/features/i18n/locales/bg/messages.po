@@ -25721,8 +25721,8 @@ msgstr "Регистрация"
 
 #: src/features/auth/flow/AuthMinimalRegisterFormCore.tsx:211
 #: src/features/auth/flow/AuthRegisterFormCore.tsx:312
-msgid "Registration is currently closed. Use a registration link from an admin to create an account."
-msgstr "Регистрацията в момента е затворена. Използвайте регистрационна връзка от администратор, за да създадете акаунт."
+msgid "Registration is currently closed. Ask a Porch member for an account registration link."
+msgstr "Регистрацията в момента е затворена. Поискайте от член на Porch връзка за регистрация на акаунт."
 
 #. Short label in the typography tab. Keep it concise.
 #: src/features/user/components/modals/tabs/component_gallery_tab/TypographyTab.tsx:34
@@ -33035,8 +33035,8 @@ msgid "This removes every custom shortcut and re-enables all built-in shortcuts.
 msgstr "Това премахва всички персонализирани преки пътища и повторно активира всички вградени преки пътища. Това действие не може да бъде отменено."
 
 #: src/features/auth/components/pages/ResetPasswordPage.tsx:114
-msgid "This reset link has expired. Reset links last 24 hours. Request a new one."
-msgstr "Връзката за нулиране е изтекла. Връзките за нулиране са валидни 24 часа. Заявете нова."
+msgid "This reset link has expired. Reset links last 1 hour. Please request a new one."
+msgstr "Тази връзка за нулиране е изтекла. Връзките за нулиране са валидни 1 час. Моля, заявете нова."
 
 #. Fallback role name in a mass-mention warning title.
 #: src/features/channel/components/MentionEveryonePopout.tsx:14

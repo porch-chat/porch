@@ -25736,8 +25736,8 @@ msgstr "Registrasi"
 
 #: src/features/auth/flow/AuthMinimalRegisterFormCore.tsx:211
 #: src/features/auth/flow/AuthRegisterFormCore.tsx:312
-msgid "Registration is currently closed. Use a registration link from an admin to create an account."
-msgstr "Pendaftaran saat ini ditutup. Gunakan tautan pendaftaran dari admin untuk membuat akun."
+msgid "Registration is currently closed. Ask a Porch member for an account registration link."
+msgstr "Pendaftaran saat ini ditutup. Minta tautan pendaftaran akun kepada anggota Porch."
 
 #. Short label in the typography tab. Keep it concise.
 #: src/features/user/components/modals/tabs/component_gallery_tab/TypographyTab.tsx:34
@@ -33050,8 +33050,8 @@ msgid "This removes every custom shortcut and re-enables all built-in shortcuts.
 msgstr "Ini akan menghapus semua pintasan khusus dan mengaktifkan kembali semua pintasan bawaan. Tindakan ini tidak dapat dibatalkan."
 
 #: src/features/auth/components/pages/ResetPasswordPage.tsx:114
-msgid "This reset link has expired. Reset links last 24 hours. Request a new one."
-msgstr "Tautan reset ini sudah kedaluwarsa. Tautan reset berlaku selama 24 jam. Minta tautan baru."
+msgid "This reset link has expired. Reset links last 1 hour. Please request a new one."
+msgstr "Tautan pengaturan ulang ini telah kedaluwarsa. Tautan pengaturan ulang berlaku selama 1 jam. Silakan minta yang baru."
 
 #. Fallback role name in a mass-mention warning title.
 #: src/features/channel/components/MentionEveryonePopout.tsx:14

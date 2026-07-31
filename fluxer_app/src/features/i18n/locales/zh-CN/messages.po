@@ -25721,8 +25721,8 @@ msgstr "注册"
 
 #: src/features/auth/flow/AuthMinimalRegisterFormCore.tsx:211
 #: src/features/auth/flow/AuthRegisterFormCore.tsx:312
-msgid "Registration is currently closed. Use a registration link from an admin to create an account."
-msgstr "当前已关闭注册。请使用管理员提供的注册链接创建账号。"
+msgid "Registration is currently closed. Ask a Porch member for an account registration link."
+msgstr "注册目前已关闭。请向 Porch 成员索取帐户注册链接。"
 
 #. Short label in the typography tab. Keep it concise.
 #: src/features/user/components/modals/tabs/component_gallery_tab/TypographyTab.tsx:34
@@ -33035,8 +33035,8 @@ msgid "This removes every custom shortcut and re-enables all built-in shortcuts.
 msgstr "这将移除所有自定义快捷方式，并重新启用所有内置快捷方式。此操作无法撤销。"
 
 #: src/features/auth/components/pages/ResetPasswordPage.tsx:114
-msgid "This reset link has expired. Reset links last 24 hours. Request a new one."
-msgstr "此重置链接已过期。重置链接的有效期为 24 小时。请申请一个新链接。"
+msgid "This reset link has expired. Reset links last 1 hour. Please request a new one."
+msgstr "此重置链接已过期。重置链接的有效期为 1 小时。请申请新链接。"
 
 #. Fallback role name in a mass-mention warning title.
 #: src/features/channel/components/MentionEveryonePopout.tsx:14

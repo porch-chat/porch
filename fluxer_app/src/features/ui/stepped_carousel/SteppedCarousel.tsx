@@ -119,8 +119,8 @@ export function SteppedCarousel<Step extends string>({
 	const setMeasureNode = useCallback(
 		(node: HTMLDivElement) => {
 			paneRef.current = node;
-			measureNode(node);
 			let observer: ResizeObserver | null = null;
+			let fallbackFrame: number | null = null;
 			if (typeof ResizeObserver !== 'undefined') {
 				observer = new ResizeObserver(() => {
 					if (paneRef.current === node) {
@@ -128,9 +128,16 @@ export function SteppedCarousel<Step extends string>({
 					}
 				});
 				observer.observe(node);
+			} else {
+				fallbackFrame = window.requestAnimationFrame(() => {
+					if (paneRef.current === node) {
+						measureNode(node);
+					}
+				});
 			}
 			return () => {
 				observer?.disconnect();
+				if (fallbackFrame !== null) window.cancelAnimationFrame(fallbackFrame);
 				if (paneRef.current === node) {
 					paneRef.current = null;
 				}
@@ -152,6 +159,7 @@ export function SteppedCarousel<Step extends string>({
 	return (
 		<motion.div
 			className={styles.container}
+			initial={false}
 			animate={{height: model.contentHeight}}
 			transition={shouldReduceMotion ? instantTransition : heightTransition}
 			aria-label={ariaLabel}
