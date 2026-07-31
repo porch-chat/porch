@@ -429,7 +429,7 @@
 			"title": "Source-native capture-card and ultrawide screen sharing",
 			"status": "active",
 			"category": "media-quality",
-			"reason": "Porch needs capture-card sharing and unusual display aspect ratios without distortion. Source capture format is now separate from outgoing stream dimensions, presets use a height ceiling while preserving the actual aspect ratio, Source uses native dimensions, FPS remains selectable up to 60, the native sender scales I420 frames only when necessary, capture-mode labels always render real values, diagnostics distinguish capture-card source dimensions from encoded output dimensions, both active-call control bars identify capture-card sources as devices, and changing quality on a live native device share restarts that sender with the requested source/output pair.",
+			"reason": "Porch needs capture-card sharing and unusual display aspect ratios without distortion. Source capture format is now separate from outgoing stream dimensions, presets use a height ceiling while preserving the actual aspect ratio, Source uses native dimensions, FPS remains selectable up to 60, the native sender scales I420 frames only when necessary, capture-mode labels always render real values, diagnostics distinguish capture-card source dimensions from encoded output dimensions, both active-call control bars identify capture-card sources as devices, and changing quality on a live native device share restarts that sender with the requested source/output pair. Windows display and window capture also falls back to copied BGRA or NV12 frames when the negotiated codec cannot consume shared D3D11 textures, preventing valid local previews from becoming all-zero green streams for remote participants.",
 			"paths": [
 				".porch/downstream-patches.json",
 				"fluxer_app/src/features/voice/components/StreamSettingsMenuContent.tsx",
@@ -450,6 +450,7 @@
 				"fluxer_app/src/features/voice/utils/ScreenShareOptions.ts",
 				"fluxer_app/src/features/voice/utils/ScreenShareStartFlow.ts",
 				"fluxer_app/src/features/voice/utils/StreamSettingsUpdatePolicy.ts",
+				"fluxer_desktop/native/win-game-capture",
 				"fluxer_desktop/native/webrtc-sender",
 				"packages/voice_engine_v2"
 			],
@@ -457,6 +458,8 @@
 				"screen-share preset, Source, ultrawide, bitrate, and capture/output separation tests",
 				"native camera device-format mapping tests",
 				"native sender ultrawide output and fallback-aspect tests",
+				"Windows shared-texture rejection and BGRA/NV12 CPU-readback fallback tests",
+				"native sender copied-frame validation and publication tests",
 				"capture-device format label interpolation tests",
 				"capture-card source-versus-encoded diagnostics regression tests",
 				"active native device-share quality replacement policy tests",
