@@ -329,13 +329,53 @@ every two seconds while the client requeued the same diagnostics batch forever.
   not sufficient to distinguish the shared client network, recursive DNS/TLS,
   or the public OVH ingress path.
 
-### Next acceptance work
+### Acceptance results
 
-- Publish the first-frame deadline fix to Canary and repeat remote display,
-  ultrawide, and capture-card receive tests.
-- Complete the two-device resize/navigation matrix while idle, in voice, with
-  camera, and while sending and receiving screen shares, both with hardware
-  acceleration enabled and disabled.
-- Add external-ingress visibility or a public synthetic probe before claiming
-  an exact cause for the transient outage; the current internal health probe
-  cannot observe every failure domain in front of the API container.
+- Porch source `0983af5bc71269da11955fef885ec13c8b54c94e` shipped as
+  app-proxy version `2026.731.155010` at immutable digest
+  `sha256:50ff08e9ecf108649f399a3f8963b6dc63741b77d7e9de251a8173b78cd2901e`.
+  The complete production verification suite passed after recreating only the
+  app proxy.
+- A fresh two-device 3840x2160/60 Elgato capture-card receive test crossed the
+  old 15-second cutoff and remained live beyond 38 seconds without `-2303`.
+  Repeating the receiver case with sender hardware acceleration disabled also
+  rendered live content beyond the old cutoff. Publication, attachment,
+  first-frame delivery, and teardown all completed normally.
+- With acceleration enabled, the two-device 4K60 capture-card case measured
+  1,649.8 MB private, 1,847.0 MB working set, 4,305 handles, and 51.9% of one
+  logical core across six local Porch processes. With acceleration disabled,
+  the same case measured 1,265.7 MB private, 1,943.0 MB working set, 3,804
+  handles, and 63.3% of one logical core. Software rendering therefore used
+  about 22% more sender CPU and remains a compatibility fallback rather than
+  the default.
+- A final accelerated two-device camera publish from the Elgato rendered on
+  the receiver and measured 798.1 MB private, 1,071.8 MB working set, 3,923
+  handles, and 49.2% of one logical core. Stopping video removed the received
+  frames and restored the avatar tile without leaving a stale preview.
+- A final whole-display publish rendered recursively on the receiver, stayed
+  live beyond the initial watch period, and measured 1,068.4 MB private,
+  1,336.2 MB working set, 4,069 handles, and 233.8% of one logical core. This
+  intentionally recursive workload remains the worst case. Stopping the share
+  removed the remote frames immediately.
+- Hardware-accelerated maximize/restore settled by the next visual sample.
+  Software rendering showed a visible old/new-layout split during the first
+  sampled frame and settled by roughly 1.5 seconds. The samples support
+  keeping hardware acceleration enabled, while the frame timing is an
+  observational bound rather than a browser trace.
+- A hardened one-minute public ingress probe now runs on OVH for API, Stable,
+  and Canary discovery. It journals resolved address, TLS verification, HTTP
+  status, and DNS/connect/TLS/first-byte/total timing, and returns failure for
+  curl, TLS, or non-200 results without stopping the timer. Initial and
+  recurring production runs were healthy.
+- Both authorized test accounts were disconnected, all camera and share tracks
+  were stopped, and the local Canary client was restarted with hardware
+  acceleration restored after the matrix.
+
+### Next performance work
+
+- Use the new public probe alongside internal API health the next time a shared
+  connection loss occurs. The current evidence narrows the earlier incident
+  but does not justify assigning an exact cause retroactively.
+- Treat recursive display sharing and software-rendered resize as known heavy
+  paths. Further changes should be driven by a repeatable browser/GPU trace or
+  a user-visible regression rather than speculative Chromium switches.
