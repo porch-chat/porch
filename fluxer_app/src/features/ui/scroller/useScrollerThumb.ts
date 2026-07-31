@@ -255,9 +255,6 @@ export function useScrollerThumb({
 			stopDragging();
 		};
 	}, [stopDragging]);
-	useEffect(() => {
-		refreshThumbState();
-	}, [refreshThumbState]);
 	const onThumbPointerDown = useCallback(
 		(event: ReactPointerEvent<HTMLDivElement>) => {
 			const liveThumb = thumbStateRef.current;

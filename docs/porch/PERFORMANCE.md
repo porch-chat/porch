@@ -535,3 +535,17 @@ every two seconds while the client requeued the same diagnostics batch forever.
   skips the selected-tab `scrollIntoView` call when pointer or keyboard
   navigation has already focused that tab; programmatic and deep-link
   selections retain the visibility correction.
+
+### Final candidate residual trace
+
+- Deployed web version `2026.731.184816` reduced the first post-reload Settings
+  open to 763 ms INP from the prior 2,030 ms cold outlier. A repeated warm open
+  measured 313 ms versus the 947 ms original baseline. Floating UI's former
+  114 ms document-lock trigger disappeared entirely; textarea sizing remained
+  159.125 by 100 px with its 100 px row constraints intact.
+- The warm trace still assigned 144 ms to a thumb-metrics read that duplicated
+  the owning `Scroller` component's scheduled refresh. Profile-to-Voice &
+  video measured 330 ms and assigned 111 ms to rewriting every sidebar item's
+  existing `tabIndex`. The final follow-up removes the duplicate hook refresh,
+  mutates only tab stops that actually change, and schedules tooltip-only text
+  overflow measurement after the interaction's first paint.

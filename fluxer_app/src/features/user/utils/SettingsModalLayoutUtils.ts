@@ -176,7 +176,8 @@ export function syncSidebarTabStops(list: HTMLElement | null, preferredItem?: HT
 	const target = preferred ?? active ?? selected ?? getRovingFallbackItem(list) ?? items[0] ?? null;
 	if (!target) return null;
 	for (const item of items) {
-		item.tabIndex = item === target ? 0 : -1;
+		const nextTabIndex = item === target ? 0 : -1;
+		if (item.tabIndex !== nextTabIndex) item.tabIndex = nextTabIndex;
 	}
 	return target;
 }
