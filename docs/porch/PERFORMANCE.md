@@ -531,4 +531,7 @@ every two seconds while the client requeued the same diagnostics batch forever.
   inside dedicated scrollers, so the lock redundantly measured the root
   scrollbar and then invalidated body styles for every modal. The next
   candidate disables that redundant lock while preserving focus management,
-  inert outside content, backdrop handling, and internal scrolling.
+  inert outside content, backdrop handling, and internal scrolling. It also
+  skips the selected-tab `scrollIntoView` call when pointer or keyboard
+  navigation has already focused that tab; programmatic and deep-link
+  selections retain the visibility correction.

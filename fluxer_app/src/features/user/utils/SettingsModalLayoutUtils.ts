@@ -198,9 +198,11 @@ export function useSettingsModalSidebarItemLogic({
 }: Pick<SettingsModalSidebarItemProps, 'selected'>): SettingsModalSidebarItemLogicState {
 	const ref = useRef<HTMLButtonElement>(null);
 	useEffect(() => {
-		if (selected) {
-			ref.current?.scrollIntoView({block: 'nearest'});
-		}
+		const node = ref.current;
+		// Pointer and keyboard selection focus the tab before updating selection, so it is
+		// already visible. Avoid a synchronous layout read in that common interaction;
+		// deep links and other programmatic selections still scroll into view.
+		if (selected && node && document.activeElement !== node) node.scrollIntoView({block: 'nearest'});
 	}, [selected]);
 	return {
 		tabIndex: selected ? 0 : -1,
