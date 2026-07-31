@@ -513,3 +513,22 @@ every two seconds while the client requeued the same diagnostics batch forever.
   community has no integrated banner and cannot use that geometry. The final
   candidate now installs that measurement and its resize observers only when
   an integrated banner exists.
+
+### Follow-up candidate interim result
+
+- Web version `2026.731.182247` deployed the textarea, settings-tree, and
+  conditional-banner changes from source `649b9b7a`. The live verifier again
+  passed both browser origins and every shared service contract.
+- The first Settings open immediately after a cache-bypassed reload was a cold
+  outlier at 2,030 ms INP, dominated by 1,252 ms presentation delay. Repeating
+  the identical interaction without reloading measured 330 ms INP: 2 ms input,
+  289 ms processing, and 39 ms presentation. This is a substantial warm-path
+  improvement over 947 ms, but the cold result means a single run is not an
+  acceptance gate; final evidence must record repeat distributions.
+- The warm trace contained 157 ms of forced layout. Source maps assigned
+  114 ms to Floating UI's document scroll lock. Porch globally applies
+  `overflow: hidden` to the application document and places scrollable content
+  inside dedicated scrollers, so the lock redundantly measured the root
+  scrollbar and then invalidated body styles for every modal. The next
+  candidate disables that redundant lock while preserving focus management,
+  inert outside content, backdrop handling, and internal scrolling.

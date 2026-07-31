@@ -191,9 +191,6 @@ const RootComponent = React.forwardRef<HTMLDivElement, ModalProps>(
 			const ids = Object.values(labelRegistry).filter(Boolean);
 			return ids.length > 0 ? ids.join(' ') : undefined;
 		}, [labelRegistry]);
-		const isIOS =
-			/iPhone|iPad|iPod/.test(navigator.userAgent) ||
-			(navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 		const [acquiredZIndex, setAcquiredZIndex] = useState<number | null>(null);
 		useEffect(() => {
 			const zIndex = OverlayStack.acquire();
@@ -247,7 +244,9 @@ const RootComponent = React.forwardRef<HTMLDivElement, ModalProps>(
 					/>
 				)}
 				<FloatingOverlay
-					lockScroll={!isIOS && isInteractive}
+					// The application root is permanently non-scrolling; content lives in internal
+					// scrollers. Floating UI's document lock only adds forced layout and body churn.
+					lockScroll={false}
 					className="modal-backdrop"
 					aria-hidden={!isInteractive}
 					style={overlayStyle}
