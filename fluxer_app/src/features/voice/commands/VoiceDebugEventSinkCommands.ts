@@ -5,10 +5,6 @@ import {
 	canOpenBrowserVoiceDebugEventSinkPopout,
 	setBrowserVoiceDebugEventSinkStatsHtml,
 } from '@app/features/voice/diagnostics/VoiceDebugBrowserEventSinkPopout';
-import {
-	renderVoiceDebugStatsHtml,
-	renderVoiceDebugStatsUnavailableHtml,
-} from '@app/features/voice/diagnostics/VoiceDebugStatsHtml';
 import voiceEngineV2AppDebugLoggingHostAdapter from '@app/features/voice/engine/v2/VoiceEngineV2AppDebugLoggingHostAdapter';
 import {collectStatsForNerdsSnapshot} from '@app/features/voice/utils/StatsForNerdsCopy';
 
@@ -24,22 +20,27 @@ function describeStatsSnapshotError(error: unknown): string {
 	return error instanceof Error ? error.message : String(error);
 }
 
-function publishBrowserOpeningStatsSnapshot(): void {
-	if (!canOpenBrowserVoiceDebugEventSinkPopout()) return;
+async function publishOpeningStatsSnapshot(): Promise<void> {
+	const electron = getElectronAPI();
+	if (!electron?.setVoiceDebugEventSinkStatsHtml && !canOpenBrowserVoiceDebugEventSinkPopout()) return;
+	const {renderVoiceDebugStatsHtml, renderVoiceDebugStatsUnavailableHtml} = await import(
+		'@app/features/voice/diagnostics/VoiceDebugStatsHtml'
+	);
 	const generatedAtIso = getGeneratedAtIso();
+	let html: string;
 	try {
-		setBrowserVoiceDebugEventSinkStatsHtml(renderVoiceDebugStatsHtml(collectStatsForNerdsSnapshot(), generatedAtIso));
+		html = renderVoiceDebugStatsHtml(collectStatsForNerdsSnapshot(), generatedAtIso);
 	} catch (error) {
-		setBrowserVoiceDebugEventSinkStatsHtml(
-			renderVoiceDebugStatsUnavailableHtml(
-				`Failed to collect stats snapshot before opening event sink: ${describeStatsSnapshotError(error)}`,
-				generatedAtIso,
-			),
+		html = renderVoiceDebugStatsUnavailableHtml(
+			`Failed to collect stats snapshot before opening event sink: ${describeStatsSnapshotError(error)}`,
+			generatedAtIso,
 		);
 	}
+	electron?.setVoiceDebugEventSinkStatsHtml?.(html);
+	setBrowserVoiceDebugEventSinkStatsHtml(html);
 }
 
 export async function openVoiceDebugEventSinkPopout(): Promise<void> {
-	publishBrowserOpeningStatsSnapshot();
+	await publishOpeningStatsSnapshot();
 	await voiceEngineV2AppDebugLoggingHostAdapter.openEventSinkPopout();
 }

@@ -481,6 +481,7 @@ export interface ElectronAPI {
 	popoutSetAlwaysOnTop?(key: string, flag: boolean): Promise<boolean>;
 	popoutFocus?(key: string): Promise<boolean>;
 	openVoiceDebugEventSinkPopout?(entries: Array<DesktopVoiceDebugEventSinkEntry>): Promise<void>;
+	isVoiceDebugEventSinkPopoutOpen?(): Promise<boolean>;
 	appendVoiceDebugEventSinkEntries?(entries: Array<DesktopVoiceDebugEventSinkEntry>): void;
 	setVoiceDebugEventSinkStatsHtml?(html: string): void;
 	windowMinimize?(): void;

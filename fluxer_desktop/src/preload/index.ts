@@ -415,6 +415,7 @@ const api: ElectronAPI = {
 	popoutFocus: (key: string): Promise<boolean> => ipcRenderer.invoke('popout:focus', key),
 	openVoiceDebugEventSinkPopout: (entries: Array<DesktopVoiceDebugEventSinkEntry>): Promise<void> =>
 		ipcRenderer.invoke('voice-debug-event-sink:open', entries),
+	isVoiceDebugEventSinkPopoutOpen: (): Promise<boolean> => ipcRenderer.invoke('voice-debug-event-sink:is-open'),
 	appendVoiceDebugEventSinkEntries: (entries: Array<DesktopVoiceDebugEventSinkEntry>): void => {
 		ipcRenderer.send('voice-debug-event-sink:append', entries);
 	},

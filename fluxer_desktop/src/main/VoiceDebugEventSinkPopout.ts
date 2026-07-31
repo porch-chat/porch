@@ -430,6 +430,10 @@ export function focusVoiceDebugEventSinkPopout(): boolean {
 	return true;
 }
 
+export function isVoiceDebugEventSinkPopoutOpen(): boolean {
+	return getEventSinkWindow() !== null;
+}
+
 export function setVoiceDebugEventSinkAlwaysOnTop(flag: boolean): boolean {
 	const window = getEventSinkWindow();
 	if (!window) {
@@ -459,6 +463,7 @@ export function registerVoiceDebugEventSinkPopoutIpcHandlers(): void {
 		'voice-debug-event-sink:open',
 		(_event, entries: unknown): Promise<void> => openVoiceDebugEventSinkPopout(entries),
 	);
+	ipcMain.handle('voice-debug-event-sink:is-open', (): boolean => isVoiceDebugEventSinkPopoutOpen());
 	ipcMain.on('voice-debug-event-sink:append', (_event, entries: unknown): void => {
 		appendVoiceDebugEventSinkEntries(entries);
 	});

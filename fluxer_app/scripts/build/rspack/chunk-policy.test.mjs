@@ -4,9 +4,14 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import createRspackConfig from '../../../rspack.config.mjs';
 
-test('catch-all vendor extraction does not promote lazy feature dependencies to startup', () => {
+test('shared extraction does not promote lazy feature dependencies to startup', () => {
 	const config = createRspackConfig();
 	const splitChunks = config.optimization?.splitChunks;
 	assert.ok(splitChunks && typeof splitChunks === 'object');
-	assert.equal(splitChunks.cacheGroups?.vendor?.chunks, 'initial');
+	assert.equal(typeof splitChunks.chunks, 'function');
+	assert.equal(splitChunks.chunks({runtime: 'main', canBeInitial: () => true}), true);
+	assert.equal(splitChunks.chunks({runtime: 'main', canBeInitial: () => false}), false);
+	assert.equal(splitChunks.chunks({runtime: 'sw', canBeInitial: () => true}), false);
+	assert.equal(splitChunks.cacheGroups?.highlight?.chunks, 'async');
+	assert.equal(splitChunks.cacheGroups?.katex?.chunks, undefined);
 });

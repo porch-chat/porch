@@ -46,6 +46,10 @@ function isMainRuntimeChunk(chunk) {
 	return false;
 }
 
+function isInitialMainRuntimeChunk(chunk) {
+	return isMainRuntimeChunk(chunk) && typeof chunk.canBeInitial === 'function' && chunk.canBeInitial();
+}
+
 function nodeAssertStrictSchemePlugin() {
 	return {
 		apply(compiler) {
@@ -443,7 +447,7 @@ export default () => {
 		optimization: {
 			splitChunks: isProduction
 				? {
-						chunks: (chunk) => isMainRuntimeChunk(chunk),
+						chunks: (chunk) => isInitialMainRuntimeChunk(chunk),
 						maxInitialRequests: 15,
 						cacheGroups: {
 							icons: {
@@ -561,7 +565,6 @@ export default () => {
 								},
 								name: 'vendor',
 								priority: 10,
-								chunks: 'initial',
 								reuseExistingChunk: true,
 							},
 						},

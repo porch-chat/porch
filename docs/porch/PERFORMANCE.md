@@ -219,6 +219,10 @@ every two seconds while the client requeued the same diagnostics batch forever.
    dependencies into the startup HTML. The eSpeak fallback alone became a
    4.05 MB minified initial script; CodeMirror was also parsed before any
    editor was opened.
+8. The voice call UI mounted a stats forwarder that collected a full diagnostics
+   snapshot and rendered it through `react-dom/server` every two seconds in
+   every call, even when no diagnostics popout existed. Besides periodic call
+   jank, this promoted both React server-renderer builds into startup.
 
 ### Implemented
 
@@ -234,17 +238,22 @@ every two seconds while the client requeued the same diagnostics batch forever.
   batches only for retryable network/server failures, discard permanently
   rejected client-error payloads, and log only the first or changed failure
   state without retaining raw error objects.
-- Restrict the catch-all vendor cache group to initial chunks. Feature-specific
-  lazy chunks may reuse dependencies already needed at startup, but a lazy-only
-  dependency can no longer turn the shared vendor chunk into an initial asset.
-  In a production build this removed eSpeak and CodeMirror from startup and
-  reduced the reported main entrypoint from 14.346 MiB to 11.589 MiB (2.757 MiB,
-  or 19.2%).
+- Restrict shared package extraction to chunks that can actually be initial.
+  Feature-specific lazy chunks may reuse dependencies already needed at
+  startup, but a lazy-only dependency can no longer turn a named shared chunk
+  into an initial asset. In a production build this removed eSpeak, CodeMirror,
+  and `react-dom/server` from startup and reduced the reported main entrypoint
+  from 14.346 MiB to 11.264 MiB (3.082 MiB, or 21.5%).
+- Collect and server-render voice debug stats only while the browser or desktop
+  diagnostics popout is open. Opening the popout captures an on-demand initial
+  snapshot; a lightweight open-state check enables live two-second updates and
+  disables them again after close.
 
 ### Validation matrix
 
 - Targeted resize-state and voice-debug retry-policy tests
 - Rspack vendor-chunk policy regression test and production entrypoint audit
+- Voice-debug stats dormancy/open-state regression tests and desktop IPC typecheck
 - App TypeScript check, scoped Biome check, production app build, and
   `git diff --check`
 - Canary live resize and navigation checks while idle, in voice, with camera,

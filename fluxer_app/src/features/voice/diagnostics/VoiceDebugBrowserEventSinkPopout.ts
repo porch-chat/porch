@@ -602,6 +602,10 @@ export function canOpenBrowserVoiceDebugEventSinkPopout(): boolean {
 	return canCreatePopoutUrl();
 }
 
+export function isBrowserVoiceDebugEventSinkPopoutOpen(): boolean {
+	return isOpenWindow(eventSinkWindow);
+}
+
 export async function openBrowserVoiceDebugEventSinkPopout(
 	entries: ReadonlyArray<DesktopVoiceDebugEventSinkEntry>,
 ): Promise<boolean> {
