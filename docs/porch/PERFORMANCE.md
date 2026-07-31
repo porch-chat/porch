@@ -546,6 +546,20 @@ every two seconds while the client requeued the same diagnostics batch forever.
 - The warm trace still assigned 144 ms to a thumb-metrics read that duplicated
   the owning `Scroller` component's scheduled refresh. Profile-to-Voice &
   video measured 330 ms and assigned 111 ms to rewriting every sidebar item's
-  existing `tabIndex`. The final follow-up removes the duplicate hook refresh,
-  mutates only tab stops that actually change, and schedules tooltip-only text
-  overflow measurement after the interaction's first paint.
+  existing `tabIndex`. The follow-up removes the duplicate hook refresh and
+  mutates only tab stops that actually change. It also attempted to defer
+  tooltip-only text overflow measurement, which the rejection below supersedes.
+
+### Residual candidate rejection
+
+- Web version `2026.731.190827` proved that `requestAnimationFrame` followed by
+  a zero-delay timer does not guarantee a paint boundary in Chromium. The
+  tooltip overflow query remained inside the Settings interaction and grew
+  from 2 ms on the prior warm trace to 186 ms; warm Settings INP regressed from
+  313 to 379 ms. This part of the candidate is rejected and reverted rather
+  than accepted on intent alone.
+- The same traces confirmed that the duplicate thumb refresh and unchanged
+  sidebar tab-stop triggers disappeared. Those two isolated changes remain in
+  the final candidate; tooltip overflow scheduling returns to its prior known
+  behavior. A future cold-settings improvement should eliminate or batch the
+  natural-width work itself rather than move it between tasks.

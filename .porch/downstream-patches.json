@@ -502,7 +502,7 @@
 			"title": "Preserve warm caches and reduce renderer event churn",
 			"status": "active",
 			"category": "client-performance",
-			"reason": "Porch navigation, settings, and live window resizing intermittently stalled because normal desktop starts discarded Chromium code and shader caches, self-hosted spellcheck attempted unavailable downloads before falling back, scroll components performed redundant observation and synchronous thumb layout work, tooltip overflow checks queried layout before interaction paint, plain community headers measured banner geometry they did not use, modals redundantly locked a globally non-scrolling document, textareas measured row constraints inside modal commits, settings navigation queried computed style for every item, rewrote unchanged tab stops, and synchronously scrolled already-focused tabs, the desktop channel view observed every pixel of a resize, and failed voice-debug uploads retried and logged without backoff. The performance record also preserves the acceleration and media benchmark evidence behind the selected defaults.",
+			"reason": "Porch navigation, settings, and live window resizing intermittently stalled because normal desktop starts discarded Chromium code and shader caches, self-hosted spellcheck attempted unavailable downloads before falling back, scroll components performed redundant observation and synchronous thumb layout work, plain community headers measured banner geometry they did not use, modals redundantly locked a globally non-scrolling document, textareas measured row constraints inside modal commits, settings navigation queried computed style for every item, rewrote unchanged tab stops, and synchronously scrolled already-focused tabs, the desktop channel view observed every pixel of a resize, and failed voice-debug uploads retried and logged without backoff. The performance record also preserves the acceleration and media benchmark evidence behind the selected defaults.",
 			"paths": [
 				".porch/downstream-patches.json",
 				"docs/porch/PERFORMANCE.md",
@@ -513,7 +513,6 @@
 				"fluxer_app/src/features/member/hooks/useMemberListVisible.ts",
 				"fluxer_app/src/features/platform/utils/AutoResizingTextarea.tsx",
 				"fluxer_app/src/features/ui/components/Scroller.tsx",
-				"fluxer_app/src/features/ui/hooks/useTextOverflow.ts",
 				"fluxer_app/src/features/ui/scroller/useScrollerThumb.ts",
 				"fluxer_app/src/features/user/utils/SettingsModalLayoutUtils.ts",
 				"fluxer_app/src/features/voice/engine/v2/VoiceEngineV2AppDebugLoggingHostAdapter.retry.test.ts",

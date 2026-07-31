@@ -99,13 +99,12 @@ export function useTextOverflow(
 			return;
 		}
 		let frameId: number | null = null;
-		let timeoutId: number | null = null;
 		let disposed = false;
 		const updateOverflowing = (next: boolean) => {
 			setIsOverflowing((previous) => (previous === next ? previous : next));
 		};
 		const checkOverflow = () => {
-			timeoutId = null;
+			frameId = null;
 			if (
 				isMeaningfullyGreater(element.scrollWidth, element.clientWidth) ||
 				(checkVertical && isMeaningfullyGreater(element.scrollHeight, element.clientHeight))
@@ -126,15 +125,10 @@ export function useTextOverflow(
 			updateOverflowing(false);
 		};
 		const scheduleOverflowCheck = () => {
-			if (disposed || frameId != null || timeoutId != null) {
+			if (disposed || frameId != null) {
 				return;
 			}
-			// Overflow only controls hover affordances. Let the interaction's visual
-			// update paint before querying layout, then refresh the tooltip state.
-			frameId = window.requestAnimationFrame(() => {
-				frameId = null;
-				timeoutId = window.setTimeout(checkOverflow, 0);
-			});
+			frameId = window.requestAnimationFrame(checkOverflow);
 		};
 		scheduleOverflowCheck();
 		const unobserveResize =
@@ -159,9 +153,6 @@ export function useTextOverflow(
 			disposed = true;
 			if (frameId != null) {
 				window.cancelAnimationFrame(frameId);
-			}
-			if (timeoutId != null) {
-				window.clearTimeout(timeoutId);
 			}
 			unobserveResize?.();
 			mutationObserver?.disconnect();
