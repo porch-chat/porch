@@ -563,3 +563,54 @@ every two seconds while the client requeued the same diagnostics batch forever.
   the final candidate; tooltip overflow scheduling returns to its prior known
   behavior. A future cold-settings improvement should eliminate or batch the
   natural-width work itself rather than move it between tasks.
+
+### Final production acceptance
+
+- Final source `81d2161993aa44f49387e51645a9adb6b1f7a092` is live as web
+  version `2026.731.193424` at immutable app-proxy digest
+  `sha256:c089ebd7b854f8bcc8c85dead8d5ff4cb477a60768d5a86677ed1c7ce3e63c53`.
+  GitHub Actions run `30659105129` passed, and the complete production
+  verifier passed API, both browser origins, metadata, CORS, gateway
+  WebSockets, LiveKit signaling and origins, passkeys, both desktop feeds, all
+  25 service states, and immutable image pins.
+- The first Settings open after a cache-bypassed reload measured 614 ms INP
+  with zero CLS. Three subsequent warm opens measured 380, 363, and 414 ms;
+  their 380 ms median is 59.9 percent faster than the original 947 ms
+  baseline. The distribution is the acceptance result rather than the best
+  individual run.
+- Profile-to-Voice & video measured 280 ms INP with zero CLS, a 71.4 percent
+  reduction from its 980 ms baseline. Community-to-DM measured 197 ms INP.
+  DM-to-community remains a visible 280 ms path: 66 ms of forced layout was
+  recorded, including 65 ms in `getScrollerState`. Restoring community
+  scroller state is therefore the clearest next interaction target.
+- Six authenticated viewport changes forced 40 ms of layout in total with
+  zero CLS. Before the scroller changes, individual authenticated resizes
+  produced 62–91 ms style passes, so resizing no longer reproduces the
+  original delayed-content symptom in the profiler.
+- A fresh desktop idle sample used 454 MB private memory across six processes
+  and 0.094 CPU-seconds over ten seconds, or 0.9 percent of one logical core.
+  Chromium reported roughly 17.3 MB of local and 1.9 MB of nonlocal GPU memory
+  on the idle/settings path. The earlier multi-gigabyte incident remains
+  attributed to DevTools retaining a repeating failed voice-debug upload;
+  its backoff and dormancy fix remains in place and the condition did not
+  recur during this audit.
+- Regression checks retained exactly one settings-sidebar tab stop, verified
+  Arrow-key and Enter navigation, and found two visible custom scrollbar
+  thumbs with valid geometry. Final Profile textarea geometry measured
+  290.8125 by 100 px in the current viewport with 100 px minimum and maximum
+  row constraints and `field-sizing: content`.
+- The accepted changes affect settings and scroller layout only. The completed
+  accelerated/software-rendered two-device voice, camera, display-share, and
+  3840x2160/60 capture-card matrix remains applicable; none of the final
+  candidate files touch the media graph or desktop native bridge.
+
+### Remaining priorities
+
+- Reduce settings natural-width work and modal DOM cost directly. The rejected
+  timer experiment proved that merely moving overflow reads between tasks is
+  not a reliable paint boundary.
+- Remove the 65 ms synchronous `getScrollerState` boundary on
+  DM-to-community navigation without sacrificing per-channel scroll restore.
+- Split public authentication bootstrap from the full communication client.
+  Login still downloads and parses the same large application graph as the
+  authenticated client, so startup remains the largest structural opportunity.
