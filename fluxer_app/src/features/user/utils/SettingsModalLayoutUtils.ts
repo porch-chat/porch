@@ -108,9 +108,9 @@ const isDisabledSidebarItem = (element: HTMLElement): boolean => {
 	return false;
 };
 const isHiddenSidebarItem = (element: HTMLElement): boolean => {
-	if (element.hidden || element.closest('[hidden], [aria-hidden="true"], [inert]')) return true;
-	const style = window.getComputedStyle(element);
-	return style.display === 'none' || style.visibility === 'hidden';
+	// Settings subtrees already expose their collapsed state semantically. Reading
+	// computed style for every item here flushes the entire modal layout on each tab.
+	return element.hidden === true || element.closest('[hidden], [aria-hidden="true"], [inert]') != null;
 };
 const getSidebarList = (element: HTMLElement | null): HTMLElement | null => {
 	if (!element) return null;

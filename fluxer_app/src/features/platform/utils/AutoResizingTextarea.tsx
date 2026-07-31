@@ -119,6 +119,7 @@ export const TextareaAutosize = React.forwardRef<HTMLTextAreaElement, TextareaAu
 	const lastEmittedHeightRef = useRef<number | null>(null);
 	const resizeScheduledRef = useRef(false);
 	const resizeRafRef = useRef<number | null>(null);
+	const constraintsTimerRef = useRef<number | null>(null);
 	const setRef = useCallback(
 		(node: HTMLTextAreaElement | null) => {
 			elRef.current = node;
@@ -159,7 +160,18 @@ export const TextareaAutosize = React.forwardRef<HTMLTextAreaElement, TextareaAu
 		if (maxHeight != null) el.style.maxHeight = `${maxHeight}px`;
 	}, [maxRows, minRows]);
 	useEffect(() => {
-		applyRowConstraints();
+		// React may flush passive effects inside the interaction that mounted a modal. Keep
+		// the computed-style read out of that commit so the newly mounted UI can paint first.
+		constraintsTimerRef.current = window.setTimeout(() => {
+			constraintsTimerRef.current = null;
+			applyRowConstraints();
+		}, 0);
+		return () => {
+			if (constraintsTimerRef.current != null) {
+				window.clearTimeout(constraintsTimerRef.current);
+				constraintsTimerRef.current = null;
+			}
+		};
 	}, [applyRowConstraints]);
 	useEffect(() => {
 		const el = elRef.current;

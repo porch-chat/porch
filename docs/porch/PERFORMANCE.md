@@ -465,3 +465,45 @@ every two seconds while the client requeued the same diagnostics batch forever.
   passes across about 712–795 elements. The DOM itself was moderate at 754
   elements, so reducing redundant synchronous measurement is a safer first
   target than removing visible channel or member content.
+
+### Settings and search baseline
+
+- Entering a community search and rendering its result pane measured 90 ms
+  INP: 1 ms input delay, 73 ms processing, and 16 ms presentation. Its 34 ms
+  of forced layout remains worth tracking, but search is currently inside the
+  good responsiveness threshold.
+- Opening User Settings from the community view measured 947 ms INP: 3 ms
+  input delay, 862 ms processing, and 82 ms presentation. The resulting modal
+  contained 1,345 elements and forced 645 ms of layout. Source maps assign
+  about 283 ms to custom-scroller metrics and 352 ms to the computed-style
+  read used to establish auto-resizing textarea row constraints.
+- Selecting Voice & video inside the open settings modal measured 980 ms INP:
+  3 ms input delay, 585 ms processing, and 391 ms presentation. The expanded
+  page contained 1,548 elements, with a 128 ms style pass and 247 ms of forced
+  layout. The largest mapped trigger was the settings sidebar's per-item
+  `getComputedStyle` visibility check at 209 ms; custom-scroller metrics added
+  another 37 ms.
+- The first measured candidate removes synchronous scrollbar reads from mount
+  commits. A follow-up candidate schedules textarea row-constraint measurement
+  outside the modal's discrete interaction and relies on the settings tree's
+  existing `hidden`, `aria-hidden`, and `inert` state instead of forcing style
+  resolution for every sidebar item. Canary acceptance must repeat all three
+  interactions and verify textarea sizing, sidebar keyboard navigation, and
+  scrollbar visibility before these candidates are considered complete.
+
+### First candidate deployment result
+
+- Web version `2026.731.180146` deployed from source `78368727` at immutable
+  app-proxy digest `sha256:33a96d92887c6664614769b224d4f6f6ccbc812fff293bd0897cabc0aa844c8f`.
+  The complete live verifier passed both origins, metadata, API CORS, gateway,
+  LiveKit, passkeys, desktop feeds, 25 service states, and immutable pins.
+- User Settings open improved from 947 to 764 ms INP, a 19.3 percent reduction,
+  while forced layout fell from 645 to 516 ms. The former 283 ms scroller
+  mount trigger disappeared; a later scheduled scroller refresh cost 33 ms.
+  Textarea constraints still accounted for 315 ms and settings sidebar
+  visibility checks for 160 ms, validating the two follow-up targets.
+- Profile-to-Voice & video improved from 980 to 296 ms INP, a 69.8 percent
+  reduction, while forced layout fell from 247 to 103 ms. The remaining
+  92 ms trigger was the settings sidebar visibility loop. This candidate is a
+  meaningful improvement but remains above the 200 ms interaction target, so
+  the follow-up candidate proceeds before final acceptance.
