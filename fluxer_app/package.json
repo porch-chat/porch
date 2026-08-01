@@ -15,7 +15,7 @@
 		"./src/*": "./src/*"
 	},
 	"scripts": {
-		"build": "pnpm wasm:codegen && pnpm generate:colors && pnpm generate:message-layout && pnpm generate:theme-variables && pnpm generate:masks && pnpm generate:css-types && pnpm lingui:compile && rm -rf dist && rspack build --mode production && pnpm tsx scripts/build-sw.mjs",
+		"build": "pnpm wasm:codegen && pnpm generate:colors && pnpm generate:message-layout && pnpm generate:theme-variables && pnpm generate:masks && pnpm generate:css-types && pnpm lingui:compile && rspack build --mode production && pnpm tsx scripts/build-sw.mjs",
 		"dev": "TOKIO_WORKER_THREADS=4 RAYON_NUM_THREADS=4 cargo run --manifest-path ../tools/ci/Cargo.toml -- app-dev-server",
 		"test": "vitest run",
 		"bench:member-list": "vitest bench --run src/features/member/utils/MemberListRangeUtils.bench.ts src/features/member/state/MemberListStateMachines.bench.ts src/features/member/state/MemberSidebar.bench.ts",

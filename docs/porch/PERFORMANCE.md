@@ -853,6 +853,10 @@ every two seconds while the client requeued the same diagnostics batch forever.
   restored to its accelerated default before media testing. A proposed
   per-settings-tab lazy boundary was rejected: duplicated shared chunks raised
   inferred initial authenticated JavaScript from about 24.8 MiB to 40.1 MiB.
+- The application production-build entrypoint no longer invokes Unix `rm` on
+  Windows. Rspack already has `output.clean` enabled, so removing the redundant
+  shell deletion preserves clean output while making the same `pnpm build`
+  command work on Windows and Linux.
 
 ### Two-device native media and stale receiver audit
 
