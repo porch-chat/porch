@@ -995,3 +995,25 @@ every two seconds while the client requeued the same diagnostics batch forever.
 - Remote receiver cadence and capture-card resize remain covered by the prior
   two-device acceptance. Repeat them only if the Canary call-grid candidate
   changes remote tile behavior.
+
+### Production acceptance
+
+- GitHub Actions run `30681813610` built the candidate from source commit
+  `d02353e896f5709a4ad771f93584ff9c389dbc86`. Stable and Canary now serve Web
+  `2026.801.32307` from immutable image digest
+  `sha256:7e8a40d821f733dbda321e081c6b07007fb8f99dcd9d0b53130020f8f14c635a`.
+- The deployed call grid reports a normal container type, no named size
+  container, and the exact authoritative inline geometry variables supplied
+  by the packed JavaScript metrics. Repeated deployed idle sweeps completed in
+  1,110--1,160 ms, settings in 1,401 ms, and solo-call sweeps in
+  1,343--1,642 ms.
+- A deployed live camera track negotiated at 1920 by 1080 and completed the
+  same resize sweep in 1,192 ms. Turning camera off removed every local video
+  element and track.
+- A deployed 1920 by 1080 display share completed repeated sweeps in
+  1,579--1,901 ms. Stopping the share removed every preview and video track;
+  disconnecting left the client fully disconnected with no media element.
+- The complete production verifier passed API, Stable, Canary, metadata,
+  CORS, both gateway WebSockets, LiveKit and its allowed origins, passkeys,
+  desktop feeds, all 25 service states, and immutable image pins. Hardware
+  acceleration was restored as the default. The candidate is accepted.
