@@ -1083,3 +1083,25 @@ every two seconds while the client requeued the same diagnostics batch forever.
   broad search, manual expansion, native maximize and restore, then run the
   complete production verifier. Stable and Canary share the same backend and
   application image, so deployment acceptance must cover both public origins.
+
+### Production acceptance
+
+- GitHub Actions run `30693237685` built source commit
+  `64d36957e46ae4a29ac8ccc7a11290c43a25aaee` for both architectures and
+  published web version `2026.801.91302` at immutable app-proxy digest
+  `sha256:6019cfe10aedb4e0176e20d87b80d4d7ab3fef76f841889c15f827e7e558fdf9`.
+- Deployment commit `e96cfd194f154827a34daf826bf23776205d3bb4` recreated only
+  the shared app-proxy. Both public origins report the new version, and the
+  complete verifier passed API, Stable, Canary, metadata, CORS, both gateway
+  WebSockets, LiveKit and its allowed origins, passkeys, desktop feeds, all 25
+  service states, and immutable pins.
+- In the deployed signed-in desktop, `voice` rendered 7 collapsed result
+  categories and 425 Settings nodes in about 55 ms of task time. The broad
+  query `a` rendered 15 categories and 680 nodes in about 72--111 ms across
+  repeated samples. Neither produced a long task, and the search field retained
+  focus.
+- Manual category expansion, automatic expansion for the single-category
+  `spellcheck` query, CSS result highlights, and native maximize and restore
+  all passed. Maximize produced no renderer long task. The dialog was closed,
+  the window was restored, hardware acceleration remained enabled, and no media
+  or communication action was started. The candidate is accepted.
