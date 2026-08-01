@@ -1,6 +1,6 @@
 {
 	"schema_version": 1,
-	"upstream_base": "21a898e602bb263d98acf472a8b484a6785e3e39",
+	"upstream_base": "fe3f1b25b6fa7fb97830a217fb611a7e147c8d7b",
 	"patches": [
 		{
 			"id": "porch-governance-0001",
@@ -58,7 +58,11 @@
 				"fluxer_desktop/src/main/DesktopTray.ts",
 				"fluxer_desktop/src/main/FluxerAudioIdentity.ts",
 				"fluxer_desktop/src/main/Menu.ts",
+				"fluxer_desktop/src/main/OpenExternal.test.mjs",
 				"fluxer_desktop/src/main/Updater.ts",
+				"fluxer_app/src/features/updater/commands/UpdaterModalCommands.tsx",
+				"fluxer_app/src/features/updater/utils/FlatpakSoftwareCenterUrl.test.ts",
+				"fluxer_app/src/features/updater/utils/FlatpakSoftwareCenterUrl.ts",
 				"fluxer_app/src/features/auth/flow/BrowserLoginHandoffModal.tsx",
 				"fluxer_app/src/features/auth/flow/BrowserLoginHandoffUrl.test.ts",
 				"fluxer_app/src/features/auth/flow/BrowserLoginHandoffUrl.ts",
@@ -73,6 +77,7 @@
 				"channel identity and default-origin smoke tests",
 				"portable deep-link registration policy tests",
 				"Velopack installed-mode smoke under packaged Electron Node",
+				"Flatpak managed-package destination and external-protocol tests",
 				"browser login handoff channel tests"
 			],
 			"conflict_risk": "medium",
@@ -312,7 +317,7 @@
 			"title": "Isolate Porch automation from Fluxer and legacy infrastructure",
 			"status": "active",
 			"category": "automation",
-			"reason": "Prevent this detached fork from dispatching to or mutating Fluxer-owned systems, remove obsolete deployment and moderation workflows, and automatically publish the shared Porch API image from Canary.",
+			"reason": "Prevent this detached fork from dispatching to or mutating Fluxer-owned systems, remove obsolete deployment and moderation workflows, and automatically publish Porch-owned runtime images from Canary.",
 			"paths": [
 				".github/workflows",
 				".porch/check-upstream-intake.mjs",
@@ -329,7 +334,7 @@
 				"read-only upstream intake check",
 				"image fragment staging without draft GitHub releases",
 				"workflow YAML parsing",
-				"GitHub Actions Canary API image build",
+				"GitHub Actions Canary API and gateway image builds",
 				"git diff --check"
 			],
 			"conflict_risk": "medium",

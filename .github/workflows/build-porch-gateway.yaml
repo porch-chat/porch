@@ -1,0 +1,54 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Porch builds gateway changes from the reviewed Canary source line and deploys
+# only immutable digests through the private operations repository.
+name: build Porch gateway
+
+on:
+  push:
+    branches:
+      - canary
+    paths:
+      - ".github/workflows/_build-image.yaml"
+      - ".github/workflows/build-porch-gateway.yaml"
+      - "fluxer_gateway/**"
+      - "tools/ci/**"
+      - "Cargo.lock"
+  workflow_dispatch:
+    inputs:
+      build-version:
+        description: "Optional explicit Porch CalVer build version"
+        type: string
+        required: false
+        default: ""
+
+permissions:
+  actions: read
+  contents: read
+  packages: write
+
+concurrency:
+  group: porch-gateway-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-automation:
+    name: Validate Porch automation isolation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout Porch source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+      - name: Validate Porch automation isolation
+        run: node scripts/validate-porch-actions.mjs
+
+  build:
+    needs: validate-automation
+    uses: ./.github/workflows/_build-image.yaml
+    with:
+      image: fluxer-gateway
+      dockerfile: fluxer_gateway/Dockerfile
+      build-version: ${{ inputs['build-version'] }}
+      moving-tags: canary
+      finalise-release: false
+    secrets: inherit

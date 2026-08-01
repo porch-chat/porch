@@ -7,9 +7,10 @@ import type {UpdaterDownloadOption} from '@app/features/platform/types/Electron'
 import * as ModalCommands from '@app/features/ui/commands/ModalCommands';
 import {modal} from '@app/features/ui/commands/ModalCommands';
 import {Combobox} from '@app/features/ui/components/form/FormCombobox';
-import {openExternalUrl} from '@app/features/ui/utils/NativeUtils';
+import {getElectronAPI, openExternalUrl} from '@app/features/ui/utils/NativeUtils';
 import styles from '@app/features/updater/commands/UpdaterModalCommands.module.css';
 import {formatDesktopBuildVersion} from '@app/features/updater/utils/DesktopBuildVersion';
+import {resolveManagedPackageUpdateUrl} from '@app/features/updater/utils/FlatpakSoftwareCenterUrl';
 import {i18n} from '@lingui/core';
 import {msg} from '@lingui/core/macro';
 import {useMemo, useState} from 'react';
@@ -77,9 +78,13 @@ const SYSTEM_MANAGED_UPDATE_BODY_DESCRIPTOR = msg({
 	message: 'This install is managed by your system. Update {productName} from your software center or package manager.',
 	comment: 'Desktop updater modal body for managed package builds such as Flatpak. productName is the app name.',
 });
+const OPEN_SOFTWARE_CENTER_DESCRIPTOR = msg({
+	message: 'Open software center',
+	comment: 'Button label that opens the software center via appstream protocol.',
+});
 const OPEN_DESKTOP_DOWNLOADS_DESCRIPTOR = msg({
 	message: 'Open desktop downloads',
-	comment: 'Button label that opens the Fluxer desktop downloads page in a browser.',
+	comment: "Button label that opens the product's desktop downloads page in a browser.",
 });
 const DESKTOP_UPDATE_READY_DESCRIPTOR = msg({
 	message: 'Desktop update ready',
@@ -299,7 +304,17 @@ export function pushUnsupportedUpdateModal(
 					<ConfirmModal
 						title={i18n._(SYSTEM_MANAGED_INSTALL_DESCRIPTOR)}
 						description={i18n._(SYSTEM_MANAGED_UPDATE_BODY_DESCRIPTOR, {productName: PRODUCT_NAME})}
+						primaryText={i18n._(OPEN_SOFTWARE_CENTER_DESCRIPTOR)}
 						secondaryText={i18n._(CLOSE_DESCRIPTOR)}
+						onPrimary={async () => {
+							let flatpakAppId: string | null = null;
+							try {
+								flatpakAppId = (await getElectronAPI()?.getDesktopInfo())?.flatpakAppId ?? null;
+							} catch {
+								// Fall through to the Porch downloads page when platform metadata is unavailable.
+							}
+							await openExternalUrl(resolveManagedPackageUpdateUrl(flatpakAppId, DESKTOP_DOWNLOAD_URL));
+						}}
 						data-flx="updater.updater-modal-commands.push-unsupported-update-modal.confirm-modal"
 					/>
 				);

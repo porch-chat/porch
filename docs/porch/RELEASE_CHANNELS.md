@@ -65,6 +65,26 @@ The check only reads Fluxer's public `main` reference and compares it with
 writes to the upstream repository. A moved upstream head makes the workflow
 fail so intake remains an explicit reviewed operation.
 
+### 2026-08-01 reviewed intake
+
+Porch reviewed and integrated Fluxer commits `21a898e6..fe3f1b25` as one
+ancestry-preserving merge. The five commits contain presence visibility and
+relationship invariant fixes, reliable batched-message-delete audit logs,
+removal of hosted-only Flutter authentication gates, Flatpak updater support,
+and a marketing download-page redesign.
+
+The merge had five overlapping Porch files and no textual conflicts. Semantic
+review preserved Porch Hub login reconciliation, standalone registration-link
+behavior, desktop version formatting, and Porch-owned update destinations. The
+new managed-package action uses the desktop runtime's Flatpak app ID instead of
+upstream hard-coded Fluxer package IDs, with `https://porch.chat/download` as a
+safe fallback.
+
+Because this intake changes gateway presence behavior, Porch also added a
+Canary-triggered, Porch-owned gateway image workflow. It publishes only image
+artifacts and moving candidate tags; production continues to deploy an
+explicit immutable digest from the private operations repository.
+
 ## Public hostnames
 
 - `porch.chat`: landing page, downloads, status links, documentation, and

@@ -12,6 +12,7 @@ const failures = [];
 const requiredWorkflows = new Map([
 	['build-porch-admin.yaml', ['name: build Porch admin', 'image: fluxer-admin', 'moving-tags: canary']],
 	['build-porch-api.yaml', ['name: build Porch API', 'image: fluxer-api', 'moving-tags: canary']],
+	['build-porch-gateway.yaml', ['name: build Porch gateway', 'image: fluxer-gateway', 'moving-tags: canary']],
 	[
 		'build-porch-app-proxy.yaml',
 		['name: build Porch app proxy', 'image: fluxer-app-proxy-self-hosted', 'moving-tags: canary'],
