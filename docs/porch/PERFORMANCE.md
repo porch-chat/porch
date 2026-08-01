@@ -1017,3 +1017,69 @@ every two seconds while the client requeued the same diagnostics batch forever.
   CORS, both gateway WebSockets, LiveKit and its allowed origins, passkeys,
   desktop feeds, all 25 service states, and immutable image pins. Hardware
   acceleration was restored as the default. The candidate is accepted.
+
+## 2026-08-01 — Settings search deep dive
+
+### Scope
+
+- Real signed-in Porch Canary Desktop, with the production client measured
+  before changes and a local production bundle served into the same desktop
+  profile for candidate validation.
+- Cold and warm Settings opening, every top-level settings category, broad and
+  narrow search queries, result expansion and collapse, scrolling, native
+  maximize and restore, closing, focus retention, and CSS Highlights behavior.
+- Matched hardware-accelerated and software-rendered desktop restarts. No call,
+  message, camera, microphone, or screen share was started during this audit.
+
+### Findings
+
+1. Ordinary Settings categories were not uniformly slow. Warm category changes
+   generally consumed about 110--211 ms of renderer task time; Appearance,
+   Notifications, Voice & video, Accessibility, Shortcuts, and Advanced were
+   the heavier panels. Opening the shell remains dominated by React and DOM
+   construction rather than layout.
+2. Search was the reproducible outlier. Every query automatically expanded and
+   mounted every matching full settings panel before highlights were scanned.
+   `voice` mounted 7 panels and 3,081 nodes with about 560 ms of task time;
+   the single-letter query `a` mounted 15 panels and 4,066 nodes with about
+   883 ms of task time and a 239 ms longest task.
+3. Multi-category search results already expose category headers, match counts,
+   preview chips, and an explicit expansion affordance. Mounting all underlying
+   forms was therefore unnecessary for discovery. A single matching category
+   remains auto-expanded so narrow searches keep their direct-result behavior.
+4. The production-bundle candidate reduced `voice` to 425 nodes and about
+   72 ms of task time, and reduced `a` to 680 nodes and about 137 ms. Those are
+   roughly 86 and 83 percent node reductions and 87 and 85 percent task-time
+   reductions, respectively. Neither query produced a long task after the
+   change.
+5. Software rendering did not improve this JavaScript and DOM workload. The
+   candidate retained zero long tasks with acceleration disabled, while the
+   process correctly switched to WARP and disabled GPU compositing. Native
+   maximize and restore with broad results open produced no renderer long task
+   in either mode. Hardware acceleration was restored as the default.
+6. `content-visibility: auto` on shortcut rows reduced initial Shortcuts work
+   but changed scroll geometry during traversal and introduced a roughly
+   350 ms scroll hitch, so it was rejected. Removing collapsed sidebar trees
+   cut node count without a consistent interaction improvement and was also
+   rejected. The earlier per-tab lazy import experiment remains rejected
+   because duplicated shared chunks materially increased initial JavaScript.
+
+### Implemented and validation
+
+- Search-query changes now auto-expand only when exactly one settings category
+  matches. Searches spanning multiple categories remain compact until the user
+  opens the category they want to inspect.
+- Changing the query resets manual expansion, the search field retains focus,
+  one-category searches still open automatically, and CSS result highlighting
+  remains active. Manual category expansion and collapse were exercised in the
+  signed-in production bundle.
+- The three-case expansion-policy regression suite, application TypeScript
+  typecheck, scoped Biome check, production application build, and
+  `git diff --check` pass. The build retains its pre-existing CSS-order warnings.
+
+### Remaining acceptance
+
+- Publish the immutable app-proxy candidate to Canary and repeat signed-in
+  broad search, manual expansion, native maximize and restore, then run the
+  complete production verifier. Stable and Canary share the same backend and
+  application image, so deployment acceptance must cover both public origins.

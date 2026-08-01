@@ -2,6 +2,7 @@
 
 import '@app/features/app/components/dialogs/components/SettingsSearchHighlight.css';
 import styles from '@app/features/app/components/dialogs/components/AllSettingsRenderer.module.css';
+import {getAutoExpandedSettingsSearchTabs} from '@app/features/app/components/dialogs/components/SettingsSearchExpansion';
 import {
 	clearHighlights,
 	createRangesForSection,
@@ -204,7 +205,7 @@ export const AllSettingsRenderer: React.FC<AllSettingsRendererProps> = observer(
 		const isSearchActive = searchQuery.trim().length > 0;
 		useEffect(() => {
 			if (searchQuery !== previousQueryRef.current) {
-				setExpandedTabs(new Set(searchResults.map((r) => r.tab.type)));
+				setExpandedTabs(getAutoExpandedSettingsSearchTabs(searchResults.map((result) => result.tab.type)));
 				previousQueryRef.current = searchQuery;
 			}
 		}, [searchQuery, searchResults]);

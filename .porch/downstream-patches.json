@@ -871,6 +871,33 @@
 			"conflict_risk": "medium",
 			"upstream_status": "permanently-downstream",
 			"removal_condition": "Remove when upstream uses a single authoritative packed call-grid implementation and matched accelerated and software-rendered media traces show no regression during continuous resizing."
+		},
+		{
+			"id": "porch-settings-search-summarization-0027",
+			"title": "Summarize broad settings searches before mounting full panels",
+			"status": "active",
+			"category": "client-performance",
+			"reason": "Settings search eagerly mounted every matching settings panel on each query. Broad terms expanded as many as 15 categories and created more than 4,000 nodes, blocking the renderer for almost a second. Porch now auto-expands only an unambiguous single-category result and leaves multi-category results summarized until the user chooses a section.",
+			"paths": [
+				".porch/downstream-patches.json",
+				"docs/porch/PERFORMANCE.md",
+				"fluxer_app/src/features/app/components/dialogs/components/AllSettingsRenderer.tsx",
+				"fluxer_app/src/features/app/components/dialogs/components/SettingsSearchExpansion.test.ts",
+				"fluxer_app/src/features/app/components/dialogs/components/SettingsSearchExpansion.ts"
+			],
+			"tests": [
+				"settings search expansion policy regression tests",
+				"signed-in local production-bundle search and manual expansion audit",
+				"accelerated and software-rendered Settings comparison",
+				"native maximize and restore with broad search results open",
+				"application TypeScript typecheck",
+				"scoped Biome formatting and lint checks",
+				"production application build",
+				"git diff --check"
+			],
+			"conflict_risk": "low",
+			"upstream_status": "permanently-downstream",
+			"removal_condition": "Remove when upstream avoids eagerly mounting multiple complete settings panels for broad searches while preserving result discovery and explicit expansion."
 		}
 	]
 }
