@@ -911,3 +911,87 @@ every two seconds while the client requeued the same diagnostics batch forever.
   passkeys, both desktop feeds, all 25 service states, and immutable pins.
   The authenticated landmark and ordered native receiver candidate is
   accepted.
+
+## 2026-07-31 — whole-app resize and call-grid audit
+
+### Scope
+
+- Porch Canary Desktop `2026.731.135052` with Stable Web `2026.801.13742`
+- Physical maximize/restore and continuous responsive resizing
+- Friends, favorites, discovery, personal notes, direct messages, community
+  channels, member list, inbox, channel popovers, community dialogs, global
+  dialogs, quick switcher, user popout, and right-click menus
+- Every top-level user-settings section and representative community dialogs
+- Isolated muted voice, live 1920 by 1080 camera, and recursive 1920 by 1080
+  display sharing
+- Matched hardware-acceleration enabled and disabled runs
+
+### Findings
+
+1. Native double-click maximize and restore were not the delayed path. The
+   first compositor frame could contain the stretched prior layout, but the
+   corrected responsive frame arrived about 6 ms after restore and 20--22 ms
+   after maximize. No long renderer task accompanied either transition.
+2. Continuous call resizing was materially slower than idle. In the original
+   60-step trace, call resizing took 2,956 ms versus 1,995 ms on the idle home
+   view, with 676 ms versus 60 ms of layout work. The call grid simultaneously
+   used JavaScript `ResizeObserver` packing and a second CSS container-query,
+   `:has()`, and container-unit layout system for the same geometry.
+3. Disabling only the call grid's size container reduced a controlled active
+   call sweep by about 29 percent. During a live local display share, the
+   production-equivalent runtime override reduced repeated 31-step sweeps from
+   1,792--2,536 ms to 1,399--1,577 ms. With acceleration disabled, the same
+   override reduced 3,273--3,564 ms to 2,038--2,170 ms.
+4. Hardware acceleration remained neutral for idle and settings layout work,
+   but disabling it made the active call about 15 percent slower and local
+   display-sharing resize about 70 percent slower. Acceleration remains the
+   correct default; software rendering is a compatibility fallback.
+5. User settings remained the heaviest non-media shell because its full
+   sidebar and current panel participate in each resize. Appearance, Voice &
+   video, Accessibility, Shortcuts, and Advanced were the slowest sampled
+   sections. Experiments that removed persistent compositor hints or removed
+   collapsed subsection grids did not consistently improve the workload and
+   were rejected rather than adding speculative CSS.
+6. Primary navigation and ordinary popovers did not reproduce a persistent
+   slowdown. Friends, favorites, discovery, DMs, community channels, channel
+   menus, member-list toggles, inbox, invites, privacy, and notification
+   dialogs stayed below a 50 ms long-task threshold once mounted. Cold quick
+   switcher and right-click menu mounts reached roughly 66--96 ms, then warmed
+   repeats settled around 28--47 ms.
+7. Camera confirmation produced a live 1920 by 1080 track and active-call
+   resize cadence comparable to voice alone. Turning the camera off removed
+   the video element and live track. Stopping screen share removed its preview,
+   and both acceleration variants disconnected without leftover media.
+8. A fresh accelerated idle restart used six Porch processes totaling about
+   591 MiB private and 926 MiB working set. The renderer used about 39--47 MiB
+   of JavaScript heap. The earlier multi-gigabyte DevTools-retention incident
+   did not reproduce.
+
+### Implemented and validation
+
+- Make the existing JavaScript packed-layout metrics authoritative for call
+  geometry. The grid now receives exact columns, rows, gap, padding, available
+  dimensions, and tile width from the single `ResizeObserver` calculation.
+- Remove the redundant size container, container units, `:has()` tile-count
+  rules, and container-query breakpoints from the call grid CSS. Static CSS
+  values remain as a safe first-frame fallback before the first measurement.
+- Add regression coverage that rejects reintroducing a second responsive grid
+  system and verifies every authoritative custom property is supplied by the
+  component.
+- Focused 11-test grid metrics suite, application TypeScript typecheck, scoped
+  Biome check, production application build, and `git diff --check` pass.
+- Live runtime validation covered accelerated and software-rendered idle,
+  settings, voice, camera, and display-share states. No message was sent and no
+  other user was called; media testing used the empty `asd` voice room.
+
+### Remaining acceptance
+
+- Publish the candidate to Canary and repeat the physical resize, solo voice,
+  camera, and display-share checks against the actual built CSS rather than a
+  runtime-equivalent override.
+- Keep the settings shell and cold context-menu module mounts in future trace
+  comparisons, but do not add speculative changes unless a reproducible user
+  interaction exceeds the current warm measurements.
+- Remote receiver cadence and capture-card resize remain covered by the prior
+  two-device acceptance. Repeat them only if the Canary call-grid candidate
+  changes remote tile behavior.

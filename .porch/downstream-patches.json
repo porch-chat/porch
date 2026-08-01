@@ -845,6 +845,32 @@
 			"conflict_risk": "medium",
 			"upstream_status": "permanently-downstream",
 			"removal_condition": "Remove when upstream guarantees ordered native subscription mutations for each participant and track source, including republish recovery, without serializing unrelated media targets."
+		},
+		{
+			"id": "porch-authoritative-voice-grid-0026",
+			"title": "Use one authoritative call-grid layout calculation",
+			"status": "active",
+			"category": "client-performance",
+			"reason": "The call UI calculated packed tile geometry in JavaScript while CSS independently repeated the same responsive work through a size container, container units, :has() selectors, and container-query breakpoints. During continuous window resizing this feedback made voice materially slower than idle and became especially expensive while rendering a local screen share. Porch now applies the existing ResizeObserver metrics directly as CSS custom properties and removes the duplicate CSS layout system.",
+			"paths": [
+				".porch/downstream-patches.json",
+				"docs/porch/PERFORMANCE.md",
+				"fluxer_app/src/features/voice/components/VoiceGridLayout.module.css",
+				"fluxer_app/src/features/voice/components/VoiceGridLayout.tsx",
+				"fluxer_app/src/features/voice/components/VoiceGridLayoutMetrics.test.ts"
+			],
+			"tests": [
+				"voice-grid layout metrics regression suite",
+				"accelerated and software-rendered continuous resize comparison",
+				"isolated voice, camera, and display-share runtime matrix",
+				"application TypeScript typecheck",
+				"scoped Biome formatting and lint checks",
+				"production application build",
+				"git diff --check"
+			],
+			"conflict_risk": "medium",
+			"upstream_status": "permanently-downstream",
+			"removal_condition": "Remove when upstream uses a single authoritative packed call-grid implementation and matched accelerated and software-rendered media traces show no regression during continuous resizing."
 		}
 	]
 }

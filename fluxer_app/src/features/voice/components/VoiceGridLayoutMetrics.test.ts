@@ -181,19 +181,26 @@ describe('VoiceGridLayoutMetrics', () => {
 		expect(metrics.contentWidth).toBeLessThanOrEqual(180 + EPSILON_PX);
 		expect(metrics.contentHeight).toBeLessThanOrEqual(1200 + EPSILON_PX);
 	});
-	it('keeps the helper constants synchronized with the CSS module breakpoints', () => {
+	it('keeps JavaScript metrics authoritative instead of duplicating responsive work in CSS', () => {
 		const css = sourceFile('VoiceGridLayout.module.css');
-		for (const rule of VOICE_GRID_COLUMN_RULES) {
-			expect(css).toContain(
-				`@container voice-grid (min-width: ${rule.minWidth}px) and (min-height: ${rule.minHeight}px)`,
-			);
-			expect(css).toContain(`--voice-grid-columns: ${rule.columns};`);
+		const gridSource = sourceFile('VoiceGridLayout.tsx');
+		expect(css).not.toContain('container-type:');
+		expect(css).not.toContain('@container voice-grid');
+		expect(css).not.toContain(':has(');
+		expect(css).not.toContain('100cqw');
+		expect(css).not.toContain('100cqh');
+		for (const property of [
+			'--voice-grid-columns',
+			'--voice-grid-rows',
+			'--voice-grid-gap',
+			'--voice-grid-side-padding',
+			'--voice-grid-vertical-padding',
+			'--voice-grid-available-width',
+			'--voice-grid-available-height',
+			'--voice-grid-tile-width',
+		]) {
+			expect(gridSource).toContain(`'${property}'`);
 		}
-		expect(css).toContain('--voice-grid-gap: 10px;');
-		expect(css).toContain('--voice-grid-gap: 8px;');
-		expect(css).toContain('--voice-grid-gap: 6px;');
-		expect(css).toContain('--voice-grid-gap: 5px;');
-		expect(css).toContain('--voice-grid-gap: 4px;');
 		expect(css).toContain('--voice-grid-tile-width: var(--voice-grid-multi-tile-width);');
 		expect(css).toContain('calc(var(--voice-grid-row-height) * 16 / 9)');
 		expect(css).not.toContain('--voice-grid-tile-width: var(--voice-grid-available-width);');

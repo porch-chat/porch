@@ -26,6 +26,12 @@ type GridStyle = React.CSSProperties &
 	VoiceGridRowStyle & {
 		'--voice-grid-columns'?: string;
 		'--voice-grid-rows'?: string;
+		'--voice-grid-gap'?: string;
+		'--voice-grid-side-padding'?: string;
+		'--voice-grid-vertical-padding'?: string;
+		'--voice-grid-available-width'?: string;
+		'--voice-grid-available-height'?: string;
+		'--voice-grid-tile-width'?: string;
 	};
 
 interface VoiceGridViewportSize {
@@ -115,6 +121,12 @@ export function VoiceGridLayout({
 			...rowStyle,
 			'--voice-grid-columns': `${packedMetrics.columns}`,
 			'--voice-grid-rows': `${packedMetrics.rows}`,
+			'--voice-grid-gap': `${packedMetrics.gap}px`,
+			'--voice-grid-side-padding': `${packedMetrics.sidePadding}px`,
+			'--voice-grid-vertical-padding': `${packedMetrics.verticalPadding}px`,
+			'--voice-grid-available-width': `${packedMetrics.availableWidth}px`,
+			'--voice-grid-available-height': `${packedMetrics.availableHeight}px`,
+			'--voice-grid-tile-width': `${packedMetrics.tileWidth}px`,
 		};
 	}, [packedMetrics, visibleEntries.length]);
 	return (
