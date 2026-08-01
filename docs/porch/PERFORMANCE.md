@@ -882,3 +882,32 @@ every two seconds while the client requeued the same diagnostics batch forever.
   the previously reported 6 GiB runaway. Automatic codec selection, muted
   microphone state, hardware acceleration, and both clients' disconnected
   state were restored after the audit.
+
+### Authenticated landmarks and ordered native receiver production acceptance
+
+- Porch source `c6b7ecc9beae7946cec4238160cd5a6a04601de1` is live on Stable
+  and Canary as web version `2026.801.13742` at immutable multi-platform
+  app-proxy digest
+  `sha256:fccb852272679a66205171afa29b39669c63da4bc41fe1edd18827cbcd84eac6`.
+  GitHub Actions run `30678234837` passed branding validation, both
+  architectures, manifest merge and inspection, and release-fragment
+  publication without creating a draft release.
+- Two refreshed production desktop clients joined the same voice room with
+  microphones muted and cameras off. The Elgato 4K X published at 1920 by
+  1080 and rendered real frames on the receiver without a green frame or
+  `-2303` timeout. Without either client leaving the room, the publisher then
+  hot-switched to 3840 by 2160 and back to 1920 by 1080; the receiver rendered
+  both republished streams without the former leave-and-rejoin workaround.
+- Stopping the share removed the local preview and live state, and both
+  clients disconnected cleanly. Fifteen seconds after shutdown, the local
+  desktop's six Porch processes totaled about 1,014.2 MiB of private memory,
+  consistent with the earlier post-media plateau rather than unbounded
+  growth. The local main-process log contained no matching screen-share
+  failure, `-2303`, subscription, or green-frame entry in its final 1,200
+  lines.
+- Deployment commit `1cdd0268dcbdab95b7bf61da740784422fa6cd98` recreated only
+  the shared app-proxy. The complete post-deploy verifier passed API, Stable,
+  Canary, metadata, CORS, gateway and LiveKit WebSockets and origins,
+  passkeys, both desktop feeds, all 25 service states, and immutable pins.
+  The authenticated landmark and ordered native receiver candidate is
+  accepted.
