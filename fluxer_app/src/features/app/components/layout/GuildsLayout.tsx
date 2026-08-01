@@ -974,14 +974,14 @@ export const GuildsLayout = observer(({children}: {children: React.ReactNode}) =
 						}
 						data-flx="app.guilds-layout.outline-frame"
 					>
-						<div
+						<main
 							id="main-content"
 							className={clsx(styles.contentInner, isVoiceCallFullscreenActive && styles.contentInnerFullscreen)}
 							tabIndex={-1}
 							data-flx="app.guilds-layout.main-content"
 						>
 							{children}
-						</div>
+						</main>
 					</OutlineFrame>
 				</TopNagbarContext.Provider>
 			</div>

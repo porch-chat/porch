@@ -817,3 +817,64 @@ every two seconds while the client requeued the same diagnostics batch forever.
   A normal authenticated cold load also reached My friends without a module
   evaluation error. The test deliberately did not use Reset app data, so the
   real desktop profile and session were preserved.
+
+### Modal exit and authenticated recovery production acceptance
+
+- Porch source `618d88705a2682024bf46e0056269c8a91f55364` is live as web
+  version `2026.731.235616` at immutable multi-platform app-proxy digest
+  `sha256:18517a5faa855884f6ac44de3f521de76a34b28c46b408d63007de5dd33e0b8a`.
+  The deployment changed only the shared app-proxy, and the complete verifier
+  passed API, Stable, Canary, metadata, CORS, gateway and LiveKit WebSockets
+  and origins, passkeys, both desktop feeds, all 25 service states, and
+  immutable pins.
+- Three signed-in production Settings exits detached in 217--220 ms, retaining
+  the 218 ms candidate median and more than halving the earlier 483--489 ms
+  retained-modal interval. Authenticated cold start and the offline-reload,
+  online-recovery sequence both returned to My friends without the prior
+  circular-evaluation crash.
+
+### Remaining authenticated and resource audit
+
+- Friends, direct messages, group DMs, communities, channels, discovery,
+  search, settings panels, message actions, the updater, keyboard behavior,
+  window resizing, and the 500 by 844 responsive layout were exercised in the
+  signed-in desktop client. No new navigation stall, delayed responsive paint,
+  unbounded route-cycle growth, or updater failure reproduced. Enter remained
+  send and Shift+Enter remained newline; the audit did not send a production
+  message.
+- The authenticated shell now owns one `main#main-content` landmark, which is
+  also the existing skip-link target. Channel content is a labeled `section`,
+  avoiding nested `main` landmarks. Local signed-in production acceptance on
+  friends, a community channel, and discovery found exactly one main landmark,
+  successful skip-link focus transfer, and no console error.
+- Accelerated idle settled at about 721.3 MiB private memory and 0.049 percent
+  of the 16-thread system CPU. Matched navigation with hardware acceleration
+  disabled did not show a meaningful responsiveness advantage, so Porch was
+  restored to its accelerated default before media testing. A proposed
+  per-settings-tab lazy boundary was rejected: duplicated shared chunks raised
+  inferred initial authenticated JavaScript from about 24.8 MiB to 40.1 MiB.
+
+### Two-device native media and stale receiver audit
+
+- Stable display sharing rendered correctly through the remote Porch client.
+  Elgato capture-card sharing initially reached a receiver-side `-2303`
+  first-frame timeout at both 3840 by 2160 and 1920 by 1080, and still failed
+  under an explicit H.264 control. A fresh voice leave and rejoin cleared the
+  condition; the same 1080 source then rendered remotely, hot-switched to 4K,
+  and rendered remotely again. This isolates the failure from source geometry,
+  4K, codec negotiation, LiveKit transport, and the capture-card bridge.
+- The desktop receiver's republish recovery issued asynchronous native
+  unsubscribe and subscribe bridge calls concurrently. Their completion order
+  was therefore nondeterministic, unlike the deliberately ordered web
+  resubscribe pulse. Native operations are now serialized per participant and
+  track source: an unsubscribe must finish before the matching subscribe can
+  start, while unrelated participants and sources remain parallel. Focused
+  regression tests enforce both properties.
+- The 1080 capture-card share used about 1,239.6 MiB private memory and 25.92
+  percent of one CPU core. The 4K hot-switch used about 2,038.6 MiB and 53.49
+  percent of one core. Twenty seconds after stopping all media and disconnecting
+  both clients, the publisher settled near 990.6 MiB, reclaiming about 1.05 GiB
+  from its 4K peak. This is bounded Chromium/native media pooling rather than
+  the previously reported 6 GiB runaway. Automatic codec selection, muted
+  microphone state, hardware acceleration, and both clients' disconnected
+  state were restored after the audit.

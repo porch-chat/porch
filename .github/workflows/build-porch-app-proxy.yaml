@@ -15,6 +15,7 @@ on:
       - "fluxer_svc/**"
       - "packages/**"
       - "patches/**"
+      - "scripts/validate-porch-branding.mjs"
       - "tools/ci/**"
       - "Cargo.lock"
       - "package.json"

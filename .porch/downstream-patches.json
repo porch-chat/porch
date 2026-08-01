@@ -791,6 +791,58 @@
 			"conflict_risk": "medium",
 			"upstream_status": "permanently-downstream",
 			"removal_condition": "Remove the modal transition override when upstream gives closing modals a bounded exit independent of their entrance spring. Remove the embed-debugger deferral when the settings graph no longer evaluates preview models during authenticated startup or an equivalent cycle-safe lazy settings boundary exists."
+		},
+		{
+			"id": "porch-authenticated-landmarks-0024",
+			"title": "Give the authenticated client one stable main landmark",
+			"status": "active",
+			"category": "accessibility",
+			"reason": "Porch's public routes exposed a real main landmark and skip target, but the authenticated shell left that target on a generic div while individual channel layouts introduced their own main elements. The shared authenticated content root is now the single main landmark, and channel content remains a labeled region without nesting competing main landmarks.",
+			"paths": [
+				".porch/downstream-patches.json",
+				"docs/porch/PERFORMANCE.md",
+				"fluxer_app/src/features/app/components/layout/AuthenticatedLayoutAccessibility.test.ts",
+				"fluxer_app/src/features/app/components/layout/GuildsLayout.tsx",
+				"fluxer_app/src/features/channel/components/ChannelLayout.tsx"
+			],
+			"tests": [
+				"authenticated layout landmark regression test",
+				"signed-in friends, community, and discovery runtime landmark audit",
+				"keyboard skip-link focus transfer",
+				"application TypeScript typecheck",
+				"production application build",
+				"Biome formatting and lint checks",
+				"git diff --check"
+			],
+			"conflict_risk": "low",
+			"upstream_status": "permanently-downstream",
+			"removal_condition": "Remove when upstream gives every authenticated route one shared main landmark and a working skip-link target without nested main elements."
+		},
+		{
+			"id": "porch-native-subscription-ordering-0025",
+			"title": "Serialize native media subscription changes per target",
+			"status": "active",
+			"category": "media-resilience",
+			"reason": "Screen-share republish recovery submitted asynchronous native unsubscribe and subscribe commands without ordering them. A later subscribe could finish first and an older unsubscribe could then leave the receiver stuck without frames until the user left and rejoined. Porch now serializes commands per participant and track source while preserving parallel work for independent targets.",
+			"paths": [
+				".porch/downstream-patches.json",
+				"docs/porch/PERFORMANCE.md",
+				"fluxer_app/src/features/voice/engine/v2/SerializedRemoteTrackSubscriptionController.ts",
+				"fluxer_app/src/features/voice/engine/v2/VoiceEngineV2AppSubscriptionAdapter.test.ts",
+				"fluxer_app/src/features/voice/engine/v2/VoiceEngineV2AppSubscriptionAdapter.ts"
+			],
+			"tests": [
+				"matching native unsubscribe-before-subscribe ordering regression test",
+				"independent participant and source parallelism regression test",
+				"voice media graph, deadline scheduler, and participant tile regression suites",
+				"two-device display and 1080/4K capture-card acceptance",
+				"application TypeScript typecheck",
+				"Biome formatting and lint checks",
+				"git diff --check"
+			],
+			"conflict_risk": "medium",
+			"upstream_status": "permanently-downstream",
+			"removal_condition": "Remove when upstream guarantees ordered native subscription mutations for each participant and track source, including republish recovery, without serializing unrelated media targets."
 		}
 	]
 }

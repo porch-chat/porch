@@ -13,6 +13,7 @@ import type {
 } from '@app/features/voice/engine/VoiceMediaGraph';
 import {voiceMediaGraphStore} from '@app/features/voice/engine/VoiceMediaGraphStore';
 import {VoiceTrackSource} from '@app/features/voice/engine/VoiceTrackSource';
+import {createSerializedNativeSubscriptionController} from '@app/features/voice/engine/v2/SerializedRemoteTrackSubscriptionController';
 import {ScreenShareWatchErrorCode, ScreenShareWatchFailures} from '@app/features/voice/state/ScreenShareWatchFailures';
 import type {
 	VoiceEngineV2ParticipantVolumeOptions,
@@ -116,14 +117,11 @@ class VoiceEngineV2AppSubscriptionAdapter extends Store {
 	private createNativeController(
 		engine: Pick<VoiceEngine, 'setRemoteTrackSubscription'>,
 	): VoiceMediaGraphRemoteTrackSubscriptionController {
-		return {
-			setRemoteTrackSubscription: (options) => {
-				void engine.setRemoteTrackSubscription(options).then(
-					() => this.reportNativeSubscriptionApplied(options),
-					(error: unknown) => this.reportNativeSubscriptionFailed(options, error),
-				);
-			},
-		};
+		return createSerializedNativeSubscriptionController(
+			engine,
+			(options) => this.reportNativeSubscriptionApplied(options),
+			(options, error) => this.reportNativeSubscriptionFailed(options, error),
+		);
 	}
 
 	private reportNativeSubscriptionApplied(options: VoiceMediaGraphRemoteSubscriptionCommand): void {

@@ -31,7 +31,7 @@ export const ChannelLayout = observer(({children}: ChannelLayoutProps) => {
 	const guild = guildId ? Guilds.getGuild(guildId) : null;
 	if (guild && !channel) {
 		return (
-			<main
+			<section
 				className={styles.channelNotFoundContainer}
 				aria-label={i18n._(CHANNEL_DESCRIPTOR)}
 				data-flx="channel.channel-layout.channel-not-found-container"
@@ -51,16 +51,16 @@ export const ChannelLayout = observer(({children}: ChannelLayoutProps) => {
 						<Trans>The channel you're looking for may have been deleted or you may not have access to it.</Trans>
 					</p>
 				</div>
-			</main>
+			</section>
 		);
 	}
 	return (
-		<main
+		<section
 			className={styles.channelLayoutContainer}
 			aria-label={channel ? i18n._(CHANNEL_2_DESCRIPTOR, {channelName: channel.name}) : i18n._(CHANNEL_DESCRIPTOR)}
 			data-flx="channel.channel-layout.channel-layout-container"
 		>
 			{children}
-		</main>
+		</section>
 	);
 });
