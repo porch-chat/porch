@@ -85,6 +85,19 @@ Canary-triggered, Porch-owned gateway image workflow. It publishes only image
 artifacts and moving candidate tags; production continues to deploy an
 explicit immutable digest from the private operations repository.
 
+### 2026-08-09 reviewed intake
+
+Porch reviewed and integrated Fluxer commits `fe3f1b25..873c203b` as one
+ancestry-preserving merge. The three commits make rich-embed descriptions
+optional in the request schema and generated OpenAPI document, fix filtering
+of `@everyone` and `@here` autocomplete suggestions when the typed query omits
+the leading `@`, and update Fluxer's marketing-site TestFlight copy.
+
+Only the generated OpenAPI document overlapped a recorded Porch downstream
+path, and it merged without a textual conflict. Semantic review retained
+Porch's registration and member-invite API additions. The marketing change is
+not deployed because Porch uses the separate `porch-site` project.
+
 ## Public hostnames
 
 - `porch.chat`: landing page, downloads, status links, documentation, and
