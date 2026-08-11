@@ -100,6 +100,7 @@ jobs:
       DESKTOP_VARIANT: default
       FLUXER_DESKTOP_BUILD_VARIANT: default
       FLUXER_WINDOWS_GAME_CAPTURE_MODULE_ENABLED: "true"
+      PORCH_UNSIGNED_DESKTOP_BUILD: "true"
       FLUXER_CI_MANIFEST_PATH: ${{ github.workspace }}\_ci\tools\ci\Cargo.toml
       CARGO_TARGET_DIR: C:\porch-cargo-target
       VERSION: ${{ needs.validate.outputs.version }}

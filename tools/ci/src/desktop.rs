@@ -1453,6 +1453,7 @@ const WINDOWS_SIGNING_ENV: &[&str] = &[
     "AZURE_ARTIFACT_SIGNING_CERTIFICATE_PROFILE_NAME",
 ];
 const VELOPACK_TRUSTED_SIGN_FILE_ENV: &str = "VELOPACK_TRUSTED_SIGN_FILE";
+const PORCH_UNSIGNED_DESKTOP_BUILD_ENV: &str = "PORCH_UNSIGNED_DESKTOP_BUILD";
 const TRUSTED_SIGNING_EXCLUDED_CREDENTIALS: &[&str] = &[
     "ManagedIdentityCredential",
     "WorkloadIdentityCredential",
@@ -1465,6 +1466,12 @@ const TRUSTED_SIGNING_EXCLUDED_CREDENTIALS: &[&str] = &[
 ];
 
 fn validate_windows_signing_inputs_step() -> Result<()> {
+    if env_bool(PORCH_UNSIGNED_DESKTOP_BUILD_ENV) {
+        println!(
+            "Porch unsigned Windows desktop build requested; Trusted Signing inputs are intentionally not required."
+        );
+        return Ok(());
+    }
     let missing = WINDOWS_SIGNING_ENV
         .iter()
         .copied()
@@ -1499,6 +1506,12 @@ fn windows_trusted_signing_metadata_path() -> PathBuf {
 }
 
 fn write_windows_signing_metadata_step() -> Result<()> {
+    if env_bool(PORCH_UNSIGNED_DESKTOP_BUILD_ENV) {
+        println!(
+            "Porch unsigned Windows desktop build requested; no Trusted Signing metadata will be written."
+        );
+        return Ok(());
+    }
     validate_windows_signing_inputs_step()?;
     let metadata = TrustedSigningMetadata {
         endpoint: require_env("AZURE_ARTIFACT_SIGNING_ENDPOINT")?,
@@ -1593,23 +1606,32 @@ fn package_app_windows_velopack_step() -> Result<()> {
         )
     })?;
     let vpk = find_velopack_cli()?;
-    let trusted_sign_file = PathBuf::from(require_env(VELOPACK_TRUSTED_SIGN_FILE_ENV).context(
-        "Velopack packaging requires the Trusted Signing metadata written by the write_windows_signing_metadata step. Windows packages are never produced unsigned.",
-    )?);
-    ensure!(
-        trusted_sign_file.is_file(),
-        "Velopack Trusted Signing metadata file is missing: {}",
-        trusted_sign_file.display()
-    );
+    let trusted_sign_file = if env_bool(PORCH_UNSIGNED_DESKTOP_BUILD_ENV) {
+        println!("Packaging the Porch Windows desktop without code signing by product policy.");
+        None
+    } else {
+        let path = PathBuf::from(require_env(VELOPACK_TRUSTED_SIGN_FILE_ENV).context(
+            "Signed Velopack packaging requires the Trusted Signing metadata written by the write_windows_signing_metadata step.",
+        )?);
+        ensure!(
+            path.is_file(),
+            "Velopack Trusted Signing metadata file is missing: {}",
+            path.display()
+        );
+        Some(path)
+    };
     let packaged = pack_and_validate_windows_velopack(
         &vpk,
         &config,
         &version,
         &arch,
         &pack_dir,
-        &trusted_sign_file,
+        trusted_sign_file.as_deref(),
     );
-    let metadata_removed = remove_file_if_exists(&trusted_sign_file);
+    let metadata_removed = trusted_sign_file
+        .as_deref()
+        .map(remove_file_if_exists)
+        .transpose();
     packaged?;
     metadata_removed?;
     print_directory(&config.output_dir)
@@ -1621,11 +1643,32 @@ fn pack_and_validate_windows_velopack(
     version: &str,
     arch: &str,
     pack_dir: &Path,
-    trusted_sign_file: &Path,
+    trusted_sign_file: Option<&Path>,
 ) -> Result<()> {
-    ensure_velopack_pack_supports(vpk, &["--azureTrustedSignFile"])?;
+    if trusted_sign_file.is_some() {
+        ensure_velopack_pack_supports(vpk, &["--azureTrustedSignFile"])?;
+    }
 
-    run_command(CommandSpec::new(vpk).args([
+    run_command(velopack_pack_command(
+        vpk,
+        config,
+        version,
+        pack_dir,
+        trusted_sign_file,
+    ))?;
+
+    validate_velopack_output(config, version, arch)?;
+    remove_velopack_portable_archives(&config.output_dir)
+}
+
+fn velopack_pack_command(
+    vpk: &Path,
+    config: &WindowsPackageConfig,
+    version: &str,
+    pack_dir: &Path,
+    trusted_sign_file: Option<&Path>,
+) -> CommandSpec {
+    let command = CommandSpec::new(vpk).args([
         "--yes",
         "pack",
         "--packId",
@@ -1650,12 +1693,12 @@ fn pack_and_validate_windows_velopack(
         config.output_dir.to_string_lossy().as_ref(),
         "--delta",
         "BestSpeed",
-        "--azureTrustedSignFile",
-        trusted_sign_file.to_string_lossy().as_ref(),
-    ]))?;
-
-    validate_velopack_output(config, version, arch)?;
-    remove_velopack_portable_archives(&config.output_dir)
+    ]);
+    if let Some(path) = trusted_sign_file {
+        command.args(["--azureTrustedSignFile", path.to_string_lossy().as_ref()])
+    } else {
+        command
+    }
 }
 
 fn remove_velopack_portable_archives(output_dir: &Path) -> Result<()> {
@@ -1665,7 +1708,7 @@ fn remove_velopack_portable_archives(output_dir: &Path) -> Result<()> {
         }
         fs::remove_file(&path).with_context(|| format!("Failed to remove {}", path.display()))?;
         println!(
-            "Removed Velopack portable archive {}. Fluxer publishes its own portable ZIP built from the signed application tree.",
+            "Removed Velopack portable archive {}. Porch publishes its own portable ZIP built from the packaged application tree.",
             path.display()
         );
     }
@@ -3908,6 +3951,46 @@ export const CHANNEL_DISPLAY_NAME = BUILD_CHANNEL;\n"
         assert_eq!(canary.pack_id, "porch_desktop_canary");
         assert_eq!(canary.runtime, "win-arm64");
         assert_eq!(canary.main_exe, "Porch Canary.exe");
+    }
+
+    #[test]
+    fn velopack_pack_command_only_adds_trusted_signing_for_signed_builds() {
+        let config = windows_package_config("canary", "x64");
+        let unsigned = velopack_pack_command(
+            Path::new("vpk.exe"),
+            &config,
+            "2026.811.1",
+            Path::new("dist-electron/win-unpacked"),
+            None,
+        );
+        let unsigned_args = unsigned
+            .args
+            .iter()
+            .map(|arg| arg.to_string_lossy().to_string())
+            .collect::<Vec<_>>();
+        assert!(
+            !unsigned_args
+                .iter()
+                .any(|arg| arg == "--azureTrustedSignFile")
+        );
+
+        let signed = velopack_pack_command(
+            Path::new("vpk.exe"),
+            &config,
+            "2026.811.1",
+            Path::new("dist-electron/win-unpacked"),
+            Some(Path::new("trusted-signing.json")),
+        );
+        let signed_args = signed
+            .args
+            .iter()
+            .map(|arg| arg.to_string_lossy().to_string())
+            .collect::<Vec<_>>();
+        assert!(
+            signed_args
+                .windows(2)
+                .any(|args| { args == ["--azureTrustedSignFile", "trusted-signing.json"] })
+        );
     }
 
     #[test]

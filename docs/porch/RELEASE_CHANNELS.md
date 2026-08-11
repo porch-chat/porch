@@ -117,6 +117,14 @@ was not carried forward because upstream now bundles the capture module in the
 normal Windows client. The simplified upstream download API was retained with
 Porch product names and API defaults.
 
+The first post-merge Canary artifact run exposed one additional policy seam:
+upstream Velopack packaging now unconditionally requires Azure Trusted Signing
+metadata, while Porch intentionally distributes unsigned desktop builds. Porch
+therefore keeps the upstream signed path intact but supplies an explicit
+`PORCH_UNSIGNED_DESKTOP_BUILD` path that omits only Velopack's Trusted Signing
+argument. A focused CI-helper regression test requires unsigned commands to
+omit the argument and signed commands to retain it.
+
 ## Public hostnames
 
 - `porch.chat`: landing page, downloads, status links, documentation, and
