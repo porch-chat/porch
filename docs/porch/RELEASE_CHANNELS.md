@@ -98,6 +98,25 @@ path, and it merged without a textual conflict. Semantic review retained
 Porch's registration and member-invite API additions. The marketing change is
 not deployed because Porch uses the separate `porch-site` project.
 
+### 2026-08-11 reviewed intake
+
+Porch reviewed and integrated Fluxer commits `873c203b..03e6062e` as one
+ancestry-preserving merge. The eleven commits make Windows game capture part
+of the normal desktop package, add stalled-capture recovery and stale Vulkan
+registration cleanup, repair shortcut handling, replace the upstream desktop
+signing/release pipeline, remove app-proxy Canary time freezing, fix emoji
+sprite alignment across browser zoom levels, and restore mobile channel-list
+scrolling. Two final favicon changes affect only Fluxer's marketing site.
+
+Seven textual conflicts were confined to intentionally downstream-owned
+automation, desktop identity/update routing, and public download code. Porch
+kept the inherited deployment workflow deleted, retained Porch Stable/Canary
+package identities and Porch-owned update feeds, and retained the documented
+unsigned-distribution policy. The retired separate game-capture build variant
+was not carried forward because upstream now bundles the capture module in the
+normal Windows client. The simplified upstream download API was retained with
+Porch product names and API defaults.
+
 ## Public hostnames
 
 - `porch.chat`: landing page, downloads, status links, documentation, and

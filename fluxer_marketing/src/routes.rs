@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 use crate::{
-    config::MarketingConfig,
+    config::{DOWNLOAD_RELEASE_CHANNEL, MarketingConfig},
     content::{
         BLOG_POSTS, BlogBookmarkAsset, BlogPost, HELP_ARTICLES, HELP_CATEGORIES, JOBS, POLICIES,
         blog_tag_label, blog_tag_slug, get_blog_post, get_help_article, get_job, get_policy,
@@ -10,7 +10,7 @@ use crate::{
     downloads::fetch_latest_desktop_versions_cached,
     geoip::resolver_from_marketing_config,
     i18n::{Locale, MarketingI18n, descriptors::*},
-    request_context::{AppState, RequestContext, create_locale_cookie},
+    request_context::{AppState, CANARY_WEB_APP_ENDPOINT, RequestContext, create_locale_cookie},
     swish::SwishQrCache,
     templates,
 };
@@ -168,6 +168,7 @@ pub fn build_router(config: MarketingConfig) -> Router {
             "/static/voice-region-flags/{flag_file}",
             get(voice_region_flag_svg),
         )
+        .route("/favicon.ico", get(favicon_ico))
         .route("/robots.txt", get(robots))
         .route("/security.txt", get(security_txt))
         .route("/sitemap.xml", get(sitemap))
@@ -345,20 +346,14 @@ async fn canonical_host_redirect_middleware(
             return Redirect::permanent(&target).into_response();
         }
         Some("fluxer.gg") => {
-            let target = append_uri(
-                &format!("{}/invite", state.config.app_endpoint),
-                request.uri(),
-            );
+            let target = append_uri(&format!("{CANARY_WEB_APP_ENDPOINT}/invite"), request.uri());
             return Redirect::temporary(&target).into_response();
         }
         Some("fluxer.gift") => {
             let target = if request.uri().path() == "/" {
                 state.config.base_url()
             } else {
-                append_uri(
-                    &format!("{}/gift", state.config.app_endpoint),
-                    request.uri(),
-                )
+                append_uri(&format!("{CANARY_WEB_APP_ENDPOINT}/gift"), request.uri())
             };
             return Redirect::temporary(&target).into_response();
         }
@@ -406,7 +401,7 @@ fn request_host(headers: &HeaderMap) -> Option<String> {
 fn legacy_marketing_redirect(config: &MarketingConfig, uri: &Uri) -> Option<Response> {
     match uri.path().trim_end_matches('/') {
         "/channels" => {
-            let target = append_uri(&config.app_endpoint, uri);
+            let target = append_uri(CANARY_WEB_APP_ENDPOINT, uri);
             Some(Redirect::temporary(&target).into_response())
         }
         "/delete-my-account" => Some(Redirect::temporary("/help/delete-account").into_response()),
@@ -418,7 +413,7 @@ fn legacy_marketing_redirect(config: &MarketingConfig, uri: &Uri) -> Option<Resp
             Some(Redirect::permanent(&target).into_response())
         }
         _ if uri.path().starts_with("/channels/") => {
-            let target = append_uri(&config.app_endpoint, uri);
+            let target = append_uri(CANARY_WEB_APP_ENDPOINT, uri);
             Some(Redirect::temporary(&target).into_response())
         }
         _ => None,
@@ -605,7 +600,7 @@ async fn download(State(state): State<AppState>, headers: HeaderMap, uri: Uri) -
         &state.latest_versions_cache,
         &state.http_client,
         &state.config.api_endpoint,
-        state.config.release_channel.segment(),
+        DOWNLOAD_RELEASE_CHANNEL.segment(),
     )
     .await;
     let mut response =
@@ -1059,6 +1054,11 @@ async fn voice_region_flag_svg(Path(flag_file): Path<String>) -> Response {
             .into_response(),
         None => StatusCode::NOT_FOUND.into_response(),
     }
+}
+
+async fn favicon_ico(State(state): State<AppState>) -> impl IntoResponse {
+    let cdn = state.config.static_cdn_endpoint.trim_end_matches('/');
+    Redirect::permanent(&format!("{cdn}/web/favicon.ico"))
 }
 
 async fn robots(State(state): State<AppState>) -> impl IntoResponse {

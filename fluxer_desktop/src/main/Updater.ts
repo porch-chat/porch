@@ -2,7 +2,6 @@
 
 import {createRequire} from 'node:module';
 import {BUILD_CHANNEL} from '@electron/common/BuildChannel';
-import {DESKTOP_BUILD_VARIANT} from '@electron/common/BuildVariant';
 import {DESKTOP_APP_NAME} from '@electron/common/DesktopIdentity';
 import {PORCH_DESKTOP_PRODUCT} from '@electron/common/PorchProduct';
 import {isPortableMode} from '@electron/common/UserDataPath';
@@ -73,9 +72,7 @@ function getDesktopDownloadArch(arch: NodeJS.Architecture): DesktopDownloadArch 
 }
 
 const DESKTOP_DOWNLOAD_ARCH = getDesktopDownloadArch(process.arch);
-const UPDATE_VARIANT_SEGMENT =
-	process.platform === 'win32' && DESKTOP_BUILD_VARIANT !== 'default' ? `/${DESKTOP_BUILD_VARIANT}` : '';
-const UPDATE_BASE_URL = `${PORCH_DESKTOP_PRODUCT.updateBaseUrl}/${BUILD_CHANNEL}/${process.platform}/${DESKTOP_DOWNLOAD_ARCH}${UPDATE_VARIANT_SEGMENT}`;
+const UPDATE_BASE_URL = `${PORCH_DESKTOP_PRODUCT.updateBaseUrl}/${BUILD_CHANNEL}/${process.platform}/${DESKTOP_DOWNLOAD_ARCH}`;
 const DOWNLOAD_PAGE_URL = `${PORCH_DESKTOP_PRODUCT.downloadPageUrl}?channel=${BUILD_CHANNEL}`;
 
 let lastContext: UpdaterContext = 'background';
