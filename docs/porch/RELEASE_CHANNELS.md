@@ -125,6 +125,24 @@ therefore keeps the upstream signed path intact but supplies an explicit
 argument. A focused CI-helper regression test requires unsigned commands to
 omit the argument and signed commands to retain it.
 
+### 2026-08-12 reviewed intake
+
+Porch reviewed and integrated Fluxer commits `03e6062e..10fc79ab` as one
+ancestry-preserving merge. The five commits bundle the complete Fluxer font
+family into application images, teach the admin and app-proxy images to serve
+those fonts, remove Fluxer's retired Canary Testers guild integration, clean
+repository metadata, and remove infrastructure-dependent integration suites.
+
+Porch retained its isolated workflow set and downstream contributor guidance,
+its member-facing invite-only registration copy, compiled localization checks,
+and its authenticated-runtime startup split. The obsolete Canary Testers API
+and UI were removed with upstream. The new app build now clears `dist` through
+Node's cross-platform filesystem API so the upstream stale-output protection
+also works in Porch's Windows desktop build matrix. The font loader remains in
+the public bootstrap, while native voice initialization remains deferred until
+the authenticated runtime to preserve the existing logged-out performance
+boundary.
+
 ## Public hostnames
 
 - `porch.chat`: landing page, downloads, status links, documentation, and
