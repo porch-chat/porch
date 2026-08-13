@@ -143,6 +143,19 @@ the public bootstrap, while native voice initialization remains deferred until
 the authenticated runtime to preserve the existing logged-out performance
 boundary.
 
+### 2026-08-13 reviewed intake
+
+Porch reviewed and integrated Fluxer commits `10fc79ab..0c291a01` as one
+ancestry-preserving merge. The three commits enforce attachment-upload
+provenance before messages can persist uploaded files, force SVG and PDF media
+responses to download instead of rendering inline, and reject malformed AVIF
+tracks whose media or movie timescale is zero.
+
+The focused API and media-proxy changes did not overlap any Porch downstream
+source patch and merged without textual conflicts. Production intake requires
+new immutable API/worker and media-proxy images only; the web clients, admin,
+static assets, gateway, databases, and desktop release feeds remain unchanged.
+
 ## Public hostnames
 
 - `porch.chat`: landing page, downloads, status links, documentation, and
