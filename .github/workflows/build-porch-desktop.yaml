@@ -219,6 +219,7 @@ jobs:
         working-directory: ${{ env.WORKDIR }}/fluxer_desktop
         shell: pwsh
         run: |
+          pnpm exec install-electron
           $env:ELECTRON_RUN_AS_NODE = "1"
           & ".\node_modules\electron\dist\electron.exe" scripts/velopack-node-runtime-smoke.mjs
 
