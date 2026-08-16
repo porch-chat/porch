@@ -6,7 +6,6 @@ import {focusMainContent} from '@app/app/SkipLinkUtils';
 import {NekoSprite} from '@app/features/accessibility/components/NekoSprite';
 import Accessibility from '@app/features/accessibility/state/Accessibility';
 import {NativeTitlebar} from '@app/features/app/components/layout/NativeTitlebar';
-import {NativeTrafficLightsBackdrop} from '@app/features/app/components/layout/NativeTrafficLightsBackdrop';
 import {PublicOverlays} from '@app/features/app/components/layout/PublicOverlays';
 import {useDesktopAllowTransparency} from '@app/features/app/hooks/useDesktopAllowTransparency';
 import {useDocumentClassToggle} from '@app/features/app/hooks/useDocumentClassToggle';
@@ -51,7 +50,7 @@ const PublicAppShell = observer(function PublicAppShell(): React.ReactElement {
 	const reducedMotion = Accessibility.useReducedMotion;
 	const stayInteractiveWhenUnfocused = Accessibility.stayInteractiveWhenUnfocused;
 	const firstClickPassThroughWhenUnfocused = Accessibility.firstClickPassThroughWhenUnfocused;
-	const {platform, isNative, isMacOS} = useNativePlatform();
+	const {platform, isNative} = useNativePlatform();
 	const useSystemTitleBar = useNativeTitleBar();
 	const isRootDocumentFullscreen = useIsRootDocumentFullscreen();
 	const [layoutVariant, setLayoutVariant] = useState<LayoutVariant>('auth');
@@ -102,8 +101,7 @@ const PublicAppShell = observer(function PublicAppShell(): React.ReactElement {
 					>
 						{i18n._(SKIP_TO_CONTENT_DESCRIPTOR)}
 					</button>
-					<NativeTrafficLightsBackdrop variant={layoutVariant} data-flx="app.public-app.traffic-lights" />
-					{isNative && !isMacOS && !useSystemTitleBar && !isRootDocumentFullscreen && (
+					{isNative && !useSystemTitleBar && !isRootDocumentFullscreen && (
 						<NativeTitlebar platform={platform} data-flx="app.public-app.native-titlebar" />
 					)}
 					<Outlet />

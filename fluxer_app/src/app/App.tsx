@@ -2,7 +2,6 @@
 
 import styles from '@app/app/App.module.css';
 import {router} from '@app/app/Router';
-import {focusMainContent} from '@app/app/SkipLinkUtils';
 import * as AccessibilityCommands from '@app/features/accessibility/commands/AccessibilityCommands';
 import {NekoSprite} from '@app/features/accessibility/components/NekoSprite';
 import Accessibility from '@app/features/accessibility/state/Accessibility';
@@ -10,7 +9,6 @@ import ScreenReader from '@app/features/accessibility/state/ScreenReader';
 import {DndContext} from '@app/features/app/components/layout/DndContext';
 import GlobalOverlays from '@app/features/app/components/layout/GlobalOverlays';
 import {NativeTitlebar} from '@app/features/app/components/layout/NativeTitlebar';
-import {NativeTrafficLightsBackdrop} from '@app/features/app/components/layout/NativeTrafficLightsBackdrop';
 import {useDesktopAllowTransparency} from '@app/features/app/hooks/useDesktopAllowTransparency';
 import {useDesktopElectronBridges} from '@app/features/app/hooks/useDesktopElectronBridges';
 import {useDocumentClassToggle} from '@app/features/app/hooks/useDocumentClassToggle';
@@ -28,6 +26,7 @@ import Authentication from '@app/features/auth/state/Authentication';
 import DeveloperOptions from '@app/features/devtools/state/DeveloperOptions';
 import {showMyselfTypingHelper} from '@app/features/devtools/utils/ShowMyselfTypingHelper';
 import GatewayConnection from '@app/features/gateway/transport/GatewayConnection';
+import MemberSidebar from '@app/features/member/state/MemberSidebar';
 import {startDeepLinkHandling} from '@app/features/navigation/utils/DeepLinkUtils';
 import {Outlet, RouterProvider} from '@app/features/platform/components/router/RouterReact';
 import {ensureAutostartDefaultEnabled} from '@app/features/platform/utils/Autostart';
@@ -63,7 +62,6 @@ import {VoiceLiveKitRoot} from '@app/features/voice/components/VoiceLiveKitRoot'
 import MediaEngine from '@app/features/voice/engine/MediaEngineFacade';
 import {useElectronScreenSharePicker} from '@app/features/voice/hooks/useElectronScreenSharePicker';
 import {startScreenSharePiPController} from '@app/features/voice/state/ScreenSharePiPController';
-import VoiceCallFullscreen from '@app/features/voice/state/VoiceCallFullscreen';
 import {startMediaDeviceStartupPreload} from '@app/features/voice/utils/MediaDeviceStartupPreload';
 import {useNativeTitleBar} from '@app/features/window/hooks/useNativeTitleBar';
 import {useStopFlashFrameOnFocus} from '@app/features/window/hooks/useStopFlashFrameOnFocus';
@@ -73,6 +71,7 @@ import {msg} from '@lingui/core/macro';
 import {I18nProvider} from '@lingui/react';
 import {useLingui} from '@lingui/react/macro';
 import {IconContext} from '@phosphor-icons/react';
+import {reaction} from 'mobx';
 import {observer} from 'mobx-react-lite';
 import React, {type ReactNode, useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
@@ -90,10 +89,9 @@ export const AppWrapper = observer(({children}: AppWrapperProps) => {
 	const reducedMotion = Accessibility.useReducedMotion;
 	const stayInteractiveWhenUnfocused = Accessibility.stayInteractiveWhenUnfocused;
 	const firstClickPassThroughWhenUnfocused = Accessibility.firstClickPassThroughWhenUnfocused;
-	const {platform, isNative, isMacOS} = useNativePlatform();
+	const {platform, isNative} = useNativePlatform();
 	const useSystemTitleBar = useNativeTitleBar();
 	const messageDisplayCompact = UserSettings.getMessageDisplayCompact();
-	const isVoiceCallFullscreenActive = VoiceCallFullscreen.isActive;
 	const isRootDocumentFullscreen = useIsRootDocumentFullscreen();
 	const [layoutVariant, setLayoutVariant] = useState<LayoutVariant>('app');
 	const layoutVariantContextValue = useMemo(
@@ -139,6 +137,15 @@ export const AppWrapper = observer(({children}: AppWrapperProps) => {
 		showMyselfTypingHelper.start();
 		return () => showMyselfTypingHelper.stop();
 	}, []);
+	useEffect(
+		() =>
+			reaction(
+				() => GatewayConnection.sessionId,
+				(sessionId) => MemberSidebar.synchronizeGatewaySession(sessionId),
+				{fireImmediately: true},
+			),
+		[],
+	);
 	useEffect(() => {
 		const clearForeignPortalHost = (): void => {
 			const activePortalHost = getActivePortalHost();
@@ -195,21 +202,15 @@ export const AppWrapper = observer(({children}: AppWrapperProps) => {
 			<VoiceLiveKitRoot room={room} data-flx="app.app.app-wrapper.voice-live-kit-root">
 				<div ref={ringsContainerRef} className={styles.appContainer} data-flx="app.app.app-wrapper.app-container">
 					<FocusRingScope containerRef={ringsContainerRef} data-flx="app.app.app-wrapper.focus-ring-scope">
-						<button
-							type="button"
+						<a
+							href="#main-content"
 							className={styles.skipLink}
 							onFocus={handleSkipLinkFocus}
-							onClick={focusMainContent}
 							data-flx="app.app.app-wrapper.skip-link"
 						>
 							{i18n._(SKIP_TO_CONTENT_DESCRIPTOR)}
-						</button>
-						<NativeTrafficLightsBackdrop
-							variant={layoutVariant}
-							hidden={isVoiceCallFullscreenActive}
-							data-flx="app.app.app-wrapper.native-traffic-lights-backdrop"
-						/>
-						{isNative && !isMacOS && !useSystemTitleBar && !isRootDocumentFullscreen && (
+						</a>
+						{isNative && !useSystemTitleBar && !isRootDocumentFullscreen && (
 							<NativeTitlebar platform={platform} data-flx="app.app.app-wrapper.native-titlebar" />
 						)}
 						{children}

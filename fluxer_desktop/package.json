@@ -29,7 +29,7 @@
 	"devDependencies": {
 		"@types/node": "24.10.9",
 		"@typescript/native-preview": "7.0.0-dev.20260130.1",
-		"electron": "41.2.2",
+		"electron": "43.4.0",
 		"electron-builder": "26.9.0",
 		"esbuild": "0.27.2",
 		"typescript": "5.9.3"
@@ -62,7 +62,6 @@
 		"@fluxer/win-game-capture": "file:./native/win-game-capture",
 		"@fluxer/win-process-loopback": "file:./native/win-process-loopback",
 		"@fluxer/windows-input-hook": "file:./native/windows-input-hook",
-		"electron-log": "5.4.3",
-		"node-mac-permissions": "2.5.0"
+		"electron-log": "5.4.3"
 	}
 }

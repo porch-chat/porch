@@ -39,7 +39,7 @@ export const MemberRegistrationInviteButton = observer(() => {
 	};
 	const buttonLabel = i18n._(INVITE_FRIENDS_TO_PORCH_DESCRIPTOR);
 	return (
-		<div className={guildStyles.addGuildButton} data-flx="app.sidebar-nav.member-registration-invite-button.div">
+		<div className={guildStyles.createGuildButton} data-flx="app.sidebar-nav.member-registration-invite-button.div">
 			<Tooltip
 				position="right"
 				size="large"
@@ -64,7 +64,7 @@ export const MemberRegistrationInviteButton = observer(() => {
 					>
 						<motion.div
 							ref={iconRef}
-							className={guildStyles.addGuildButtonIcon}
+							className={guildStyles.createGuildButtonIcon}
 							animate={{borderRadius: isHovering ? '30%' : '50%'}}
 							initial={{borderRadius: isHovering ? '30%' : '50%'}}
 							transition={{duration: Accessibility.useReducedMotion ? 0 : 0.07, ease: 'easeOut'}}

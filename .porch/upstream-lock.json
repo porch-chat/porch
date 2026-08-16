@@ -2,8 +2,8 @@
 	"schema_version": 1,
 	"upstream_repository": "https://github.com/fluxerapp/fluxer.git",
 	"upstream_branch": "main",
-	"upstream_commit": "0c291a01dae7c638256c6a210fdf1b7392d2ff48",
-	"nearest_upstream_tag": "2026.813.130150",
-	"recorded_at": "2026-08-13T17:17:52Z",
+	"upstream_commit": "e054aa96be94e7f09c047852220a259450dd262d",
+	"nearest_upstream_tag": "fluxer-unfurl@2026.816.130436",
+	"recorded_at": "2026-08-16T13:50:06Z",
 	"license": "AGPL-3.0-or-later"
 }

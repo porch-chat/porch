@@ -330,7 +330,6 @@ async function registerWithResolvedAccess(
 		last_voice_activity_sharing_change_at: null,
 		version: 1,
 	});
-	await kvActivityTracker.updateActivity(user.id, now);
 	await users.upsertSettings(
 		UserSettings.getDefaultUserSettings({
 			userId,
@@ -339,6 +338,9 @@ async function registerWithResolvedAccess(
 			theme: data.theme,
 		}),
 	);
+	void kvActivityTracker.updateActivity(user.id, now).catch((error: unknown) => {
+		Logger.warn({error, userId: user.id}, 'Failed to update real-time user activity');
+	});
 	const isUnclaimed = !rawEmail;
 	const usernameIsUserChosen = data.username != null || data.global_name != null;
 	const riskResult = await registrationRiskEvaluator.evaluate({

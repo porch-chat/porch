@@ -197,7 +197,7 @@ export const GuildChannelView = observer(({channelId, guildId}: GuildChannelView
 		activeSearchSegments,
 	} = searchState;
 	const isSearchPanelVisible = isSearchActive && !isMobileLayout;
-	const {hasMessagesBottomBar, onBottomBarVisibilityChange} = useMessagesBottomBarVisibility(channelId);
+	const {onBottomBarVisibilityChange} = useMessagesBottomBarVisibility(channelId);
 	const {
 		showFullscreenView: showVoiceCallFullscreenView,
 		fullscreenRequestNonce: voiceCallFullscreenRequestNonce,
@@ -484,7 +484,6 @@ export const GuildChannelView = observer(({channelId, guildId}: GuildChannelView
 				}
 				chatArea={
 					<ChannelChatLayout
-						channel={channel}
 						messages={
 							<Messages
 								key={channel.id}
@@ -495,7 +494,6 @@ export const GuildChannelView = observer(({channelId, guildId}: GuildChannelView
 							/>
 						}
 						textarea={renderChatArea(isVoiceTextCallExpanded)}
-						hideBottomBar={hasMessagesBottomBar}
 						data-flx="channel.channel-view.guild-channel-view.channel-chat-layout"
 					/>
 				}
@@ -541,7 +539,6 @@ export const GuildChannelView = observer(({channelId, guildId}: GuildChannelView
 			}
 			chatArea={
 				<ChannelChatLayout
-					channel={channel}
 					messages={
 						<Messages
 							key={channel.id}
@@ -551,7 +548,6 @@ export const GuildChannelView = observer(({channelId, guildId}: GuildChannelView
 						/>
 					}
 					textarea={renderChatArea()}
-					hideBottomBar={hasMessagesBottomBar}
 					data-flx="channel.channel-view.guild-channel-view.channel-chat-layout--2"
 				/>
 			}

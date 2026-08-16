@@ -156,6 +156,34 @@ source patch and merged without textual conflicts. Production intake requires
 new immutable API/worker and media-proxy images only; the web clients, admin,
 static assets, gateway, databases, and desktop release feeds remain unchanged.
 
+### 2026-08-16 reviewed intake
+
+Porch reviewed and integrated Fluxer commits `0c291a01..e054aa96` as one
+ancestry-preserving merge. This 95-commit release train updates application
+rendering, composer slowmode, search and settings behavior, reduced-motion and
+splash handling, API registration and activity tracking, gateway push payloads,
+media-proxy request coalescing, unfurl parsing, self-hosting discovery and CSP
+configuration, and the desktop runtime to Electron 43.4.0. It also extracts the
+upstream marketing site into a separate submodule and regenerates localization
+catalogs.
+
+Eleven textual conflicts were confined to Porch-owned automation, two client
+performance seams, the desktop build helper, and upstream's rewritten release
+helper. Porch retained GitHub-hosted runners, Porch-owned image credentials,
+non-finalizing image builds, and the complete ban on external Fluxer automation;
+the new private-marketing dispatcher is intentionally absent. Upstream's newer
+window-layout invalidation and titlebar implementations supersede the older
+overlapping Porch code, while Porch's Stable and Canary desktop identities are
+preserved alongside upstream's universal macOS build support.
+
+Semantic review confirmed that Porch Hub enrollment remains independent from
+Fluxer's optional restrictive single-community mode. Approval now safely honors
+both systems when explicitly enabled, while Porch's member registration links
+continue to create accounts without treating social invites as registration
+links. Production intake requires rebuilt Porch API/worker, app-proxy, gateway,
+admin, and affected client artifacts plus updated immutable upstream media-proxy
+and unfurl images; deployment remains pinned by digest in the operations repo.
+
 ## Public hostnames
 
 - `porch.chat`: landing page, downloads, status links, documentation, and

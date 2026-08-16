@@ -13,6 +13,7 @@ import * as RouterUtils from '@app/features/navigation/utils/RouterUtils';
 import {useLocation} from '@app/features/platform/components/router/RouterReact';
 import ReadStates from '@app/features/read_state/state/ReadStates';
 import Relationships from '@app/features/relationship/state/Relationships';
+import {remFromPx} from '@app/features/theme/layout/RemFromPx';
 import {FluxerButtonContextMenu} from '@app/features/ui/action_menu/FluxerButtonContextMenu';
 import * as ContextMenuCommands from '@app/features/ui/commands/ContextMenuCommands';
 import {FluxerSymbol} from '@app/features/ui/components/icons/FluxerSymbol';
@@ -116,11 +117,13 @@ export const FluxerButton = observer(() => {
 			/>
 		));
 	}, []);
-	const indicatorHeight = (() => {
-		if (isSelected) return 40;
-		if (isHovering) return 20;
-		return 8;
-	})();
+	const indicatorHeight = remFromPx(
+		(() => {
+			if (isSelected) return 40;
+			if (isHovering) return 20;
+			return 8;
+		})(),
+	);
 	const isActive = isHovering || isSelected;
 	if (RuntimeConfig.directMessagesDisabled) {
 		return null;
