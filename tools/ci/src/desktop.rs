@@ -2656,6 +2656,21 @@ fn prepare_artifacts_windows_step() -> Result<()> {
     })?;
     let portable_suffix = format!("-portable-win-{arch}.zip");
     copy_matching_files(&dist, staging, |name| name.ends_with(&portable_suffix))?;
+    let portable_files = collect_files(staging)?
+        .into_iter()
+        .filter(|path| {
+            path.file_name()
+                .and_then(OsStr::to_str)
+                .is_some_and(|name| name.ends_with(&portable_suffix))
+        })
+        .collect::<Vec<_>>();
+    ensure!(
+        portable_files.len() == 1,
+        "Expected exactly one staged Porch portable ZIP, found {}.",
+        portable_files.len()
+    );
+    let portable_name = file_name_string(&portable_files[0])?;
+    rewrite_windows_portable_asset(staging, &portable_name)?;
 
     ensure!(
         any_file_matching(staging, |name| name.ends_with(".exe"))?,
@@ -2674,6 +2689,33 @@ fn prepare_artifacts_windows_step() -> Result<()> {
         "No Velopack full nupkg staged."
     );
     print_directory(staging)
+}
+
+fn rewrite_windows_portable_asset(staging: &Path, portable_name: &str) -> Result<()> {
+    let path = staging.join("assets.win.json");
+    let mut manifest: Value = serde_json::from_str(
+        &fs::read_to_string(&path).with_context(|| format!("Failed to read {}", path.display()))?,
+    )
+    .with_context(|| format!("Failed to parse {}", path.display()))?;
+    let assets = manifest
+        .as_array_mut()
+        .context("assets.win.json must contain an array")?;
+    let mut portable_assets = 0;
+    for asset in assets {
+        if asset.get("Type").and_then(Value::as_str) != Some("Portable") {
+            continue;
+        }
+        let filename = asset
+            .get_mut("RelativeFileName")
+            .context("Portable asset is missing RelativeFileName")?;
+        *filename = Value::String(portable_name.to_owned());
+        portable_assets += 1;
+    }
+    ensure!(
+        portable_assets == 1,
+        "Expected exactly one Portable entry in assets.win.json, found {portable_assets}."
+    );
+    write_json_pretty(&path, &manifest)
 }
 
 fn prepare_artifacts_unix_step() -> Result<()> {
@@ -4054,6 +4096,32 @@ export const CHANNEL_DISPLAY_NAME = BUILD_CHANNEL;\n"
         assert!(remaining.contains("fluxer_desktop_canary-2026.810.1-full.nupkg"));
         assert!(remaining.contains("Fluxer Canary-2026.810.1-win-arm64.exe"));
         assert!(remaining.contains("RELEASES"));
+    }
+
+    #[test]
+    fn windows_assets_manifest_points_at_the_staged_porch_portable_zip() {
+        let temp = tempfile::tempdir().unwrap();
+        let path = temp.path().join("assets.win.json");
+        fs::write(
+            &path,
+            r#"[
+                {"RelativeFileName":"porch_desktop_canary-win-Setup.exe","Type":"Installer"},
+                {"RelativeFileName":"porch_desktop_canary-win-Portable.zip","Type":"Portable"}
+            ]"#,
+        )
+        .unwrap();
+
+        rewrite_windows_portable_asset(
+            temp.path(),
+            "Porch Canary-2026.822.125952-portable-win-x64.zip",
+        )
+        .unwrap();
+
+        let manifest: Value = serde_json::from_str(&fs::read_to_string(path).unwrap()).unwrap();
+        assert_eq!(
+            manifest[1]["RelativeFileName"],
+            "Porch Canary-2026.822.125952-portable-win-x64.zip"
+        );
     }
 
     #[test]

@@ -226,6 +226,13 @@ theme invariants and parses Hunspell dictionary search paths with the operating
 system's native separator. The corrected desktop native suite passes all 220
 unit and property tests on Windows.
 
+Desktop artifact acceptance caught one further upstream packaging mismatch:
+Velopack's generated assets manifest still named its removed generic Portable
+ZIP after Porch staged the separately verified branded portable archive. The
+Porch build helper now rewrites that entry to the exact staged filename and
+fails if the manifest or portable inventory is missing or ambiguous, preventing
+an atomic feed publication from introducing a broken download URL.
+
 ## Public hostnames
 
 - `porch.chat`: landing page, downloads, status links, documentation, and
