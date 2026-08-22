@@ -911,6 +911,35 @@
 			"conflict_risk": "low",
 			"upstream_status": "candidate",
 			"removal_condition": "Remove when upstream normalizes text before literal invariant checks and parses Hunspell dictionary search paths with the platform-native separator."
+		},
+		{
+			"id": "porch-self-hosted-session-voice-recovery-0029",
+			"title": "Preserve self-hosted sessions and usable ICE candidates",
+			"status": "active",
+			"category": "client-resilience",
+			"reason": "Upstream instance isolation rejected relative same-origin API endpoints, clearing valid Porch credentials on every reload, while the browser voice path forced Electron to relay-only ICE even though the self-hosted LiveKit topology advertises direct UDP and TCP fallback without TURN. Porch now resolves relative API identity through the absolute public endpoint and permits the full self-hosted ICE candidate set.",
+			"paths": [
+				".porch/downstream-patches.json",
+				"docs/porch/CLIENT_RESILIENCE.md",
+				"fluxer_app/src/features/app/state/RuntimeConfig.ts",
+				"fluxer_app/src/features/app/state/RuntimeInstanceIdentity.test.ts",
+				"fluxer_app/src/features/app/state/RuntimeInstanceIdentity.ts",
+				"fluxer_app/src/features/voice/engine/v2/VoiceEngineV2AppConnectionHostAdapter.ts",
+				"fluxer_app/src/features/voice/engine/v2/VoiceIcePolicy.test.ts",
+				"fluxer_app/src/features/voice/engine/v2/VoiceIcePolicy.ts"
+			],
+			"tests": [
+				"relative and absolute runtime instance identity regression tests",
+				"self-hosted Electron ICE policy regression tests",
+				"application TypeScript typecheck",
+				"production application build",
+				"Biome formatting and lint checks",
+				"Porch branding and automation validation",
+				"production Stable and Canary verification"
+			],
+			"conflict_risk": "low",
+			"upstream_status": "downstream-until-fixed",
+			"removal_condition": "Remove when upstream accepts relative same-origin API endpoints for account identity and does not force relay-only ICE on self-hosted Electron clients without a guaranteed TURN service."
 		}
 	]
 }

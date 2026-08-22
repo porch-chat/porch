@@ -20,13 +20,22 @@ gateway session lifecycle are one availability boundary.
   30 seconds instead of waiting forever.
 - After ten seconds, the splash screen exposes explicit reload and sign-out
   recovery actions in addition to service-status links.
+- Relative same-origin API endpoints are resolved through the absolute public
+  API endpoint when identifying saved accounts. A valid account on `/api`
+  must survive reloads without weakening isolation between different servers.
+- Self-hosted Electron clients use LiveKit's normal ICE candidate selection.
+  Relay-only ICE is reserved for hosted infrastructure that is guaranteed to
+  advertise a TURN relay; otherwise direct UDP and LiveKit TCP fallback would
+  both be rejected before media negotiation.
 
 ## Acceptance
 
 The client test suite proves that an unanswered `IDENTIFY` closes the stale
 socket with the `Gateway READY timeout` reason and enters reconnection. Service
 worker routing tests protect the boundary between navigations, immutable
-assets, and metadata.
+assets, and metadata. Instance-identity tests cover relative and absolute API
+endpoints, cross-instance isolation, and invalid endpoints. Voice policy tests
+cover self-hosted Electron, hosted Electron, and browser ICE selection.
 
 Production verification remains deployment-owned. The Porch operations smoke
 suite validates Stable and Canary discovery, semantic same-origin login and

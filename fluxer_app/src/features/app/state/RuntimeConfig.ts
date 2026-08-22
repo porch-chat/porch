@@ -7,6 +7,7 @@ import {
 	type GifProviderInfoInput,
 	normalizeGifProviderInfo,
 } from '@app/features/app/state/GifProviderConfig';
+import {runtimeConfigSnapshotsAreSameInstance} from '@app/features/app/state/RuntimeInstanceIdentity';
 import DeveloperOptions from '@app/features/devtools/state/DeveloperOptions';
 import {http} from '@app/features/platform/transport/RestTransport';
 import {API_CODE_VERSION} from '@fluxer/constants/src/AppConstants';
@@ -35,6 +36,7 @@ export type {
 	InstanceSsoConfig,
 };
 export type {GifProvider, GifProviderInfo};
+export {runtimeConfigSnapshotsAreSameInstance};
 
 export interface RuntimeConfigSnapshot {
 	apiEndpoint: string;
@@ -62,38 +64,6 @@ export interface RuntimeConfigSnapshot {
 	publicPushVapidKey: string | null;
 	limits: LimitConfigSnapshot;
 	appPublic: InstanceAppPublic;
-}
-
-function runtimeInstanceKey(snapshot: RuntimeConfigSnapshot): string | null {
-	try {
-		const endpoint = snapshot.apiEndpoint.trim();
-		const url = new URL(endpoint);
-		if (
-			(url.protocol !== 'https:' && url.protocol !== 'http:') ||
-			url.username ||
-			url.password ||
-			url.search ||
-			url.hash
-		) {
-			return null;
-		}
-		const path = url.pathname.replace(/\/+$/u, '');
-		return `${url.origin.toLowerCase()}${path}`;
-	} catch {
-		return null;
-	}
-}
-
-export function runtimeConfigSnapshotsAreSameInstance(
-	left: RuntimeConfigSnapshot | undefined,
-	right: RuntimeConfigSnapshot,
-): boolean {
-	if (!left) {
-		return false;
-	}
-	const leftKey = runtimeInstanceKey(left);
-	const rightKey = runtimeInstanceKey(right);
-	return leftKey !== null && leftKey === rightKey;
 }
 
 const DEFAULT_INSTANCE_FEATURES: InstanceFeatures = {

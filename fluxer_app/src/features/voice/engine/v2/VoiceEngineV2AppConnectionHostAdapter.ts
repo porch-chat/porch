@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import assert from 'node:assert/strict';
+import RuntimeConfig from '@app/features/app/state/RuntimeConfig';
 import {isElectronPlatform} from '@app/features/platform/types/Platform';
 import {Logger} from '@app/features/platform/utils/AppLogger';
 import * as VoicePresenceHeartbeatCommands from '@app/features/voice/commands/VoicePresenceHeartbeatCommands';
@@ -34,6 +35,7 @@ import {
 	isReadyToRepublishTrack,
 } from '@app/features/voice/engine/v2/VoiceEngineV2AppAdapterAssertions';
 import {VoiceEngineV2AppReconnectPolicy} from '@app/features/voice/engine/v2/VoiceEngineV2AppReconnectPolicy';
+import {shouldForceRelayIce} from '@app/features/voice/engine/v2/VoiceIcePolicy';
 import VoiceRegionTeleport from '@app/features/voice/state/VoiceRegionTeleport';
 import {
 	getVideoDecoderExclusionsSync,
@@ -182,7 +184,7 @@ function createRoomConnectOptions(): RoomConnectOptions {
 		autoSubscribe: false,
 	};
 	assert.equal(connectOptions.autoSubscribe, false, 'LiveKit connect options must not auto-subscribe');
-	if (isElectronPlatform()) {
+	if (shouldForceRelayIce(isElectronPlatform(), RuntimeConfig.features.self_hosted)) {
 		connectOptions.rtcConfig = {iceTransportPolicy: 'relay'};
 		assert.equal(
 			connectOptions.rtcConfig.iceTransportPolicy,
