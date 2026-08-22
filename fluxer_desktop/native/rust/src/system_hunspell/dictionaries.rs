@@ -31,11 +31,7 @@ pub fn canonicalize_tag(raw: &str) -> String {
 pub fn build_search_path(env: &EnvSnapshot) -> Vec<PathBuf> {
     let mut dirs = Vec::new();
     if let Some(raw) = &env.hunspell_dict_dir {
-        dirs.extend(
-            raw.split(':')
-                .filter(|part| !part.is_empty())
-                .map(PathBuf::from),
-        );
+        dirs.extend(std::env::split_paths(raw).filter(|part| !part.as_os_str().is_empty()));
     }
     if let Some(xdg_home) = &env.xdg_data_home {
         dirs.push(Path::new(xdg_home).join("hunspell"));
@@ -110,8 +106,12 @@ mod tests {
 
     #[test]
     fn build_search_path_hunspell_dict_dir_is_honoured_first() {
+        let search_path = std::env::join_paths([Path::new("/tmp/a"), Path::new("/tmp/b")])
+            .unwrap()
+            .into_string()
+            .unwrap();
         let dirs = build_search_path(&EnvSnapshot {
-            hunspell_dict_dir: Some("/tmp/a:/tmp/b".to_owned()),
+            hunspell_dict_dir: Some(search_path),
             ..EnvSnapshot::default()
         });
         assert_eq!(PathBuf::from("/tmp/a"), dirs[0]);
@@ -148,11 +148,12 @@ mod tests {
         std::fs::write(dir_b.path().join("orphan.dic"), "").unwrap();
 
         let dicts = discover_dictionaries(&EnvSnapshot {
-            hunspell_dict_dir: Some(format!(
-                "{}:{}",
-                dir_a.path().display(),
-                dir_b.path().display()
-            )),
+            hunspell_dict_dir: Some(
+                std::env::join_paths([dir_a.path(), dir_b.path()])
+                    .unwrap()
+                    .into_string()
+                    .unwrap(),
+            ),
             ..EnvSnapshot::default()
         });
         assert_eq!(1, dicts.iter().filter(|dict| dict.tag == "en-us").count());

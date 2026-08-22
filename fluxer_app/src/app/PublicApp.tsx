@@ -25,10 +25,7 @@ import FocusRingScope from '@app/features/ui/focus_ring/FocusRingScope';
 import MobileLayout from '@app/features/ui/state/MobileLayout';
 import Modal from '@app/features/ui/state/Modal';
 import {attachExternalLinkInterceptor, isDesktop} from '@app/features/ui/utils/NativeUtils';
-import {
-	FIRST_CLICK_PASSTHROUGH_WHEN_UNFOCUSED_CLASS,
-	UNFOCUSED_FULLY_INTERACTIVE_CLASS,
-} from '@app/features/ui/utils/WindowFocusInteractionGuard';
+import {UNFOCUSED_FULLY_INTERACTIVE_CLASS} from '@app/features/ui/utils/WindowFocusInteractionGuard';
 import {useNativeTitleBar} from '@app/features/window/hooks/useNativeTitleBar';
 import {usePublicWindowEventListeners} from '@app/features/window/hooks/usePublicWindowEventListeners';
 import {useStopFlashFrameOnFocus} from '@app/features/window/hooks/useStopFlashFrameOnFocus';
@@ -49,7 +46,6 @@ const PublicAppShell = observer(function PublicAppShell(): React.ReactElement {
 	const {i18n} = useLingui();
 	const reducedMotion = Accessibility.useReducedMotion;
 	const stayInteractiveWhenUnfocused = Accessibility.stayInteractiveWhenUnfocused;
-	const firstClickPassThroughWhenUnfocused = Accessibility.firstClickPassThroughWhenUnfocused;
 	const {platform, isNative} = useNativePlatform();
 	const useSystemTitleBar = useNativeTitleBar();
 	const isRootDocumentFullscreen = useIsRootDocumentFullscreen();
@@ -65,7 +61,6 @@ const PublicAppShell = observer(function PublicAppShell(): React.ReactElement {
 	useDocumentClassToggle('reduced-motion', reducedMotion);
 	useDocumentClassToggle('mobile-layout', MobileLayout.platformMobileDetected || MobileLayout.enabled);
 	useDocumentClassToggle(UNFOCUSED_FULLY_INTERACTIVE_CLASS, stayInteractiveWhenUnfocused);
-	useDocumentClassToggle(FIRST_CLICK_PASSTHROUGH_WHEN_UNFOCUSED_CLASS, firstClickPassThroughWhenUnfocused);
 	useDesktopAllowTransparency(isNative);
 	usePublicWindowEventListeners({preventDocumentScroll: !isNative});
 	usePlatformClasses(platform, isNative);

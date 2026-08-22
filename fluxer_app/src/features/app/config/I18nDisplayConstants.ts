@@ -6,7 +6,6 @@ import {THE_OTHER_PLATFORM} from '@fluxer/constants/src/ExternalPlatformConstant
 import {PREMIUM_PRODUCT_FULL_NAME, PREMIUM_PRODUCT_NAME, PRODUCT_NAME} from './ProductConstants';
 
 export {PREMIUM_PRODUCT_FULL_NAME, PREMIUM_PRODUCT_NAME, PRODUCT_NAME};
-export const DESKTOP_PRODUCT_NAME = `${PRODUCT_NAME} Desktop`;
 export const PRODUCT_API_NAME = `${PRODUCT_NAME} API`;
 export const PRODUCT_HQ_COMMUNITY_NAME = `${PRODUCT_NAME} HQ`;
 export const CANARY_RELEASE_CHANNEL_NAME = `${PRODUCT_NAME} Canary`;
@@ -29,6 +28,8 @@ export const SUPPORT_EMAIL = 'admin@porch.chat';
 export const SUPPORT_EMAIL_MAILTO = `mailto:${SUPPORT_EMAIL}`;
 export const I18N_EMAIL = 'admin@porch.chat';
 export const I18N_EMAIL_MAILTO = `mailto:${I18N_EMAIL}`;
+export const I18N_WEBLATE_DOMAIN = 'porch.chat';
+export const I18N_WEBLATE_URL = `https://${I18N_WEBLATE_DOMAIN}`;
 export const EXAMPLE_DOMAIN = 'example.com';
 export const EXAMPLE_URL = `https://${EXAMPLE_DOMAIN}`;
 export const EXAMPLE_CALLBACK_URL = `${EXAMPLE_URL}/callback`;
@@ -60,7 +61,10 @@ export const DESKTOP_DOWNLOAD_URL =
 	Config.PUBLIC_RELEASE_CHANNEL === 'canary' ? 'https://porch.chat/#downloads-canary' : 'https://porch.chat/#downloads';
 export const API_DOCUMENTATION_DOMAIN = 'api.porch.chat';
 export const API_DOCUMENTATION_URL = `https://${API_DOCUMENTATION_DOMAIN}/api/openapi.json`;
+export const FLUXER_DOCS_DOMAIN = API_DOCUMENTATION_DOMAIN;
+export const FLUXER_DOCS_URL = API_DOCUMENTATION_URL;
 export const PORCH_HOME_URL = 'https://porch.chat';
+export const FLUXER_BLUESKY_HANDLE = '@porch.chat';
 export const SPLASH_IRC_SERVER = 'irc.porch.chat:6667';
 export const YOUTUBE_PROVIDER_NAME = 'YouTube';
 export const EVERYONE_MENTION = '@everyone';

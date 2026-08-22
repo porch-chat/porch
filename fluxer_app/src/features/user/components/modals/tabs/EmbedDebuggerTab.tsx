@@ -181,7 +181,7 @@ const EmbedDebuggerPreview: React.FC<{message: Message}> = observer(({message}) 
 			isHovering: false,
 			messageDisplayCompact: false,
 			previewContext: MessagePreviewContext.SETTINGS,
-			readonlyPreview: true,
+			suppressMessageActions: true,
 			handleDelete: () => {},
 		}),
 		[channel, message],

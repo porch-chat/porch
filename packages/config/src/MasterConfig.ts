@@ -79,12 +79,21 @@ export interface MasterConfig {
 			static: string;
 		};
 	};
+	s3_downloads?: {
+		endpoint: string;
+		presigned_url_base?: string;
+		force_path_style?: boolean;
+		region?: string;
+		access_key_id?: string;
+		secret_access_key?: string;
+	};
 	services: {
 		api: {
 			port: number;
 			cors_allowed_origins?: Array<string>;
 			ip_ban_exempt_ips: Array<string>;
 			presigned_attachment_uploads_enabled: boolean;
+			presigned_downloads_enabled: boolean;
 			unfurl_ignored_hosts: Array<string>;
 			embeds: {
 				oembed_html_enabled: boolean;
@@ -104,6 +113,14 @@ export interface MasterConfig {
 				task?: string;
 				enable_cron_scheduler?: boolean;
 				enable_voice_reconciliation?: boolean;
+				voice_reconciliation?: {
+					interval_ms?: number;
+					stagger_delay_ms?: number;
+					lock_ttl_seconds?: number;
+					cadence_ttl_seconds?: number;
+					gateway_only_grace_ms?: number;
+					livekit_only_grace_ms?: number;
+				};
 				lane_concurrency_overrides?: {
 					realtime?: number;
 					unfurl?: number;

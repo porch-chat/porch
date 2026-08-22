@@ -79,11 +79,8 @@ class AccountManager {
 		userId: string;
 	}> {
 		await SessionManager.initialize();
-		const account = SessionManager.accounts.find((a) => a.userId === userId);
-		if (!account) {
-			throw new Error(`No stored data found for account ${userId}`);
-		}
-		const ok = await SessionManager.validateToken(account.token, account.instance);
+		const account = SessionManager.requireAccountOnCurrentInstance(userId);
+		const ok = await SessionManager.validateToken(account.token);
 		if (!ok) {
 			SessionManager.markAccountInvalid(userId);
 			throw new SessionExpiredError();
@@ -101,8 +98,12 @@ class AccountManager {
 	}
 
 	async switchToAccount(userId: string, redirectPath: string | null = Routes.ME): Promise<void> {
-		if (userId !== SessionManager.userId && SessionManager.canSwitchAccount() && this.accounts.has(userId)) {
-			SessionManager.prepareForAccountTransition('account-switch');
+		if (userId === SessionManager.userId) {
+			return;
+		}
+		SessionManager.requireAccountOnCurrentInstance(userId);
+		if (!SessionManager.canSwitchAccount()) {
+			throw new Error(`Cannot switch from state: ${SessionManager.state}`);
 		}
 		if (this.shouldManagePushSubscriptions()) {
 			const PushSubscriptionService = await import('@app/features/platform/push/PushSubscriptionService');

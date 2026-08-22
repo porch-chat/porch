@@ -184,6 +184,48 @@ links. Production intake requires rebuilt Porch API/worker, app-proxy, gateway,
 admin, and affected client artifacts plus updated immutable upstream media-proxy
 and unfurl images; deployment remains pinned by digest in the operations repo.
 
+### 2026-08-22 reviewed intake
+
+Porch reviewed and integrated Fluxer commits `e054aa96..137edc7c` as one
+ancestry-preserving merge. This 118-commit train adds the new application-shell
+and navigation performance work, reduces renderer CPU and WASM memory pressure,
+improves gateway connection latency, fixes screen-share audio defaults and
+publication handling, introduces the standalone hardware-encoder capability
+path, adds deferred phone-gate and registration administration changes, and
+extends external media routing, downloads storage, billing, search, gateway,
+and moderation behavior.
+
+The largest architectural change removes Fluxer's native voice renderer and
+native display-sender stack. Porch retired three downstream patches that only
+protected that deleted path: native preview independence, Windows native
+capture packaging, and serialized native subscription commands. Capture-card
+and ultrawide behavior remains active on the replacement architecture: Porch
+still carries source-aware dimensions, Source/480p/720p/1080p/1440p/4K quality,
+60 FPS limits, aspect-ratio preservation, device-aware active controls, and
+live quality replacement over Chromium capture plus the standalone hardware
+encoder.
+
+Semantic conflict review retained Porch Hub enrollment independently from
+single-community mode, member-created account registration links, Porch-only
+branding and public URLs, Stable/Canary browser handoff routing, the logged-out
+runtime boundary, the five-second fresh-shell navigation policy, readable
+desktop build versions, GitHub-hosted and release-free image workflows, and
+Porch-owned unsigned desktop/update distribution. Upstream's removal of
+self-host instance switching matches Porch's one-backend policy.
+
+Focused validation covered app, desktop, API, and voice-engine typechecks;
+public bootstrap isolation; service-worker recovery; registration, Porch Hub,
+member invites, and deferred phone gating; updater behavior; and screen-share
+resolution, source state, local controls, and debug-upload backoff. Production
+intake requires new immutable images for every changed runtime service and new
+Stable/Canary client artifacts before promotion.
+
+The full Windows validation pass also exposed two upstream portability defects
+before release. Porch now normalizes checkout newlines when checking generated
+theme invariants and parses Hunspell dictionary search paths with the operating
+system's native separator. The corrected desktop native suite passes all 220
+unit and property tests on Windows.
+
 ## Public hostnames
 
 - `porch.chat`: landing page, downloads, status links, documentation, and

@@ -88,6 +88,7 @@ function defaultConfig(): MasterConfig {
 				cors_allowed_origins: [],
 				ip_ban_exempt_ips: [],
 				presigned_attachment_uploads_enabled: false,
+				presigned_downloads_enabled: false,
 				unfurl_ignored_hosts: [],
 				embeds: {
 					oembed_html_enabled: false,

@@ -323,7 +323,6 @@ function formatWindowBehavior(settings: DesktopWindowBehaviorSettings): string {
 		`activeSmoothScrolling=${settings.activeSmoothScrolling}`,
 		`middleClickAutoscroll=${settings.middleClickAutoscroll}`,
 		`activeMiddleClickAutoscroll=${settings.activeMiddleClickAutoscroll}`,
-		`firstClickPassThroughWhenUnfocused=${settings.firstClickPassThroughWhenUnfocused}`,
 	].join(', ');
 }
 

@@ -274,7 +274,13 @@ export const AuthLoginLayout = observer(function AuthLoginLayout({
 			);
 		}
 		if (authLoginStep === 'sso') {
-			return <AuthSsoPanel redirectPath={ssoRedirectPath} dataFlx="auth.flow.auth-login-layout.sso-panel" />;
+			return (
+				<AuthSsoPanel
+					redirectPath={ssoRedirectPath}
+					dataFlx="auth.flow.auth-login-layout.sso-panel"
+					data-flx="auth.flow.auth-login-layout.render-auth-login-step.auth-sso-panel"
+				/>
+			);
 		}
 		if (authLoginStep === 'account') {
 			return (
@@ -283,7 +289,6 @@ export const AuthLoginLayout = observer(function AuthLoginLayout({
 					currentAccountId={currentUserId}
 					error={switchError}
 					disabled={isSwitching}
-					showInstance
 					clickableRows
 					onSelectAccount={handleSelectExistingAccount}
 					onAddAccount={handleAddAnotherAccount}

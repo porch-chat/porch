@@ -34,9 +34,6 @@ import {configure} from 'mobx';
 import type {ReactNode} from 'react';
 import ReactDOM from 'react-dom/client';
 
-type AuthenticationCommandsModule = typeof import('@app/features/auth/commands/AuthenticationCommands');
-type NativeUtilsModule = typeof import('@app/features/ui/utils/NativeUtils');
-
 const logger = new Logger('index');
 
 configure({disableErrorBoundaries: true, enforceActions: 'observed'});
@@ -83,41 +80,6 @@ async function logClientInfo(): Promise<void> {
 	}
 }
 
-async function resumePendingDesktopHandoffLogin(
-	getElectronAPI: NativeUtilsModule['getElectronAPI'],
-	authenticationCommands: AuthenticationCommandsModule,
-): Promise<void> {
-	const electronApi = getElectronAPI();
-	if (!electronApi || typeof electronApi.consumeDesktopHandoffCode !== 'function') {
-		return;
-	}
-	let handoffCode: string | null = null;
-	try {
-		handoffCode = await electronApi.consumeDesktopHandoffCode();
-	} catch (error) {
-		logger.warn('Failed to consume pending desktop handoff code:', error);
-		return;
-	}
-	if (!handoffCode) {
-		return;
-	}
-	try {
-		const result = await authenticationCommands.pollDesktopHandoffStatus(handoffCode);
-		if (result.status === 'completed' && result.token && result.user_id) {
-			const userData = authenticationCommands.authResponseUserToUserData(result.user);
-			await authenticationCommands.completeLogin({
-				token: result.token,
-				userId: result.user_id,
-				...(userData ? {userData} : {}),
-			});
-		} else {
-			logger.warn('Pending desktop handoff not completed:', {status: result.status});
-		}
-	} catch (error) {
-		logger.warn('Failed to resume pending desktop handoff login:', error);
-	}
-}
-
 async function bootstrapThemeStudio(): Promise<void> {
 	const [{ThemeStudioStandaloneApp}, {setupHttp}, {default: AccountManager}] = await Promise.all([
 		loadLazyModule(() => import('@app/features/theme_studio/ThemeStudioStandaloneApp')),
@@ -137,28 +99,23 @@ async function bootstrapThemeStudio(): Promise<void> {
 async function bootstrapApp(): Promise<void> {
 	const [
 		{AppBootstrap},
-		authenticationCommands,
 		{setupHttp},
 		{default: CaptchaInterceptor},
 		{registerServiceWorker},
 		{default: AccountManager},
 		_runtimeConfig,
-		{getElectronAPI},
 	] = await Promise.all([
 		loadLazyModule(() => import('@app/app/AppBootstrap')),
-		loadLazyModule(() => import('@app/features/auth/commands/AuthenticationCommands')),
 		loadLazyModule(() => import('@app/app/SetupHttp')),
 		loadLazyModule(() => import('@app/features/auth/components/CaptchaInterceptor')),
 		loadLazyModule(() => import('@app/features/platform/service_worker/Register')),
 		loadLazyModule(() => import('@app/features/auth/state/AccountManager')),
 		loadLazyModule(() => import('@app/features/app/state/RuntimeConfig')),
-		loadLazyModule(() => import('@app/features/ui/utils/NativeUtils')),
 	]);
 	void preloadClientInfo();
 	CaptchaInterceptor.setI18n(reactiveI18n);
 	await AccountManager.bootstrap();
 	setupHttp();
-	await resumePendingDesktopHandoffLogin(getElectronAPI, authenticationCommands);
 	mountRoot(<AppBootstrap data-flx="index.bootstrap.app" />, 'index.bootstrap');
 	registerServiceWorker();
 }

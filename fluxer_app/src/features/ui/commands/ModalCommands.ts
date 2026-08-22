@@ -24,11 +24,16 @@ const getBackgroundModalType = (element: React.ReactElement): React.ComponentTyp
 	return backgroundModalTypes.has(element.type) ? element.type : null;
 };
 const getCommandOwnerDocument = (): Document => getActivePortalHost()?.ownerDocument ?? document;
-const getPushOptions = (isBackground: boolean) => ({
-	isBackground,
-	forceMainWindow: isBackground,
-	portalHost: isBackground ? null : getActivePortalHost(),
-});
+const getPushOptions = (isBackground: boolean) => {
+	const activePortalHost = getActivePortalHost();
+	const isPoppedOut = activePortalHost?.ownerDocument !== document;
+	const forceMainWindow = isBackground && isPoppedOut;
+	return {
+		isBackground,
+		forceMainWindow,
+		portalHost: forceMainWindow ? null : activePortalHost,
+	};
+};
 
 export function modal(render: () => React.ReactElement): ModalRender {
 	return render as ModalRender;

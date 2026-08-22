@@ -416,6 +416,7 @@ const VoiceControlBarInner = observer(function VoiceControlBarInner() {
 						ActiveScreenShareSource.getSourceId(),
 						VoiceSettings.getLastScreenShareSource(),
 					)}
+					shareContextResolved={ActiveScreenShareSource.getSourceId() != null}
 					data-flx="voice.voice-control-bar.render-screen-share-menu.stream-settings-menu-content"
 				/>
 				<MenuGroup data-flx="voice.voice-control-bar.render-screen-share-menu.menu-group--2">

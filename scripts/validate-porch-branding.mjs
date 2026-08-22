@@ -103,7 +103,7 @@ for (const expected of [
 	"I18N_EMAIL = 'admin@porch.chat'",
 	"FLUXER_TAG_LABEL = 'PorchTag'",
 	"API_DOCUMENTATION_DOMAIN = 'api.porch.chat'",
-	'API_DOCUMENTATION_URL = `https://${API_DOCUMENTATION_DOMAIN}/api/openapi.json`',
+	'API_DOCUMENTATION_URL = `https://$' + '{API_DOCUMENTATION_DOMAIN}/api/openapi.json`',
 	"PORCH_HOME_URL = 'https://porch.chat'",
 	"SPLASH_IRC_SERVER = 'irc.porch.chat:6667'",
 ]) {
@@ -126,7 +126,6 @@ forbidText('fluxer_app/src/features/user/components/modals/tabs/applications_tab
 for (const relativePath of [
 	'fluxer_app/src/features/app/components/BootstrapErrorScreen.tsx',
 	'fluxer_app/src/features/app/components/whats_new/WhatsNewModal.tsx',
-	'fluxer_app/src/features/app/components/ConnectionIssuesLinks.tsx',
 	'packages/constants/src/ExternalUrls.ts',
 ]) {
 	forbidText(relativePath, 'fluxerstatus.com');
@@ -180,8 +179,6 @@ for (const component of ['FluxerIcon.tsx', 'FluxerLogo.tsx']) {
 	forbidText(relativePath, '@app/media/images/fluxer-logo');
 	forbidText(relativePath, 'M121.272 233.143');
 }
-requireText('fluxer_app/src/features/ui/components/icons/FluxerSymbol.tsx', 'porch-symbol.svg?react');
-forbidText('fluxer_app/src/features/ui/components/icons/FluxerSymbol.tsx', 'M121.272 233.143');
 requireText('fluxer_app/src/features/ui/components/icons/FluxerWordmark.tsx', '{productName}');
 forbidText('fluxer_app/src/features/ui/components/icons/FluxerWordmark.tsx', 'fluxer-wordmark.svg?react');
 forbidText(

@@ -33,8 +33,8 @@ const electronExternals = [
 	'electron-log',
 	'update-electron-app',
 	'velopack',
+	'@fluxer/hardware-encoder',
 	'@fluxer/webauthn',
-	'@fluxer/webrtc-sender',
 	'hunspell-asm',
 ];
 const pathAliasPlugin = {
@@ -242,8 +242,8 @@ function expectedNativeRuntimeArtifactsForArch(platform, arch) {
 		runtimeFiles: ['index.js', 'loader-diagnostics.cjs', 'pure.cjs'],
 	});
 	artifacts.push({
-		label: '@fluxer/webrtc-sender',
-		relativePath: `webrtc-sender.${tag}.node`,
+		label: '@fluxer/hardware-encoder',
+		relativePath: `hardware-encoder.${tag}.node`,
 		runtimeFiles: ['index.js'],
 	});
 	if (platform === 'darwin') {
@@ -423,8 +423,8 @@ function buildNativeAddons() {
 		jsEntry: 'index.js',
 	});
 	buildNativeAddon({
-		label: '@fluxer/webrtc-sender',
-		dirName: 'webrtc-sender',
+		label: '@fluxer/hardware-encoder',
+		dirName: 'hardware-encoder',
 		commands: [['pnpm', 'build']],
 		jsEntry: 'index.js',
 	});

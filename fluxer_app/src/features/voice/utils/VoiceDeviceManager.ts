@@ -4,16 +4,7 @@ import {ensureNativePermission} from '@app/features/permissions/system/utils/Nat
 import {Platform} from '@app/features/platform/types/Platform';
 import {Logger} from '@app/features/platform/utils/AppLogger';
 import {getNativePlatformSync, isDesktop} from '@app/features/ui/utils/NativeUtils';
-import {
-	type NativeAudioDeviceModuleStatus,
-	nativeAudioDeviceModuleState,
-} from '@app/features/voice/engine/native_voice_engine/NativeAudioDeviceModuleState';
-import {isVoiceEngineV2AppNativeAudioDeviceBridgeAvailable} from '@app/features/voice/engine/v2/VoiceEngineV2AppNativeBridge';
-import type {
-	VoiceEngineV2AudioDeviceRole,
-	VoiceEngineV2AudioInputDevice,
-	VoiceEngineV2AudioOutputDevice,
-} from '@fluxer/voice_engine_v2';
+import type {VoiceEngineV2AudioDeviceRole} from '@fluxer/voice_engine_v2';
 
 const logger = new Logger('VoiceDeviceManager');
 
@@ -124,11 +115,6 @@ export type VoiceMediaDeviceInfo = MediaDeviceInfo & {
 	fluxerVoiceAudioDevice?: VoiceAudioDeviceMetadata;
 };
 
-type NativeVoiceDeviceBridge = {
-	listAudioInputDevices?: () => Promise<Array<VoiceEngineV2AudioInputDevice>>;
-	listAudioOutputDevices?: () => Promise<Array<VoiceEngineV2AudioOutputDevice>>;
-};
-
 interface NormalizedAudioDeviceLabel {
 	role: VoiceAudioDeviceRole | null;
 	endpointLabel: string;
@@ -159,11 +145,6 @@ const USB_HARDWARE_ID_LABEL = /^[0-9a-f]{4}:[0-9a-f]{4}$/i;
 const UUID_DEVICE_LABEL = /^[{(]?[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}[)}]?$/i;
 const OPAQUE_DEVICE_LABEL = /^[a-z0-9+/=_:-]{24,}$/i;
 const DEVICE_PATH_LABEL = /^(?:\\\\\?\\|[a-z]+:\/)/i;
-
-function getNativeVoiceDeviceBridge(): NativeVoiceDeviceBridge | null {
-	if (typeof window === 'undefined') return null;
-	return window.electron?.voiceEngine ?? null;
-}
 
 function getAudioDefaultDevicePlatform(): VoiceAudioDefaultDevicePlatform {
 	if (!isDesktop()) {
@@ -422,42 +403,6 @@ export function shapeBrowserAudioDevices(devices: ReadonlyArray<MediaDeviceInfo>
 	);
 }
 
-export function shapeNativeAudioInputDevices(
-	devices: ReadonlyArray<VoiceEngineV2AudioInputDevice>,
-): Array<MediaDeviceInfo> {
-	return shapeAudioDevices(
-		devices.map((device) => ({
-			deviceId: device.deviceId,
-			groupId: '',
-			kind: 'audioinput',
-			label: device.label,
-			isDefault: device.isDefault,
-			role: device.role,
-			endpointLabel: device.endpointLabel,
-			isDefaultRoute: device.isDefaultRoute,
-		})),
-		{synthesizeDefaultRoute: true},
-	);
-}
-
-export function shapeNativeAudioOutputDevices(
-	devices: ReadonlyArray<VoiceEngineV2AudioOutputDevice>,
-): Array<MediaDeviceInfo> {
-	return shapeAudioDevices(
-		devices.map((device) => ({
-			deviceId: device.deviceId,
-			groupId: '',
-			kind: 'audiooutput',
-			label: device.label,
-			isDefault: device.isDefault,
-			role: device.role,
-			endpointLabel: device.endpointLabel,
-			isDefaultRoute: device.isDefaultRoute,
-		})),
-		{synthesizeDefaultRoute: true},
-	);
-}
-
 class VoiceDeviceManager {
 	private state: VoiceDeviceState = {
 		inputDevices: [],
@@ -471,13 +416,11 @@ class VoiceDeviceManager {
 	private currentEnumerationRequestsPermissions = false;
 	private shouldRequestPermissions = false;
 	private hasEnumeratedDevices = false;
-	private lastEnumerationUsedNativeAudio: boolean | null = null;
 
 	constructor() {
 		if (typeof navigator !== 'undefined' && navigator.mediaDevices?.addEventListener) {
 			navigator.mediaDevices.addEventListener('devicechange', this.handleDeviceChange);
 		}
-		nativeAudioDeviceModuleState.subscribe(this.handleNativeAudioDeviceModuleStatusChange);
 	}
 
 	public getState(): VoiceDeviceState {
@@ -509,8 +452,7 @@ class VoiceDeviceManager {
 			this.shouldRequestPermissions = true;
 		}
 		const shouldRequest = this.shouldRequestPermissions || requestPermissions;
-		const useNativeAudioDevices = await this.shouldUseNativeAudioDevices();
-		if (!forceRefresh && !this.enumeratingPromise && this.canUseCachedState(shouldRequest, useNativeAudioDevices)) {
+		if (!forceRefresh && !this.enumeratingPromise && this.canUseCachedState(shouldRequest)) {
 			logger.debug('Using cached device state');
 			return this.state;
 		}
@@ -520,7 +462,7 @@ class VoiceDeviceManager {
 				if (!this.queuedPermissionEnumerationPromise) {
 					this.queuedPermissionEnumerationPromise = this.enumeratingPromise
 						.catch(() => this.state)
-						.then(async () => this.startEnumeration(true, await this.shouldUseNativeAudioDevices()))
+						.then(() => this.startEnumeration(true))
 						.finally(() => {
 							this.queuedPermissionEnumerationPromise = null;
 						});
@@ -531,14 +473,11 @@ class VoiceDeviceManager {
 			return this.enumeratingPromise;
 		}
 		logger.debug('Creating new enumeration promise');
-		return this.startEnumeration(shouldRequest, useNativeAudioDevices);
+		return this.startEnumeration(shouldRequest);
 	}
 
-	private canUseCachedState(requestPermissions: boolean, useNativeAudioDevices: boolean): boolean {
+	private canUseCachedState(requestPermissions: boolean): boolean {
 		if (!this.hasEnumeratedDevices) {
-			return false;
-		}
-		if (this.lastEnumerationUsedNativeAudio !== useNativeAudioDevices) {
 			return false;
 		}
 		if (!requestPermissions) {
@@ -547,9 +486,9 @@ class VoiceDeviceManager {
 		return this.state.permissionStatus === 'granted';
 	}
 
-	private startEnumeration(requestPermissions: boolean, useNativeAudioDevices: boolean): Promise<VoiceDeviceState> {
+	private startEnumeration(requestPermissions: boolean): Promise<VoiceDeviceState> {
 		this.currentEnumerationRequestsPermissions = requestPermissions;
-		const pendingPromise = this.enumerateDevices(requestPermissions, useNativeAudioDevices).catch((error) => {
+		const pendingPromise = this.enumerateDevices(requestPermissions).catch((error) => {
 			logger.debug('Failed to enumerate media devices:', error);
 			throw error;
 		});
@@ -563,10 +502,7 @@ class VoiceDeviceManager {
 		});
 	}
 
-	private async enumerateDevices(
-		requestPermissions: boolean,
-		useNativeAudioDevices: boolean,
-	): Promise<VoiceDeviceState> {
+	private async enumerateDevices(requestPermissions: boolean): Promise<VoiceDeviceState> {
 		logger.debug('enumerateDevices started', {requestPermissions});
 		if (!navigator.mediaDevices?.enumerateDevices) {
 			logger.debug('Navigator or mediaDevices API not available');
@@ -625,7 +561,7 @@ class VoiceDeviceManager {
 					logger.debug('No labels found, requesting permissions via getUserMedia');
 					try {
 						const stream = await navigator.mediaDevices.getUserMedia({
-							audio: !useNativeAudioDevices,
+							audio: true,
 							video: true,
 						});
 						logger.debug('getUserMedia succeeded, stopping tracks');
@@ -661,26 +597,12 @@ class VoiceDeviceManager {
 					}
 				}
 			}
-			const nativeAudioWarming = useNativeAudioDevices
-				? (await nativeAudioDeviceModuleState.ensureStatus()) === 'warming'
-				: false;
-			if (nativeAudioWarming) {
-				logger.debug('Native audio device module warming; deferring native device enumeration');
-			}
-			const inputDevices = useNativeAudioDevices
-				? nativeAudioWarming
-					? []
-					: await this.enumerateNativeInputDevices()
-				: shapeBrowserAudioDevices(
-						devices.filter((device) => device.kind === 'audioinput' && !isInternalVirtualAudioDevice(device)),
-					);
-			const outputDevices = useNativeAudioDevices
-				? nativeAudioWarming
-					? []
-					: await this.enumerateNativeOutputDevices()
-				: shapeBrowserAudioDevices(
-						devices.filter((device) => device.kind === 'audiooutput' && !isInternalVirtualAudioDevice(device)),
-					);
+			const inputDevices = shapeBrowserAudioDevices(
+				devices.filter((device) => device.kind === 'audioinput' && !isInternalVirtualAudioDevice(device)),
+			);
+			const outputDevices = shapeBrowserAudioDevices(
+				devices.filter((device) => device.kind === 'audiooutput' && !isInternalVirtualAudioDevice(device)),
+			);
 			const videoDevices = shapeVideoDevices(devices.filter((device) => device.kind === 'videoinput'));
 			const nextState: VoiceDeviceState = {
 				inputDevices,
@@ -688,8 +610,7 @@ class VoiceDeviceManager {
 				videoDevices,
 				permissionStatus: this.resolvePermissionStatus(requestPermissions, permissionStatus),
 			};
-			this.hasEnumeratedDevices = !nativeAudioWarming;
-			this.lastEnumerationUsedNativeAudio = useNativeAudioDevices;
+			this.hasEnumeratedDevices = true;
 			logger.debug('Final device state', {
 				inputDeviceCount: inputDevices.length,
 				outputDeviceCount: outputDevices.length,
@@ -704,36 +625,6 @@ class VoiceDeviceManager {
 				this.updateState({permissionStatus: 'denied'});
 			}
 			return this.state;
-		}
-	}
-
-	private async shouldUseNativeAudioDevices(): Promise<boolean> {
-		return isVoiceEngineV2AppNativeAudioDeviceBridgeAvailable();
-	}
-
-	private async enumerateNativeInputDevices(): Promise<Array<MediaDeviceInfo>> {
-		const bridge = getNativeVoiceDeviceBridge();
-		if (!bridge?.listAudioInputDevices) {
-			throw new Error('Native audio device bridge lost listAudioInputDevices after availability check');
-		}
-		try {
-			return shapeNativeAudioInputDevices(await bridge.listAudioInputDevices());
-		} catch (error) {
-			logger.error('Native audio input device enumeration failed', {error});
-			return [];
-		}
-	}
-
-	private async enumerateNativeOutputDevices(): Promise<Array<MediaDeviceInfo>> {
-		const bridge = getNativeVoiceDeviceBridge();
-		if (!bridge?.listAudioOutputDevices) {
-			throw new Error('Native audio device bridge lost listAudioOutputDevices after availability check');
-		}
-		try {
-			return shapeNativeAudioOutputDevices(await bridge.listAudioOutputDevices());
-		} catch (error) {
-			logger.error('Native audio output device enumeration failed', {error});
-			return [];
 		}
 	}
 
@@ -758,13 +649,6 @@ class VoiceDeviceManager {
 	}
 
 	private handleDeviceChange = () => {
-		this.hasEnumeratedDevices = false;
-		void this.ensureDevices({requestPermissions: this.shouldRequestPermissions});
-	};
-
-	private handleNativeAudioDeviceModuleStatusChange = (status: NativeAudioDeviceModuleStatus) => {
-		if (status !== 'ready') return;
-		logger.debug('Native audio device module became ready; re-enumerating devices');
 		this.hasEnumeratedDevices = false;
 		void this.ensureDevices({requestPermissions: this.shouldRequestPermissions});
 	};

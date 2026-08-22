@@ -146,7 +146,6 @@ interface CreateWindowOptions {
 let mainWindow: BrowserWindow | null = null;
 let windowStateFile: string;
 let isQuitting = false;
-let initialAcceptFirstMouseOnFocus: boolean | null = null;
 let initialUseNativeTitleBar: boolean | null = null;
 let initialAllowTransparency: boolean | null = null;
 let themeStudioPopoutWindow: BrowserWindow | null = null;
@@ -330,12 +329,6 @@ function shouldHideMainWindowOnMinimize(): boolean {
 
 export function getMainWindow(): BrowserWindow | null {
 	return mainWindow;
-}
-
-export function desktopFirstClickPassThroughPendingRestart(): boolean {
-	if (process.platform !== 'darwin') return false;
-	if (initialAcceptFirstMouseOnFocus === null) return false;
-	return getDesktopWindowBehaviorSettings().firstClickPassThroughWhenUnfocused !== initialAcceptFirstMouseOnFocus;
 }
 
 export function getActiveUseNativeTitleBar(): boolean {
@@ -721,8 +714,7 @@ export function createWindow(options: CreateWindowOptions = {}): BrowserWindow {
 	const desktopWindowBehavior = getDesktopWindowBehaviorSettings();
 	const allowTransparency = desktopWindowBehavior.allowTransparency;
 	const useNativeTitleBar = getEffectiveUseNativeTitleBar(desktopWindowBehavior);
-	const acceptFirstMouseOnFocus = isMac && desktopWindowBehavior.firstClickPassThroughWhenUnfocused;
-	initialAcceptFirstMouseOnFocus = acceptFirstMouseOnFocus;
+	const acceptFirstMouseOnFocus = isMac;
 	initialUseNativeTitleBar = useNativeTitleBar;
 	initialAllowTransparency = allowTransparency;
 	const appUrl = getAppUrl();

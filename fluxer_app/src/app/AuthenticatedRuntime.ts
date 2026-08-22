@@ -12,12 +12,6 @@ let runtimePromise: Promise<AuthenticatedAppModule> | null = null;
 export function loadAuthenticatedRuntime(): Promise<AuthenticatedAppModule> {
 	if (runtimePromise) return runtimePromise;
 	runtimePromise = (async () => {
-		const {initializeNativeVoiceEngineSelectionForStartup} = await loadLazyModule(
-			() => import('@app/features/voice/engine/native_voice_engine/NativeVoiceEngineSelection'),
-		);
-		// MediaEngine construction reads this selection, so preserve the original
-		// ordering and initialize it before importing the full application graph.
-		await initializeNativeVoiceEngineSelectionForStartup();
 		const [
 			appModule,
 			{ChannelSettingsModal},

@@ -9,6 +9,7 @@ import {HttpError} from '@app/features/platform/types/EndpointError';
 import {Logger} from '@app/features/platform/utils/AppLogger';
 import {failureCode} from '@app/features/platform/utils/ResponseInspection';
 import {isDesktop} from '@app/features/ui/utils/NativeUtils';
+import UserSettings from '@app/features/user/state/UserSettings';
 import {APIErrorCodes} from '@fluxer/constants/src/ApiErrorCodes';
 import type {ValueOf} from '@fluxer/constants/src/ValueOf';
 import type {
@@ -19,14 +20,12 @@ import type {
 	SsoStartResponse,
 } from '@fluxer/schema/src/domains/auth/AuthSchemas';
 import type {UserPartial} from '@fluxer/schema/src/domains/user/UserResponseSchemas';
-import {i18n} from '@lingui/core';
 import type {AuthenticationResponseJSON, PublicKeyCredentialRequestOptionsJSON} from '@simplewebauthn/browser';
 
 const logger = new Logger('AuthService');
-const getPlatformHeaderValue = (): 'web' | 'desktop' | 'mobile' => (isDesktop() ? 'desktop' : 'web');
-const withPlatformHeader = (headers?: Record<string, string>): Record<string, string> => ({
-	'X-Fluxer-Platform': getPlatformHeaderValue(),
-	'Accept-Language': i18n.locale || navigator.language || 'en-US',
+const withAuthLocaleHeader = (headers?: Record<string, string>): Record<string, string> => ({
+	'X-Fluxer-Platform': isDesktop() ? 'desktop' : 'web',
+	'Accept-Language': UserSettings.getLocale(),
 	...(headers ?? {}),
 });
 export const VerificationResult = {
@@ -246,7 +245,7 @@ export async function login({
 	try {
 		const response = await http.post<LoginResponse>(Endpoints.AUTH_LOGIN, {
 			body: loginBody({email, password, inviteCode}),
-			headers: withPlatformHeader(captchaHeaders({captchaToken, captchaType})),
+			headers: withAuthLocaleHeader(captchaHeaders({captchaToken, captchaType})),
 		});
 		logger.debug('Login successful', {mfa: response.body?.mfa});
 		return response.body;
@@ -267,7 +266,7 @@ export async function loginMfaTotp(code: string, ticket: string, inviteCode?: st
 	try {
 		const response = await http.post<TokenResponse>(Endpoints.AUTH_LOGIN_MFA_TOTP, {
 			body: mfaTotpBody(code, ticket, inviteCode),
-			headers: withPlatformHeader(),
+			headers: withAuthLocaleHeader(),
 		});
 		const responseBody = response.body;
 		logger.debug('MFA TOTP authentication successful');
@@ -287,7 +286,7 @@ export async function loginMfaWebAuthn(
 	try {
 		const httpResponse = await http.post<TokenResponse>(Endpoints.AUTH_LOGIN_MFA_WEBAUTHN, {
 			body: mfaWebAuthnBody(response, challenge, ticket, inviteCode),
-			headers: withPlatformHeader(),
+			headers: withAuthLocaleHeader(),
 		});
 		const responseBody = httpResponse.body;
 		logger.debug('MFA WebAuthn authentication successful');
@@ -302,7 +301,7 @@ export async function getWebAuthnMfaOptions(ticket: string): Promise<PublicKeyCr
 	try {
 		const response = await http.post<PublicKeyCredentialRequestOptionsJSON>(Endpoints.AUTH_LOGIN_MFA_WEBAUTHN_OPTIONS, {
 			body: ticketBody(ticket),
-			headers: withPlatformHeader(),
+			headers: withAuthLocaleHeader(),
 		});
 		const responseBody = response.body;
 		logger.debug('WebAuthn MFA options retrieved');
@@ -316,7 +315,7 @@ export async function getWebAuthnMfaOptions(ticket: string): Promise<PublicKeyCr
 export async function getWebAuthnAuthenticationOptions(): Promise<PublicKeyCredentialRequestOptionsJSON> {
 	try {
 		const response = await http.post<PublicKeyCredentialRequestOptionsJSON>(Endpoints.AUTH_WEBAUTHN_OPTIONS, {
-			headers: withPlatformHeader(),
+			headers: withAuthLocaleHeader(),
 		});
 		const responseBody = response.body;
 		logger.debug('WebAuthn authentication options retrieved');
@@ -335,7 +334,7 @@ export async function authenticateWithWebAuthn(
 	try {
 		const httpResponse = await http.post<TokenResponse>(Endpoints.AUTH_WEBAUTHN_AUTHENTICATE, {
 			body: webAuthnBody(response, challenge, inviteCode),
-			headers: withPlatformHeader(),
+			headers: withAuthLocaleHeader(),
 		});
 		const responseBody = httpResponse.body;
 		logger.debug('WebAuthn authentication successful');
@@ -350,7 +349,7 @@ export async function register(data: RegisterData): Promise<RegisterResponse> {
 	try {
 		const response = await http.post<RegisterResponse>(Endpoints.AUTH_REGISTER, {
 			body: registerBody(data),
-			headers: withPlatformHeader(captchaHeaders(data)),
+			headers: withAuthLocaleHeader(captchaHeaders(data)),
 		});
 		const responseBody = response.body;
 		logger.info('Registration successful');
@@ -369,7 +368,7 @@ export async function getUsernameSuggestions(globalName: string): Promise<Array<
 	try {
 		const response = await http.post<UsernameSuggestionsResponse>(Endpoints.AUTH_USERNAME_SUGGESTIONS, {
 			body: {global_name: globalName},
-			headers: withPlatformHeader(),
+			headers: withAuthLocaleHeader(),
 		});
 		const responseBody = response.body;
 		logger.debug('Username suggestions retrieved', {count: responseBody?.suggestions?.length || 0});
@@ -388,7 +387,7 @@ export async function forgotPassword(
 	try {
 		await http.post(Endpoints.AUTH_FORGOT_PASSWORD, {
 			body: {email},
-			headers: withPlatformHeader(captchaHeaders({captchaToken, captchaType})),
+			headers: withAuthLocaleHeader(captchaHeaders({captchaToken, captchaType})),
 		});
 		logger.debug('Password reset email sent');
 	} catch (error) {
@@ -401,7 +400,7 @@ export async function validateResetPasswordToken(token: string): Promise<boolean
 		const response = await http.get<{
 			valid: boolean;
 		}>(Endpoints.AUTH_VALIDATE_RESET_PASSWORD_TOKEN(token), {
-			headers: withPlatformHeader(),
+			headers: withAuthLocaleHeader(),
 		});
 		return response.body.valid;
 	} catch (error) {
@@ -414,7 +413,7 @@ export async function resetPassword(token: string, password: string): Promise<Re
 	try {
 		const response = await http.post<ResetPasswordResponse>(Endpoints.AUTH_RESET_PASSWORD, {
 			body: {token, password},
-			headers: withPlatformHeader(),
+			headers: withAuthLocaleHeader(),
 		});
 		const responseBody = response.body;
 		logger.info('Password reset successful');
@@ -429,7 +428,7 @@ export async function revertEmailChange(token: string, password: string): Promis
 	try {
 		const response = await http.post<TokenResponse>(Endpoints.AUTH_EMAIL_REVERT, {
 			body: {token, password},
-			headers: withPlatformHeader(),
+			headers: withAuthLocaleHeader(),
 		});
 		const responseBody = response.body;
 		logger.info('Email revert successful');
@@ -444,7 +443,7 @@ export async function verifyEmail(token: string): Promise<VerificationResult> {
 	try {
 		await http.post(Endpoints.AUTH_VERIFY_EMAIL, {
 			body: tokenBody(token),
-			headers: withPlatformHeader(),
+			headers: withAuthLocaleHeader(),
 		});
 		logger.info('Email verification successful');
 		return VerificationResult.SUCCESS;
@@ -462,7 +461,7 @@ export async function verifyEmail(token: string): Promise<VerificationResult> {
 export async function resendVerificationEmail(): Promise<VerificationResult> {
 	try {
 		await http.post(Endpoints.AUTH_RESEND_VERIFICATION, {
-			headers: withPlatformHeader(),
+			headers: withAuthLocaleHeader(),
 		});
 		logger.info('Verification email resent');
 		return VerificationResult.SUCCESS;
@@ -485,7 +484,7 @@ export async function authorizeIp(token: string): Promise<VerificationResult> {
 	try {
 		await http.post(Endpoints.AUTH_AUTHORIZE_IP, {
 			body: tokenBody(token),
-			headers: withPlatformHeader(),
+			headers: withAuthLocaleHeader(),
 		});
 		logger.info('IP authorization successful');
 		return VerificationResult.SUCCESS;
@@ -503,7 +502,7 @@ export async function authorizeIp(token: string): Promise<VerificationResult> {
 export async function resendIpAuthorization(ticket: string): Promise<void> {
 	await http.post(Endpoints.AUTH_IP_AUTHORIZATION_RESEND, {
 		body: ticketBody(ticket),
-		headers: withPlatformHeader(),
+		headers: withAuthLocaleHeader(),
 	});
 }
 
@@ -516,7 +515,7 @@ export interface IpAuthorizationPollResult {
 
 export async function pollIpAuthorization(ticket: string): Promise<IpAuthorizationPollResult> {
 	const response = await http.get<IpAuthorizationPollResult>(Endpoints.AUTH_IP_AUTHORIZATION_POLL(ticket), {
-		headers: withPlatformHeader(),
+		headers: withAuthLocaleHeader(),
 	});
 	return response.body;
 }
@@ -546,7 +545,7 @@ export async function completeDesktopHandoff({
 }): Promise<void> {
 	await http.post(Endpoints.AUTH_HANDOFF_COMPLETE, {
 		body: {code, user_id: userId},
-		headers: withPlatformHeader({Authorization: token}),
+		headers: withAuthLocaleHeader({Authorization: token}),
 		auth: 'none',
 	});
 }
@@ -645,7 +644,7 @@ export async function startSso({
 	};
 	const response = await http.post<SsoStartResponse>(Endpoints.AUTH_SSO_START, {
 		body,
-		headers: withPlatformHeader(),
+		headers: withAuthLocaleHeader(),
 	});
 	return response.body;
 }
@@ -653,7 +652,7 @@ export async function startSso({
 export async function completeSso({code, state}: {code: string; state: string}): Promise<SsoCompleteResponse> {
 	const response = await http.post<SsoCompleteResponse>(Endpoints.AUTH_SSO_COMPLETE, {
 		body: {code, state},
-		headers: withPlatformHeader(),
+		headers: withAuthLocaleHeader(),
 	});
 	return response.body;
 }

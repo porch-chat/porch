@@ -826,6 +826,12 @@ importers:
       '@typescript/native-preview':
         specifier: 'catalog:'
         version: 7.0.0-dev.20260224.1
+      vite-tsconfig-paths:
+        specifier: 'catalog:'
+        version: 6.1.1(typescript@5.9.3)(vite@7.3.1(@types/node@25.3.0)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)(yaml@2.8.2))
+      vitest:
+        specifier: 'catalog:'
+        version: 4.0.18(@opentelemetry/api@1.9.0)(@types/node@25.3.0)(@vitest/browser-playwright@4.0.18)(happy-dom@20.7.0)(jiti@2.6.1)(jsdom@28.1.0)(lightningcss@1.31.1)(msw@2.12.10(@types/node@25.3.0)(typescript@5.9.3))(tsx@4.21.0)(yaml@2.8.2)
 
   fluxer_api/pkgs/mime_utils:
     dependencies:
@@ -1367,6 +1373,9 @@ importers:
       '@tanstack/react-virtual':
         specifier: ^3.13.23
         version: 3.13.23(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      animejs:
+        specifier: 4.5.0
+        version: 4.5.0
       bowser:
         specifier: 'catalog:'
         version: 2.14.1
@@ -1683,6 +1692,9 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
     optionalDependencies:
+      '@fluxer/hardware-encoder':
+        specifier: file:./native/hardware-encoder
+        version: file:fluxer_desktop/native/hardware-encoder
       '@fluxer/linux-audio-capture':
         specifier: file:./native/linux-audio-capture
         version: file:fluxer_desktop/native/linux-audio-capture
@@ -1728,9 +1740,6 @@ importers:
       '@fluxer/webauthn':
         specifier: file:./native/webauthn
         version: file:fluxer_desktop/native/webauthn
-      '@fluxer/webrtc-sender':
-        specifier: file:./native/webrtc-sender
-        version: file:fluxer_desktop/native/webrtc-sender
       '@fluxer/win-clipboard':
         specifier: file:./native/win-clipboard
         version: file:fluxer_desktop/native/win-clipboard
@@ -4438,6 +4447,10 @@ packages:
   '@floating-ui/utils@0.2.12':
     resolution: {integrity: sha512-HpCo8tmWzLVad5s2d19EhAz5zqrrQ6s69qd6moPMQvkOuSwDT1YgRfWSVuc4ennqrgv3OHppiOGMQ7oC13yIww==}
 
+  '@fluxer/hardware-encoder@file:fluxer_desktop/native/hardware-encoder':
+    resolution: {directory: fluxer_desktop/native/hardware-encoder, type: directory}
+    cpu: [x64, arm64]
+
   '@fluxer/linux-audio-capture@file:fluxer_desktop/native/linux-audio-capture':
     resolution: {directory: fluxer_desktop/native/linux-audio-capture, type: directory}
     cpu: [x64, arm64]
@@ -4510,11 +4523,6 @@ packages:
   '@fluxer/webauthn@file:fluxer_desktop/native/webauthn':
     resolution: {directory: fluxer_desktop/native/webauthn, type: directory}
     cpu: [x64, arm64]
-
-  '@fluxer/webrtc-sender@file:fluxer_desktop/native/webrtc-sender':
-    resolution: {directory: fluxer_desktop/native/webrtc-sender, type: directory}
-    cpu: [x64, arm64]
-    os: [darwin, linux, win32]
 
   '@fluxer/win-clipboard@file:fluxer_desktop/native/win-clipboard':
     resolution: {directory: fluxer_desktop/native/win-clipboard, type: directory}
@@ -7403,6 +7411,17 @@ packages:
 
   ajv@8.18.0:
     resolution: {integrity: sha512-PlXPeEWMXMZ7sPYOHqmDyCJzcfNrUr3fGNKtezX14ykXOEIvyK81d+qydx89KY5O71FKMPaQ2vBfBFI5NHR63A==}
+
+  animejs@4.5.0:
+    resolution: {integrity: sha512-NQimYX+lz8WaXonGS9zVVoviCIAjONeJayxacUditaivYLqyXgGjFKjuyl0aUUhFKm5MriX9ty1TGovNzoJQWA==}
+    peerDependencies:
+      '@types/three': '>=0.150.0'
+      three: '>=0.150.0'
+    peerDependenciesMeta:
+      '@types/three':
+        optional: true
+      three:
+        optional: true
 
   ansi-html-community@0.0.8:
     resolution: {integrity: sha512-1APHAyr3+PCamwNw3bXCPp4HFLONZt/yIH0sZp0/469KWNTEy+qN5jQ3GVX6DMZ1UXAi34yVwtTeaG/HpBuuzw==}
@@ -13844,6 +13863,9 @@ snapshots:
 
   '@floating-ui/utils@0.2.12': {}
 
+  '@fluxer/hardware-encoder@file:fluxer_desktop/native/hardware-encoder':
+    optional: true
+
   '@fluxer/linux-audio-capture@file:fluxer_desktop/native/linux-audio-capture':
     optional: true
 
@@ -13887,9 +13909,6 @@ snapshots:
     optional: true
 
   '@fluxer/webauthn@file:fluxer_desktop/native/webauthn':
-    optional: true
-
-  '@fluxer/webrtc-sender@file:fluxer_desktop/native/webrtc-sender':
     optional: true
 
   '@fluxer/win-clipboard@file:fluxer_desktop/native/win-clipboard':
@@ -17385,6 +17404,8 @@ snapshots:
       json-schema-traverse: 1.0.0
       require-from-string: 2.0.2
 
+  animejs@4.5.0: {}
+
   ansi-html-community@0.0.8: {}
 
   ansi-regex@5.0.1: {}
@@ -19160,7 +19181,7 @@ snapshots:
       saxes: 6.0.0
       symbol-tree: 3.2.4
       tough-cookie: 6.0.0
-      undici: 7.22.0
+      undici: 7.29.0
       w3c-xmlserializer: 5.0.0
       webidl-conversions: 8.0.1
       whatwg-mimetype: 5.0.0
