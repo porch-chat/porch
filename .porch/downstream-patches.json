@@ -952,25 +952,34 @@
 		},
 		{
 			"id": "porch-windows-av1-hardware-encoding-0030",
-			"title": "Enable the complete Windows AV1 hardware encoding path",
+			"title": "Keep Windows AV1 screen sharing on a hardware-compatible path",
 			"status": "active",
 			"category": "media-performance",
-			"reason": "Chromium requires both the WebRTC AV1 hardware gate and the Windows Media Foundation AV1 encoder gate. Porch enabled only the WebRTC gate, so supported Windows GPUs could fall back to software libaom encoding during screen sharing. Porch now enables both gates whenever desktop hardware acceleration is enabled.",
+			"reason": "Chromium 150 gates AV1 hardware encoding behind WebRtcAV1HWEncode and its Windows Media Foundation encoder advertises single-layer AV1 universally, with temporal layers only when the driver reports them and no spatial layers. Porch previously forced L3T3_KEY for its automatic screen-share preset and L1T3 for gaming, which made WebRTC select software libaom even on supported GPUs. Porch now keeps automatic hardware AV1 and VP9 on L1T1, preserves advanced scalability when explicitly selected or software-biased, and lets the live WebRTC efficiency probe downgrade optimistic GPU-family capability guesses.",
 			"paths": [
 				".porch/downstream-patches.json",
+				"docs/porch/PERFORMANCE.md",
+				"fluxer_app/src/features/voice/engine/voice_screen_share_manager/shared.ts",
+				"fluxer_app/src/features/voice/utils/GpuEncoderCapabilities.test.ts",
+				"fluxer_app/src/features/voice/utils/GpuEncoderCapabilities.ts",
+				"fluxer_app/src/features/voice/utils/ScreenShareScalabilityMode.test.ts",
+				"fluxer_app/src/features/voice/utils/ScreenShareScalabilityMode.ts",
 				"fluxer_desktop/src/main/ChromiumRuntime.test.mjs",
 				"fluxer_desktop/src/main/ChromiumRuntime.ts"
 			],
 			"tests": [
-				"Windows AV1 hardware feature regression tests",
+				"screen-share scalability-mode regression tests",
+				"GPU capability reconciliation regression tests",
+				"Windows WebRTC AV1 feature regression tests",
 				"desktop TypeScript typecheck",
+				"application TypeScript typecheck",
 				"Porch desktop product and workflow validation",
 				"git diff --check",
 				"Canary Windows desktop artifact build"
 			],
-			"conflict_risk": "low",
+			"conflict_risk": "medium",
 			"upstream_status": "downstream-until-fixed",
-			"removal_condition": "Remove when upstream enables both WebRtcAV1HWEncode and MediaFoundationAV1Encoding for accelerated Windows desktop sessions."
+			"removal_condition": "Remove when upstream enables WebRtcAV1HWEncode for accelerated Windows desktop sessions, derives automatic SVC modes from the hardware encoder's advertised scalability modes, and reconciles static GPU-family guesses with live WebRTC encoding capability."
 		}
 	]
 }

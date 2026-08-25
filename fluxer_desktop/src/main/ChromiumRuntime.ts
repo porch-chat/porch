@@ -366,7 +366,6 @@ export function appendLinuxOzonePlatformHint(commandLine: ChromiumCommandLine = 
 export function addWindowsHardwareVideoEncodeFeatures(features: Set<string>): void {
 	if (process.platform !== 'win32') return;
 	features.add('WebRtcAV1HWEncode');
-	features.add('MediaFoundationAV1Encoding');
 }
 
 export async function appendWindowsGpuDriverWorkaroundSwitches(): Promise<void> {

@@ -299,10 +299,11 @@ export function reconcileHardwareEncodeReport(
 	vendorId: number,
 ): HardwareEncodeReport {
 	const isNvidiaReport = vendorId === PCI_VENDOR_NVIDIA || report.gpuFamily?.startsWith('nvidia-') === true;
-	if (platform !== 'linux' || !isNvidiaReport) return report;
+	const strictProbeRequired = platform === 'linux' && isNvidiaReport;
 	const adjust = (codec: VideoCodec): HardwareEncodeAnswer => {
 		if (report[codec] !== 'hardware') return report[codec];
-		return efficiency?.[codec] === 'hardware' ? 'hardware' : 'software';
+		if (strictProbeRequired) return efficiency?.[codec] === 'hardware' ? 'hardware' : 'software';
+		return efficiency?.[codec] === 'software' ? 'software' : 'hardware';
 	};
 	return {
 		...report,

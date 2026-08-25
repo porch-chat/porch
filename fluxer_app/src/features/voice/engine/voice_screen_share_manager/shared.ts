@@ -16,6 +16,7 @@ import {
 	resolveStreamingModeSettings,
 	SCREEN_SHARE_DEGRADATION_PREFERENCE,
 } from '@app/features/voice/utils/ScreenShareOptions';
+import {resolveScreenShareScalabilityMode} from '@app/features/voice/utils/ScreenShareScalabilityMode';
 import {classifyVideoEncoderAcceleration} from '@app/features/voice/utils/VideoAccelerationClassification';
 import {
 	BackupCodecPolicy,
@@ -187,22 +188,14 @@ export function getEffectiveScreenShareEncoding(publishOptions?: TrackPublishOpt
 }
 
 function getScreenShareScalabilityModeForCodec(codec: VideoCodec): TrackPublishOptions['scalabilityMode'] | undefined {
-	if (codec !== 'av1' && codec !== 'vp9') return undefined;
-	const preference = VoiceSettings.getScreenShareScalabilityModeOverride();
-	if (preference === 'single_layer') return 'L1T1';
-	if (preference === 'temporal') return 'L1T3';
-	if (preference === 'spatial') return 'L3T3_KEY';
-	const streamingMode = VoiceSettings.getStreamingMode();
-	if (streamingMode === 'gaming') return 'L1T3';
-	if (streamingMode === 'screenshare') return 'L3T3_KEY';
-	const quality = VoiceSettings.getScreenShareSoftwareQualityOverride();
-	if (!quality) return undefined;
-	const gpuReport = getGpuEncoderReportSync();
-	const softwareBiased = VoiceSettings.getScreenShareEncoderMode() === 'software' || gpuReport?.[codec] === 'software';
-	if (!softwareBiased) return undefined;
-	if (quality === 'realtime') return 'L1T1';
-	if (quality === 'balanced') return 'L1T3';
-	return 'L3T3_KEY';
+	return resolveScreenShareScalabilityMode({
+		codec,
+		preference: VoiceSettings.getScreenShareScalabilityModeOverride() ?? 'auto',
+		streamingMode: VoiceSettings.getStreamingMode(),
+		softwareQuality: VoiceSettings.getScreenShareSoftwareQualityOverride(),
+		encoderMode: VoiceSettings.getScreenShareEncoderMode(),
+		hardwareAcceleration: getGpuEncoderReportSync()?.[codec] ?? 'unknown',
+	});
 }
 
 function isSvcScreenShareCodec(codec: VideoCodec): boolean {

@@ -27,7 +27,7 @@ const WGC_DISABLED_FEATURES = [
 	'WebRtcWgcRequireBorder',
 ];
 
-const WINDOWS_HARDWARE_VIDEO_ENCODE_FEATURES = ['WebRtcAV1HWEncode', 'MediaFoundationAV1Encoding'];
+const WINDOWS_HARDWARE_VIDEO_ENCODE_FEATURES = ['WebRtcAV1HWEncode'];
 
 function loadChromiumRuntime(platform = 'win32') {
 	const appendedSwitches = [];
@@ -68,7 +68,7 @@ function loadChromiumRuntime(platform = 'win32') {
 }
 
 describe('ChromiumRuntime Windows capture policy', () => {
-	test('enables both WebRTC and Media Foundation AV1 hardware encoding on Windows', () => {
+	test('enables WebRTC AV1 hardware encoding on Windows', () => {
 		const {module} = loadChromiumRuntime('win32');
 		const features = new Set(['ExistingFeature']);
 

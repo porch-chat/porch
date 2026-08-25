@@ -1105,3 +1105,39 @@ every two seconds while the client requeued the same diagnostics batch forever.
   all passed. Maximize produced no renderer long task. The dialog was closed,
   the window was restored, hardware acceleration remained enabled, and no media
   or communication action was started. The candidate is accepted.
+
+## 2026-08-25 — Windows AV1 hardware screen-share selection
+
+### Finding
+
+- Canary Desktop `2026.825.192437` correctly enabled Chromium 150's
+  `WebRtcAV1HWEncode` gate, but an AMD Radeon RX 9070 XT still reported libaom
+  software encoding during AV1 screen sharing.
+- Chromium's Windows Media Foundation encoder always advertises single-layer
+  `L1T1` for AV1, optionally advertises temporal layers when the driver reports
+  support, and does not advertise spatial scalability. Porch's automatic
+  screen-share preset forced `L3T3_KEY`; its gaming preset forced `L1T3`.
+  Those constraints could therefore require WebRTC to choose the software AV1
+  encoder even when hardware AV1 was available.
+- Chromium 150 also blocks its separate D3D12 video encoder on all AMD GPUs due
+  known produced-stream artifacts. Porch must not bypass that safety blocklist.
+- Porch's GPU-family table classified RDNA 3 and newer as AV1-capable but ignored
+  an explicit software result from the renderer's WebRTC MediaCapabilities
+  probe on Windows, causing Auto mode to retain AV1 when the active Chromium
+  path could not provide a power-efficient encoder.
+
+### Implemented and validation
+
+- Automatic hardware AV1 and VP9 publishing now uses `L1T1`. Explicit temporal
+  and spatial selections remain available, and software-biased presets retain
+  their existing layered modes.
+- A live WebRTC `powerEfficient` result can now downgrade optimistic static
+  hardware capability on Windows and other platforms. Unknown probe results do
+  not erase a static hardware capability; Linux NVIDIA retains its stricter
+  positive-probe requirement.
+- Removed the obsolete `MediaFoundationAV1Encoding` feature name from the
+  desktop command line. Chromium 150 gates this WebRTC path with
+  `WebRtcAV1HWEncode`.
+- Added focused scalability policy, capability reconciliation, and Chromium
+  feature regression coverage. Runtime acceptance requires the next Canary to
+  report a Windows hardware encoder implementation rather than libaom.
