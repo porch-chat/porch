@@ -16,9 +16,9 @@ import {
 const BACKFILL_PAGE_SIZE = 100;
 const PORCH_HUB_ENROLLED_TRAIT_PREFIX = 'porch_hub_enrolled:';
 
-export type PorchHubEnrollmentOutcome = 'disabled' | 'already_enrolled' | 'enrolled' | 'ineligible' | 'failed';
+type PorchHubEnrollmentOutcome = 'disabled' | 'already_enrolled' | 'enrolled' | 'ineligible' | 'failed';
 
-export interface PorchHubBackfillResult {
+interface PorchHubBackfillResult {
 	scanned: number;
 	enrolled: number;
 	already_enrolled: number;

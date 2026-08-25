@@ -12,6 +12,10 @@ test('shared extraction does not promote lazy feature dependencies to startup', 
 	assert.equal(splitChunks.chunks({runtime: 'main', canBeInitial: () => true}), true);
 	assert.equal(splitChunks.chunks({runtime: 'main', canBeInitial: () => false}), false);
 	assert.equal(splitChunks.chunks({runtime: 'sw', canBeInitial: () => true}), false);
-	assert.equal(splitChunks.cacheGroups?.highlight?.chunks, 'async');
+	const highlightChunks = splitChunks.cacheGroups?.highlight?.chunks;
+	assert.equal(typeof highlightChunks, 'function');
+	assert.equal(highlightChunks({runtime: 'main', canBeInitial: () => true}), false);
+	assert.equal(highlightChunks({runtime: 'main', canBeInitial: () => false}), true);
+	assert.equal(highlightChunks({runtime: 'markdown.worker', canBeInitial: () => false}), false);
 	assert.equal(splitChunks.cacheGroups?.katex?.chunks, undefined);
 });

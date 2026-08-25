@@ -2,7 +2,7 @@
 
 import path from 'node:path';
 
-export interface PortableMarkerContext {
+interface PortableMarkerContext {
 	readonly appImage?: string;
 	readonly execPath: string;
 	readonly platform: NodeJS.Platform;

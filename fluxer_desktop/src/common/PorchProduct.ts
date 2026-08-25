@@ -3,7 +3,7 @@
 import {BUILD_CHANNEL, type BuildChannel} from '@electron/common/BuildChannel';
 import product from '../../porch-product.json';
 
-export type PorchDesktopChannelConfig = {
+type PorchDesktopChannelConfig = {
 	readonly appName: string;
 	readonly defaultAppUrl: string;
 	readonly protocol: string;
@@ -15,7 +15,7 @@ export type PorchDesktopChannelConfig = {
 	readonly windowsToastActivatorClsid: string;
 };
 
-export type PorchDesktopProductConfig = {
+type PorchDesktopProductConfig = {
 	readonly schemaVersion: number;
 	readonly brandName: string;
 	readonly companyName: string;

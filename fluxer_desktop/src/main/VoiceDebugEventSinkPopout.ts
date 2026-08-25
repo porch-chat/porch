@@ -430,7 +430,7 @@ export function focusVoiceDebugEventSinkPopout(): boolean {
 	return true;
 }
 
-export function isVoiceDebugEventSinkPopoutOpen(): boolean {
+function isVoiceDebugEventSinkPopoutOpen(): boolean {
 	return getEventSinkWindow() !== null;
 }
 

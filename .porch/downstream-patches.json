@@ -325,6 +325,7 @@
 				"AGENTS.md",
 				"docs/porch/ACTIONS_POLICY.md",
 				"docs/porch/RELEASE_CHANNELS.md",
+				"knip.json",
 				"package.json",
 				"scripts/validate-porch-actions.mjs",
 				"tools/ci/src/release.rs"
@@ -335,6 +336,7 @@
 				"read-only upstream intake check",
 				"image fragment staging without draft GitHub releases",
 				"workflow YAML parsing",
+				"Knip downstream entry and export validation",
 				"GitHub Actions Canary API and gateway image builds",
 				"git diff --check"
 			],
