@@ -949,6 +949,28 @@
 			"conflict_risk": "low",
 			"upstream_status": "downstream-until-fixed",
 			"removal_condition": "Remove when upstream accepts relative same-origin API endpoints for account identity and does not force relay-only ICE on self-hosted Electron clients without a guaranteed TURN service."
+		},
+		{
+			"id": "porch-windows-av1-hardware-encoding-0030",
+			"title": "Enable the complete Windows AV1 hardware encoding path",
+			"status": "active",
+			"category": "media-performance",
+			"reason": "Chromium requires both the WebRTC AV1 hardware gate and the Windows Media Foundation AV1 encoder gate. Porch enabled only the WebRTC gate, so supported Windows GPUs could fall back to software libaom encoding during screen sharing. Porch now enables both gates whenever desktop hardware acceleration is enabled.",
+			"paths": [
+				".porch/downstream-patches.json",
+				"fluxer_desktop/src/main/ChromiumRuntime.test.mjs",
+				"fluxer_desktop/src/main/ChromiumRuntime.ts"
+			],
+			"tests": [
+				"Windows AV1 hardware feature regression tests",
+				"desktop TypeScript typecheck",
+				"Porch desktop product and workflow validation",
+				"git diff --check",
+				"Canary Windows desktop artifact build"
+			],
+			"conflict_risk": "low",
+			"upstream_status": "downstream-until-fixed",
+			"removal_condition": "Remove when upstream enables both WebRtcAV1HWEncode and MediaFoundationAV1Encoding for accelerated Windows desktop sessions."
 		}
 	]
 }
