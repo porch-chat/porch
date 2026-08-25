@@ -51,6 +51,20 @@ bundled Node runtime before packaging. This gate prevents an updater native
 module whose declared Node range excludes the Electron runtime from producing
 an installer that passes static inspection but crashes on launch.
 
+## Update-check behavior
+
+The renderer checks the installed desktop package and the currently served web
+bundle together. Web-bundle checks are restricted to the Stable and Canary
+client origins (`app.porch.chat` and `canary.porch.chat`); unrelated hosts do
+not participate in Porch update discovery.
+
+A user-initiated desktop check always ends in an explicit result. An available
+Windows package opens the download confirmation, a downloaded package opens
+the restart confirmation, and a failed native bridge reports a check failure
+instead of claiming that the app is current. Native download and install error
+phases are preserved across the preload boundary so the recovery dialog names
+the operation that actually failed.
+
 ## Feed layout
 
 Velopack artifacts are served without filename rewriting:

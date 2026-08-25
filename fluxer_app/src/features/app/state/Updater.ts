@@ -6,7 +6,7 @@ import {
 	shouldShowNativeDesktopUpdateDownloadProgress,
 	shouldShowNativeDesktopUpdateInApp,
 } from '@app/features/app/utils/UpdaterPlatformUtils';
-import type {UpdaterContext, UpdaterDownloadOption, UpdaterEvent} from '@app/features/platform/types/Electron';
+import type {UpdaterDownloadOption, UpdaterEvent} from '@app/features/platform/types/Electron';
 import {Logger} from '@app/features/platform/utils/AppLogger';
 import {getClientInfo} from '@app/features/platform/utils/ClientInfo';
 import {downloadWithNative, getElectronAPI, isElectron, openExternalUrl} from '@app/features/ui/utils/NativeUtils';
@@ -37,7 +37,7 @@ import {
 	type WebUpdateInfo,
 } from '@app/features/updater/state/UpdaterStateMachine';
 import {buildLinuxManualUpdateOptions} from '@app/features/updater/utils/LinuxManualUpdateOptions';
-import type {UpdaterEvent as NativeUpdaterEvent} from '@app/types/electron.d';
+import {isWebUpdateHost, normalizeUpdaterEvent} from '@app/features/updater/utils/UpdaterRuntimePolicy';
 import {msg} from '@lingui/core/macro';
 import {makeAutoObservable, runInAction} from 'mobx';
 
@@ -53,73 +53,6 @@ const CHECK_INTERVAL_MS = 30 * 60 * 1000;
 const MIN_CHECK_INTERVAL_MS = 60 * 1000;
 const VERSION_ENDPOINT = '/version.json';
 const CURRENT_BUILD_VERSION = Config.PUBLIC_BUILD_VERSION ?? null;
-const ALLOWED_WEB_UPDATE_HOSTS = new Set(['web.fluxer.app', 'web.canary.fluxer.app']);
-
-function normalizeUpdaterContext(context: NativeUpdaterEvent['context']): UpdaterContext {
-	switch (context) {
-		case 'user':
-		case 'background':
-		case 'focus':
-			return context;
-		default:
-			return 'background';
-	}
-}
-
-function normalizeUpdaterEvent(event: NativeUpdaterEvent): UpdaterEvent | null {
-	const context = normalizeUpdaterContext(event.context);
-	switch (event.type) {
-		case 'checking':
-			return {type: 'checking', context};
-		case 'available':
-			return {
-				type: 'available',
-				context,
-				version: event.version ?? null,
-				downloadSize: event.downloadSize ?? null,
-				downloadStarted: event.downloadStarted ?? true,
-				downloadUrl: event.downloadUrl,
-				downloadOptions: event.downloadOptions,
-			};
-		case 'not-available':
-			return {type: 'not-available', context};
-		case 'downloaded':
-			return {type: 'downloaded', context, version: event.version ?? null};
-		case 'progress':
-			if (
-				typeof event.percent !== 'number' ||
-				typeof event.transferred !== 'number' ||
-				typeof event.total !== 'number' ||
-				typeof event.bytesPerSecond !== 'number'
-			) {
-				return null;
-			}
-			return {
-				type: 'progress',
-				context,
-				percent: event.percent,
-				transferred: event.transferred,
-				total: event.total,
-				bytesPerSecond: event.bytesPerSecond,
-			};
-		case 'error':
-			return {
-				type: 'error',
-				context,
-				message: event.message ?? 'Unknown updater error',
-			};
-		case 'unsupported':
-			if (event.reason !== 'platform' && event.reason !== 'unpackaged' && event.reason !== 'managed-package') {
-				return null;
-			}
-			return {
-				type: 'unsupported',
-				context,
-				reason: event.reason,
-				downloadUrl: event.downloadUrl,
-			};
-	}
-}
 
 class Updater {
 	private snapshot: UpdaterMachineSnapshot = createUpdaterMachineSnapshot();
@@ -457,7 +390,7 @@ class Updater {
 		let failed = false;
 		try {
 			const shouldCheckNative = this.shouldRunNativeCheck(userInitiated);
-			const [, webResult] = await Promise.all([
+			const [nativeCheckCompleted, webResult] = await Promise.all([
 				shouldCheckNative ? this.checkNativeUpdate(checkContext) : Promise.resolve(null),
 				this.checkWebUpdate(),
 			]);
@@ -466,6 +399,9 @@ class Updater {
 				available: webResult?.available ?? false,
 				version: webResult?.version ?? null,
 			});
+			if (shouldCheckNative && nativeCheckCompleted === false) {
+				throw new Error('Native updater bridge failed to complete the update check');
+			}
 			if (userInitiated && (!shouldCheckNative || (!this.isChecking && !this.nativeCheckFailed))) {
 				this.showCurrentUpdateState();
 			}
@@ -496,7 +432,7 @@ class Updater {
 		available: boolean;
 		version: string | null;
 	}> {
-		if (!ALLOWED_WEB_UPDATE_HOSTS.has(window.location.host)) {
+		if (!isWebUpdateHost(window.location.hostname)) {
 			return {available: false, version: null};
 		}
 		try {
@@ -600,6 +536,10 @@ class Updater {
 	private showCurrentUpdateState(): void {
 		if (this.nativeManualUpdateAvailable) {
 			this.showManualNativeUpdateModal();
+			return;
+		}
+		if (this.nativeAwaitingDownload) {
+			pushUpdateAvailableModal(this.updateInfo.native.version, this.startNativeDownload);
 			return;
 		}
 		if (this.nativeUpdateReady) {

@@ -258,6 +258,7 @@ export interface UpdaterEvent {
 	context?: 'user' | 'background' | 'focus';
 	version?: string | null;
 	message?: string;
+	phase?: 'check' | 'download' | 'install';
 	progress?: number;
 	percent?: number;
 	transferred?: number;

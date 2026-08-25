@@ -980,6 +980,34 @@
 			"conflict_risk": "medium",
 			"upstream_status": "downstream-until-fixed",
 			"removal_condition": "Remove when upstream enables WebRtcAV1HWEncode for accelerated Windows desktop sessions, derives automatic SVC modes from the hardware encoder's advertised scalability modes, and reconciles static GPU-family guesses with live WebRTC encoding capability."
+		},
+		{
+			"id": "porch-updater-result-correctness-0031",
+			"title": "Make Porch update checks complete and actionable",
+			"status": "active",
+			"category": "desktop-distribution",
+			"reason": "The inherited web updater allowlist omitted Porch's Stable and Canary origins, an explicit Windows check could discover a package without showing the available-update dialog, native bridge rejection could be mistaken for an up-to-date result, and preload event normalization discarded download/install error phases. Porch now recognizes both client origins, surfaces every user-requested Windows result, treats bridge rejection as failure, and preserves the native failure phase.",
+			"paths": [
+				".porch/downstream-patches.json",
+				"docs/porch/DESKTOP_DISTRIBUTION.md",
+				"fluxer_app/src/features/app/state/Updater.ts",
+				"fluxer_app/src/features/updater/utils/UpdaterRuntimePolicy.test.ts",
+				"fluxer_app/src/features/updater/utils/UpdaterRuntimePolicy.ts",
+				"fluxer_app/src/types/electron.d.ts"
+			],
+			"tests": [
+				"updater runtime policy regression tests",
+				"updater state-machine regression tests",
+				"application TypeScript typecheck",
+				"production application build",
+				"desktop TypeScript typecheck",
+				"Porch branding and workflow validation",
+				"Stable installed-update acceptance",
+				"production Stable and Canary verification"
+			],
+			"conflict_risk": "low",
+			"upstream_status": "downstream-until-fixed",
+			"removal_condition": "Remove when upstream recognizes Porch-owned runtime origins or provides a configurable same-origin web-update policy, explicitly surfaces available automatic desktop downloads after manual checks, treats bridge rejection as failure, and preserves updater error phases end to end."
 		}
 	]
 }
