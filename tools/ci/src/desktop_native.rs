@@ -1182,34 +1182,29 @@ mod tests {
 
     #[test]
     fn child_build_output_root_honors_absolute_cargo_target_dir() {
+        let cargo_root = env::temp_dir().join("porch-native-crate");
+        let target_dir = env::temp_dir().join("porch-cargo-target");
         assert_eq!(
-            resolve_cargo_output_root(
-                Path::new(r"W:\fluxer_desktop\native\win-game-capture\hook"),
-                Some(OsString::from(r"C:\porch-cargo-target")),
-            ),
-            PathBuf::from(r"C:\porch-cargo-target"),
+            resolve_cargo_output_root(&cargo_root, Some(target_dir.clone().into_os_string()),),
+            target_dir,
         );
     }
 
     #[test]
     fn child_build_output_root_resolves_relative_cargo_target_dir_from_crate() {
+        let cargo_root = env::temp_dir().join("porch-native-crate");
         assert_eq!(
-            resolve_cargo_output_root(
-                Path::new(r"W:\fluxer_desktop\native\win-game-capture\hook"),
-                Some(OsString::from(".cargo-output")),
-            ),
-            PathBuf::from(r"W:\fluxer_desktop\native\win-game-capture\hook\.cargo-output"),
+            resolve_cargo_output_root(&cargo_root, Some(OsString::from(".cargo-output")),),
+            cargo_root.join(".cargo-output"),
         );
     }
 
     #[test]
     fn child_build_output_root_defaults_to_crate_target_directory() {
+        let cargo_root = env::temp_dir().join("porch-native-crate");
         assert_eq!(
-            resolve_cargo_output_root(
-                Path::new(r"W:\fluxer_desktop\native\win-game-capture\hook"),
-                None,
-            ),
-            PathBuf::from(r"W:\fluxer_desktop\native\win-game-capture\hook\target"),
+            resolve_cargo_output_root(&cargo_root, None),
+            cargo_root.join("target"),
         );
     }
 

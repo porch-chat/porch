@@ -906,12 +906,13 @@
 				"fluxer_app/src/features/code_highlighting/utils/ArboriumThemeBridge.test.ts",
 				"fluxer_app/src/features/theme/styles/TextRendering.test.ts",
 				"fluxer_app/scripts/GenerateThemeVariables.ts",
-				"fluxer_desktop/native/rust/src/system_hunspell/dictionaries.rs"
+				"fluxer_desktop/native/rust/src/system_hunspell/dictionaries.rs",
+				"tools/ci/src/desktop_native.rs"
 			],
 			"tests": [
 				"theme variable generator check on a Windows checkout",
 				"Arborium theme, text-rendering CSS, username generation, and UTC date contracts on Windows",
-				"desktop native Rust suite on Windows",
+				"desktop native and CI-helper Rust suites on Windows and Linux",
 				"application TypeScript typecheck",
 				"Biome formatting and lint checks",
 				"git diff --check"
