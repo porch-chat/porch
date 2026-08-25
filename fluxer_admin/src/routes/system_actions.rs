@@ -746,7 +746,7 @@ fn build_smtp_test_request(form: &MultiValueForm) -> Result<InstanceEmailSmtpTes
     })
 }
 
-fn build_single_community_update(enabled: bool) -> InstanceConfigUpdateRequest {
+fn build_single_community_update(_enabled: bool) -> InstanceConfigUpdateRequest {
     InstanceConfigUpdateRequest {
         gateway_rollout: None,
         registration: None,
