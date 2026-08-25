@@ -14,6 +14,7 @@ import {type AuthCardVariant, AuthLayoutContext} from '@app/features/auth/state/
 import {AuthRegisterDraftContext, type AuthRegisterFormDraft} from '@app/features/auth/state/AuthRegisterDraftContext';
 import {useLocation} from '@app/features/platform/components/router/RouterReact';
 import {FluxerWordmark} from '@app/features/ui/components/icons/FluxerWordmark';
+import {Scroller, type ScrollerHandle} from '@app/features/ui/components/Scroller';
 import {isMobileExperienceEnabled} from '@app/features/ui/utils/MobileExperience';
 import {hasUnavailableElectronNativeContext} from '@app/features/ui/utils/NativeUtils';
 import {useNativeTitleBar} from '@app/features/window/hooks/useNativeTitleBar';
@@ -38,10 +39,9 @@ const AuthLayoutContent = observer(function AuthLayoutContent({children}: {child
 	const useSystemTitleBar = useNativeTitleBar();
 	const splashUrlRef = useRef<string | null>(null);
 	const registerFormDraftsRef = useRef<Map<string, AuthRegisterFormDraft>>(new Map());
-	const scrollerRef = useRef<HTMLDivElement>(null);
+	const scrollerRef = useRef<ScrollerHandle>(null);
 	const location = useLocation();
-	const previousPathnameRef = useRef(location.pathname);
-	const {patternReady, splashLoaded, splashDimensions} = useAuthBackground(splashUrl, porchPatternUrl);
+	const {patternReady, splashDimensions} = useAuthBackground(splashUrl, porchPatternUrl);
 	const handleSetSplashUrl = useCallback(
 		(url: string | null) => {
 			if (splashUrlRef.current === url) return;
@@ -58,6 +58,7 @@ const AuthLayoutContent = observer(function AuthLayoutContent({children}: {child
 			setViewportWidth(window.innerWidth);
 			setViewportHeight(window.innerHeight);
 		};
+		handleResize();
 		window.addEventListener('resize', handleResize);
 		return () => window.removeEventListener('resize', handleResize);
 	}, []);
@@ -68,9 +69,7 @@ const AuthLayoutContent = observer(function AuthLayoutContent({children}: {child
 		};
 	}, []);
 	useEffect(() => {
-		if (previousPathnameRef.current === location.pathname) return;
-		previousPathnameRef.current = location.pathname;
-		scrollerRef.current?.scrollTo({top: 0});
+		scrollerRef.current?.jumpToStartEdge();
 	}, [location.pathname]);
 	const splashScale = useMemo(() => {
 		if (!splashDimensions) return null;
@@ -135,9 +134,10 @@ const AuthLayoutContent = observer(function AuthLayoutContent({children}: {child
 						</div>
 					)}
 					<div className={styles.scrollerWrapper} data-flx="app.auth-layout.auth-layout-content.scroller-wrapper">
-						<div
+						<Scroller
 							ref={scrollerRef}
 							className={styles.mobileContainer}
+							fade={false}
 							key="auth-layout-mobile-scroller"
 							data-flx="app.auth-layout.auth-layout-content.mobile-container"
 						>
@@ -159,7 +159,7 @@ const AuthLayoutContent = observer(function AuthLayoutContent({children}: {child
 								</div>
 								{children}
 							</main>
-						</div>
+						</Scroller>
 					</div>
 				</AuthLayoutContext.Provider>
 			</AuthRegisterDraftContext.Provider>
@@ -181,7 +181,7 @@ const AuthLayoutContent = observer(function AuthLayoutContent({children}: {child
 					</div>
 				)}
 				<div className={styles.scrollerWrapper} data-flx="app.auth-layout.auth-layout-content.scroller-wrapper--2">
-					<div
+					<Scroller
 						ref={scrollerRef}
 						className={styles.container}
 						key="auth-layout-scroller"
@@ -196,7 +196,6 @@ const AuthLayoutContent = observer(function AuthLayoutContent({children}: {child
 						>
 							<AuthBackground
 								splashUrl={splashUrl}
-								splashLoaded={splashLoaded}
 								splashDimensions={splashDimensions}
 								splashScale={splashScale}
 								patternReady={patternReady}
@@ -235,7 +234,7 @@ const AuthLayoutContent = observer(function AuthLayoutContent({children}: {child
 								</div>
 							</div>
 						</div>
-					</div>
+					</Scroller>
 				</div>
 			</AuthLayoutContext.Provider>
 		</AuthRegisterDraftContext.Provider>

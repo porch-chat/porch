@@ -157,7 +157,6 @@ forbidText('packages/errors/src/i18n/ErrorI18nMessages.ts', 'Fluxer API');
 forbidText('packages/errors/src/i18n/ErrorI18nMessages.ts', 'support@fluxer.app');
 for (const [relativePath, expected] of [
 	['fluxer_api/src/api/push/ApnsPushService.ts', "?? 'Porch'"],
-	['fluxer_api/src/api/system/PneumaticPostNotices.ts', "productName: 'Porch'"],
 	['fluxer_api/src/api/user/repositories/account/crud/UserDataRepository.ts', "username: 'Porch'"],
 	['fluxer_api/src/api/oauth/repositories/ApplicationRepository.ts', "name: 'Porch Admin'"],
 	['fluxer_api/pkgs/captcha/src/providers/HttpCaptchaProvider.ts', 'PorchBot/1.0; +https://porch.chat'],

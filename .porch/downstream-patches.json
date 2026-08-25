@@ -1,6 +1,6 @@
 {
 	"schema_version": 1,
-	"upstream_base": "137edc7cfbf2e82b1f935028c3cb5d5534f1f094",
+	"upstream_base": "53cac0b614b4849182483c54fa14985feee655c2",
 	"patches": [
 		{
 			"id": "porch-governance-0001",
@@ -125,6 +125,7 @@
 				".github/workflows/build-porch-desktop.yaml",
 				".github/workflows/build-porch-static.yaml",
 				"docs/porch/BRANDING.md",
+				"fluxer_api/src/api/auth/tests/DesktopHandoffFlow.test.ts",
 				"fluxer_app/index.html",
 				"fluxer_app/scripts/build/rspack/static-files.mjs",
 				"fluxer_app/scripts/GenerateColorSystem.ts",
@@ -894,15 +895,20 @@
 			"title": "Keep upstream intake validation portable across Windows and Linux",
 			"status": "active",
 			"category": "build-resilience",
-			"reason": "The upstream theme invariant generator compared literal LF newlines and the native Hunspell path parser assumed POSIX colon-separated paths. Porch validates and builds desktop artifacts on Windows as well as Linux, so both contracts must accept native checkout line endings and native path-list separators.",
+			"reason": "Upstream theme, CSS, date, and word-list handling assumed literal LF newlines, POSIX path separators, or a UTC local timezone, while the native Hunspell path parser assumed POSIX colon-separated paths. Porch validates and builds desktop artifacts on Windows as well as Linux, so these contracts must normalize checkout line endings, paths, word lists, and date assertions.",
 			"paths": [
 				".porch/downstream-patches.json",
 				"docs/porch/RELEASE_CHANNELS.md",
+				"fluxer_api/src/api/stripe/tests/StripeUtils.test.ts",
+				"fluxer_api/src/api/utils/UsernameGenerator.ts",
+				"fluxer_app/src/features/code_highlighting/utils/ArboriumThemeBridge.test.ts",
+				"fluxer_app/src/features/theme/styles/TextRendering.test.ts",
 				"fluxer_app/scripts/GenerateThemeVariables.ts",
 				"fluxer_desktop/native/rust/src/system_hunspell/dictionaries.rs"
 			],
 			"tests": [
 				"theme variable generator check on a Windows checkout",
+				"Arborium theme, text-rendering CSS, username generation, and UTC date contracts on Windows",
 				"desktop native Rust suite on Windows",
 				"application TypeScript typecheck",
 				"Biome formatting and lint checks",
@@ -910,7 +916,7 @@
 			],
 			"conflict_risk": "low",
 			"upstream_status": "candidate",
-			"removal_condition": "Remove when upstream normalizes text before literal invariant checks and parses Hunspell dictionary search paths with the platform-native separator."
+			"removal_condition": "Remove when upstream normalizes text, word lists, paths, and UTC date assertions before invariant checks and parses Hunspell dictionary search paths with the platform-native separator."
 		},
 		{
 			"id": "porch-self-hosted-session-voice-recovery-0029",

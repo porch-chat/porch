@@ -49,7 +49,6 @@ const UNABLE_TO_UNFURL_URL_DESCRIPTOR = msg({
 });
 
 const EMBED_DEBUGGER_PREVIEW_CHANNEL_ID = '0';
-
 function createEmbedDebuggerPreviewChannel(): Channel {
 	return new Channel({
 		id: EMBED_DEBUGGER_PREVIEW_CHANNEL_ID,

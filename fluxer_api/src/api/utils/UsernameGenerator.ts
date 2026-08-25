@@ -7,8 +7,8 @@ import {fileURLToPath} from 'node:url';
 import {UsernameType} from '@fluxer/schema/src/primitives/UserValidators';
 
 const WORDS_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'words');
-const scales = readFileSync(resolve(WORDS_DIR, 'scales.txt'), 'utf-8').trim().split('\n').filter(Boolean);
-const tails = readFileSync(resolve(WORDS_DIR, 'tails.txt'), 'utf-8').trim().split('\n').filter(Boolean);
+const scales = readFileSync(resolve(WORDS_DIR, 'scales.txt'), 'utf-8').trim().split(/\r?\n/).filter(Boolean);
+const tails = readFileSync(resolve(WORDS_DIR, 'tails.txt'), 'utf-8').trim().split(/\r?\n/).filter(Boolean);
 
 function capitalize(word: string): string {
 	return word.charAt(0).toUpperCase() + word.slice(1);

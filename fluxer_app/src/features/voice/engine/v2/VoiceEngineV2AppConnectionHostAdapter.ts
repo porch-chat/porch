@@ -21,7 +21,12 @@ import {
 	type VoiceConnectionSnapshot,
 } from '@app/features/voice/engine/VoiceConnectionStateMachine';
 import {VoiceConnectionThrottle} from '@app/features/voice/engine/VoiceConnectionThrottle';
-import {createE2EEKeyProvider, createE2EEWorker} from '@app/features/voice/engine/VoiceE2EEKeyProvider';
+import {
+	createE2EEKeyProvider,
+	createE2EEWorker,
+	ownE2EEWorker,
+	releaseE2EEWorker,
+} from '@app/features/voice/engine/VoiceE2EEKeyProvider';
 import {getSharedVoiceAudioContext} from '@app/features/voice/engine/VoiceSharedAudioContext';
 import {selectLocalMediaPublicationsForConnectionRepublish} from '@app/features/voice/engine/VoiceTrackPublicationUtils';
 import {
@@ -158,6 +163,7 @@ function createRoomOptions(
 ): {
 	roomOptions: RoomOptions;
 	e2eeKeyProvider: ExternalE2EEKeyProvider | null;
+	e2eeWorker: Worker | null;
 } {
 	const roomOptions: RoomOptions = {
 		adaptiveStream: false,
@@ -166,17 +172,20 @@ function createRoomOptions(
 		subscriberVideoCodecExclusions,
 	};
 	let e2eeKeyProvider: ExternalE2EEKeyProvider | null = null;
+	let e2eeWorker: Worker | null = null;
 	if (e2eeKey) {
 		try {
 			e2eeKeyProvider = createE2EEKeyProvider();
-			const worker = createE2EEWorker();
-			roomOptions.e2ee = {keyProvider: e2eeKeyProvider, worker};
+			e2eeWorker = createE2EEWorker();
+			roomOptions.e2ee = {keyProvider: e2eeKeyProvider, worker: e2eeWorker};
 		} catch (error) {
 			logger.error('Failed to construct E2EE key provider/worker', error);
+			e2eeWorker?.terminate();
 			e2eeKeyProvider = null;
+			e2eeWorker = null;
 		}
 	}
-	return {roomOptions, e2eeKeyProvider};
+	return {roomOptions, e2eeKeyProvider, e2eeWorker};
 }
 
 function createRoomConnectOptions(): RoomConnectOptions {
@@ -612,12 +621,14 @@ export class VoiceEngineV2AppConnectionHostAdapter extends Store {
 			logger.warn('Aborting LiveKit room creation after codec probing because attempt is stale', {attemptId});
 			return;
 		}
-		const {roomOptions, e2eeKeyProvider} = createRoomOptions(e2eeKey, subscriberVideoCodecExclusions);
+		const {roomOptions, e2eeKeyProvider, e2eeWorker} = createRoomOptions(e2eeKey, subscriberVideoCodecExclusions);
 		const room = new LiveKitRoom(roomOptions);
+		ownE2EEWorker(room, e2eeWorker);
 		let roomClosed = false;
 		const closeRoom = () => {
 			if (roomClosed) return;
 			roomClosed = true;
+			releaseE2EEWorker(room);
 			onRoomClosed?.(room, attemptId);
 		};
 		const failConnectBeforeRoomConnect = (message: string, error?: unknown) => {
@@ -833,6 +844,7 @@ export class VoiceEngineV2AppConnectionHostAdapter extends Store {
 				} catch (error) {
 					logger.warn('Region hot-swap: failed to disconnect old room', {error});
 				}
+				releaseE2EEWorker(previousRoom);
 				logger.info('Region hot-swap: complete', {
 					previousEndpoint: this.connectionState.voiceServerEndpoint,
 					newEndpoint: endpoint,
@@ -996,6 +1008,7 @@ export class VoiceEngineV2AppConnectionHostAdapter extends Store {
 		if (room) {
 			room.removeAllListeners();
 			room.disconnect();
+			releaseE2EEWorker(room);
 		}
 		this.update(() => {
 			this.transitionConnection({type: 'connection.disconnected', reason});
@@ -1017,6 +1030,7 @@ export class VoiceEngineV2AppConnectionHostAdapter extends Store {
 		if (room) {
 			room.removeAllListeners();
 			room.disconnect();
+			releaseE2EEWorker(room);
 		}
 		this.update(() => {
 			this.transitionConnection({type: 'connection.disconnectForChannelMove'});
@@ -1035,6 +1049,7 @@ export class VoiceEngineV2AppConnectionHostAdapter extends Store {
 		} catch (error) {
 			logger.warn('Terminal unload LiveKit room disconnect failed', {label, error});
 		}
+		releaseE2EEWorker(room);
 	}
 
 	hasTerminalUnloadTransports(): boolean {
@@ -1241,6 +1256,7 @@ export class VoiceEngineV2AppConnectionHostAdapter extends Store {
 		} catch (error) {
 			logger.warn('Failed to disconnect previous room', error);
 		}
+		releaseE2EEWorker(previousRoom);
 	}
 
 	private getPreviousRoomNonScreenShareTracks(previousRoom: Room): Array<LocalTrack> {
@@ -1285,6 +1301,7 @@ export class VoiceEngineV2AppConnectionHostAdapter extends Store {
 		if (room) {
 			room.removeAllListeners();
 			room.disconnect();
+			releaseE2EEWorker(room);
 		}
 		this.update(() => {
 			this.isLocalDisconnecting = false;

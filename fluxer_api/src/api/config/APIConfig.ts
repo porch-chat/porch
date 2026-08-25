@@ -331,6 +331,7 @@ export interface APIConfig {
 	};
 	presignedAttachmentUploadsEnabled: boolean;
 	presignedDownloadsEnabled: boolean;
+	presignedHarvestDownloadsEnabled: boolean;
 	attachmentDecayEnabled: boolean;
 	deletionGracePeriodHours: number;
 	inactivityDeletionThresholdDays?: number;
