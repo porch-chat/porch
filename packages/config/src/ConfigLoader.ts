@@ -65,6 +65,7 @@ function defaultConfig(): MasterConfig {
 				ssl_ca: '',
 				max_connections: 20,
 				kv_table: 'fluxer_kv',
+				prepared_statements: true,
 			},
 		},
 		s3: {
@@ -86,7 +87,11 @@ function defaultConfig(): MasterConfig {
 			api: {
 				port: 8080,
 				cors_allowed_origins: [],
+				headers_timeout_ms: 30_000,
+				request_timeout_ms: 120_000,
+				max_inflight_requests: 512,
 				ip_ban_exempt_ips: [],
+				desktop_github_redirect_countries: [],
 				presigned_attachment_uploads_enabled: false,
 				presigned_downloads_enabled: false,
 				presigned_harvest_downloads_enabled: true,
@@ -177,6 +182,7 @@ function defaultConfig(): MasterConfig {
 				provider: 'none',
 				from_email: '',
 				from_name: 'Porch',
+				app_base_url: '',
 			},
 			sms: {
 				enabled: false,
@@ -190,6 +196,7 @@ function defaultConfig(): MasterConfig {
 				api_key: '',
 				api_secret: '',
 				url: '',
+				internal_url: '',
 				webhook_url: '',
 			},
 			search: {
@@ -347,6 +354,7 @@ function validatePostgresConfig(config: MasterConfig): void {
 	assertIntegerInRange(postgres.max_connections, 'FLUXER_POSTGRES_MAX_CONNECTIONS', 1, 1000);
 	assertBoolean(postgres.ssl, 'FLUXER_POSTGRES_SSL');
 	assertIdentifier(postgres.kv_table, 'FLUXER_POSTGRES_KV_TABLE');
+	assertBoolean(postgres.prepared_statements, 'FLUXER_POSTGRES_PREPARED_STATEMENTS');
 	if (config.env !== 'production' || config.database.backend !== 'postgres') {
 		return;
 	}
@@ -400,6 +408,9 @@ function normalizeConfig(config: MasterConfig): MasterConfig {
 	);
 	validatePostgresConfig(config);
 	validateApiWorkerConfig(config);
+	assertIntegerInRange(config.services.api.max_inflight_requests, 'FLUXER_API_MAX_INFLIGHT_REQUESTS', 1, 100_000);
+	assertIntegerInRange(config.services.api.headers_timeout_ms, 'FLUXER_API_HEADERS_TIMEOUT_MS', 1_000, 3_600_000);
+	assertIntegerInRange(config.services.api.request_timeout_ms, 'FLUXER_API_REQUEST_TIMEOUT_MS', 1_000, 3_600_000);
 	requireString(config.domain.base_domain, 'FLUXER_BASE_DOMAIN');
 	requireString(config.auth.sudo_mode_secret, 'FLUXER_SUDO_MODE_SECRET');
 	requireString(config.auth.connection_initiation_secret, 'FLUXER_CONNECTION_INITIATION_SECRET');

@@ -35,7 +35,11 @@ export interface APIConfig {
 	nodeEnv: 'development' | 'production';
 	port: number;
 	corsAllowedOrigins: Array<string>;
+	headersTimeoutMs: number;
+	requestTimeoutMs: number;
+	maxInflightRequests: number;
 	ipBanExemptIps: Array<string>;
+	desktopGitHubRedirectCountries: ReadonlySet<string>;
 	cassandra: {
 		hosts: string;
 		port: number;
@@ -55,6 +59,7 @@ export interface APIConfig {
 		sslCa: string;
 		maxConnections: number;
 		kvTable: string;
+		preparedStatements: boolean;
 	};
 	database: {
 		backend: 'cassandra' | 'postgres';
@@ -159,6 +164,7 @@ export interface APIConfig {
 		webhookSecret?: string;
 		fromEmail: string;
 		fromName: string;
+		appBaseUrl: string;
 		smtp?: {
 			host: string;
 			port: number;
@@ -205,6 +211,7 @@ export interface APIConfig {
 		apiSecret?: string;
 		webhookUrl?: string;
 		url?: string;
+		internalUrl?: string;
 		defaultRegion?: {
 			id: string;
 			name: string;
@@ -328,6 +335,7 @@ export interface APIConfig {
 		disableRateLimits: boolean;
 		testModeEnabled: boolean;
 		testHarnessToken?: string;
+		validateResponses: boolean;
 	};
 	presignedAttachmentUploadsEnabled: boolean;
 	presignedDownloadsEnabled: boolean;

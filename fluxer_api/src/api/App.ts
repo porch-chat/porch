@@ -40,7 +40,7 @@ function AbuseAwareAppErrorHandler(err: Error, ctx: Context<HonoEnv>): Response 
 
 export async function createAPIApp(options: CreateAPIAppOptions): Promise<APIAppResult> {
 	const {config, logger} = options;
-	const shutdownApiLifecycle = createShutdown(logger);
+	const shutdownApiLifecycle = createShutdown(config, logger);
 	setIsDevelopment(config.nodeEnv === 'development');
 	const routes = new Hono<HonoEnv>({strict: true});
 	const corsOrigins = resolveCorsOrigins(config);
@@ -50,6 +50,7 @@ export async function createAPIApp(options: CreateAPIAppOptions): Promise<APIApp
 		corsOrigins,
 		trustClientIpHeader: config.proxy.trust_client_ip_header,
 		clientIpHeaderName: config.proxy.client_ip_header,
+		maxInflightRequests: config.maxInflightRequests,
 	});
 	routes.onError(AbuseAwareAppErrorHandler);
 	routes.notFound(AppNotFoundHandler);

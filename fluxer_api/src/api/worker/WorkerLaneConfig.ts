@@ -32,7 +32,6 @@ const LANE_CONFIG = {
 		consumerName: 'workers_lifecycle',
 		tasks: [
 			'processStripeWebhook',
-			'sendScheduledMessage',
 			'sendSystemDm',
 			'userProcessPendingDeletion',
 			'userProcessPendingDeletions',

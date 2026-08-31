@@ -31,7 +31,7 @@ docker --version
 docker compose version
 ```
 
-Use Docker Engine 24 or newer and the Compose v2 plugin.
+Use Docker Engine 24 or newer and Compose v2.20.2 or newer. Older Compose plugins reject the API healthcheck's `start_interval` key. Engine 25 or newer acts on that key and brings the stack up faster.
 
 ## Step 2: Download the stack
 
@@ -41,7 +41,7 @@ Create a working directory and download the stack files:
 mkdir fluxer
 cd fluxer
 
-base=https://raw.githubusercontent.com/fluxerapp/fluxer/main/deploy/self-hosting
+base=https://raw.githubusercontent.com/fluxerapp/fluxer/3b1eb56713d59181823df284b9646c890d2a3cba/deploy/self-hosting
 curl -fsSLO "$base/docker-compose.yml"
 curl -fsSLO "$base/Caddyfile"
 curl -fsSLO "$base/livekit.yaml"

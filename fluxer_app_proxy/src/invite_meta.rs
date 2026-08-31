@@ -45,7 +45,7 @@ pub struct InviteMetaResolver {
 enum InviteMetaStorage {
     Postgres(PostgresInviteMetaStorage),
     #[cfg(feature = "scylla")]
-    Scylla(ScyllaInviteMetaStorage),
+    Scylla(Box<ScyllaInviteMetaStorage>),
 }
 
 struct PostgresInviteMetaStorage {
@@ -103,7 +103,7 @@ impl InviteMetaResolver {
     pub async fn connect(config: &AppProxyConfig) -> anyhow::Result<Self> {
         match config.database_backend {
             DatabaseBackend::Postgres => {
-                let pool = fluxer_svc::postgres::connect(&fluxer_svc::postgres::PostgresConfig {
+                let postgres_config = fluxer_svc::postgres::PostgresConfig {
                     url: config.postgres_url.clone(),
                     host: config.postgres_host.clone(),
                     port: config.postgres_port,
@@ -114,9 +114,10 @@ impl InviteMetaResolver {
                     ssl_ca: config.postgres_ssl_ca.clone(),
                     max_connections: config.postgres_max_connections,
                     kv_table: config.postgres_kv_table.clone(),
-                })
-                .await?;
-                let kv = postgres::KvClient::new(pool, &config.postgres_kv_table)?;
+                    prepared_statements: config.postgres_prepared_statements,
+                };
+                let pool = fluxer_svc::postgres::connect(&postgres_config).await?;
+                let kv = postgres::KvClient::new(pool, &postgres_config)?;
                 Self::new_postgres(kv, config)
             }
             DatabaseBackend::Cassandra => {
@@ -183,13 +184,13 @@ impl InviteMetaResolver {
         let cache = invite_meta_cache(config);
 
         Ok(Self {
-            storage: InviteMetaStorage::Scylla(ScyllaInviteMetaStorage {
+            storage: InviteMetaStorage::Scylla(Box::new(ScyllaInviteMetaStorage {
                 db,
                 stmt_invite,
                 stmt_guild,
                 stmt_channel,
                 stmt_user,
-            }),
+            })),
             cache,
         })
     }

@@ -322,6 +322,8 @@ function registerVelopackUpdater(getMainWindow: () => BrowserWindow | null): voi
 function registerElectronUpdater(getMainWindow: () => BrowserWindow | null): void {
 	let electronUpdateDownloading = false;
 	let electronDownloadRetries = 0;
+	let electronUpdateDownloaded = false;
+	let electronDownloadedVersion: string | null = null;
 	const {UpdateSourceType, updateElectronApp} = requireModule(
 		'update-electron-app',
 	) as typeof import('update-electron-app');
@@ -337,7 +339,14 @@ function registerElectronUpdater(getMainWindow: () => BrowserWindow | null): voi
 	autoUpdater.on('checking-for-update', () => {
 		send(getMainWindow(), {type: 'checking', context: lastContext});
 	});
+	const sendPendingRestart = () => {
+		send(getMainWindow(), {type: 'downloaded', context: lastContext, version: electronDownloadedVersion});
+	};
 	autoUpdater.on('update-available', () => {
+		if (electronUpdateDownloaded) {
+			sendPendingRestart();
+			return;
+		}
 		electronUpdateDownloading = true;
 		send(getMainWindow(), {
 			type: 'available',
@@ -348,10 +357,19 @@ function registerElectronUpdater(getMainWindow: () => BrowserWindow | null): voi
 		});
 	});
 	autoUpdater.on('update-not-available', () => {
+		if (electronUpdateDownloaded) {
+			sendPendingRestart();
+			return;
+		}
 		send(getMainWindow(), {type: 'not-available', context: lastContext});
 	});
 	autoUpdater.on('update-downloaded', (_event, _releaseNotes, releaseName) => {
-		send(getMainWindow(), {type: 'downloaded', context: lastContext, version: releaseName ?? null});
+		electronUpdateDownloading = false;
+		electronUpdateDownloaded = true;
+		if (releaseName) {
+			electronDownloadedVersion = releaseName;
+		}
+		sendPendingRestart();
 	});
 	autoUpdater.on('error', (err: Error) => {
 		const message = err?.message ?? String(err);
@@ -374,6 +392,10 @@ function registerElectronUpdater(getMainWindow: () => BrowserWindow | null): voi
 			return;
 		}
 		electronUpdateDownloading = false;
+		if (electronUpdateDownloaded) {
+			sendPendingRestart();
+			return;
+		}
 		send(getMainWindow(), {type: 'error', context: lastContext, phase, message});
 	});
 	ipcMain.handle('updater-check', async (_e, context: UpdaterContext) => {
@@ -487,14 +509,14 @@ function buildManualLatestDownloadUrl(format: ManualDesktopFormat): string {
 	return `${UPDATE_BASE_URL}/latest/${format}`;
 }
 
-function getModernProductName(): string {
+function getArtifactProductName(): string {
 	return DESKTOP_APP_NAME;
 }
 
 function getManualUpdateSuggestedName(format: LinuxManualDesktopFormat, version: string): string {
 	const archToken = LINUX_MANUAL_ARCH_TOKENS[format][DESKTOP_DOWNLOAD_ARCH];
 	const extension = LINUX_MANUAL_FORMAT_EXTENSIONS[format];
-	return `${getModernProductName()}-${version}-linux-${archToken}${extension}`;
+	return `${getArtifactProductName()}-${version}-linux-${archToken}${extension}`;
 }
 
 function getManualDownloadOptions(info: ManualLatestInfo): Array<UpdaterDownloadOption> {

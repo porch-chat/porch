@@ -3,7 +3,6 @@
 import {randomUUID} from 'node:crypto';
 import type {IWorkerService} from '@pkgs/worker/src/contracts/IWorkerService';
 import {JobCancelledError, type WorkerTaskHandler} from '@pkgs/worker/src/contracts/WorkerTask';
-import type {WorkerJobPayload} from '@pkgs/worker/src/contracts/WorkerTypes';
 import type {ConsumerMessages, JsMsg} from 'nats';
 import type {IJobLedgerRepository} from '../jobs/IJobLedgerRepository';
 import {Logger} from '../Logger';
@@ -11,6 +10,7 @@ import {getWorkerService} from '../middleware/ServiceRegistry';
 import {isJsonRecord, parseJsonRecord} from '../utils/JsonBoundaryUtils';
 
 const MAX_DLQ_PUBLISH_ATTEMPTS = 3;
+const MIN_ACK_HEARTBEAT_MS = 1000;
 
 interface WorkerRunnerJetStreamClient {
 	consumers: {
@@ -38,16 +38,6 @@ interface WorkerRunnerDlqMeta {
 interface WorkerRunnerQueue {
 	getConnectionManager(): WorkerRunnerConnectionManager;
 	getStreamName(): string;
-	enqueue(
-		taskType: string,
-		payload: WorkerJobPayload,
-		options?: {
-			runAt?: Date;
-			maxAttempts?: number;
-			priority?: number;
-			jobKey?: string;
-		},
-	): Promise<string>;
 	publishToDlq(taskType: string, originalPayload: Record<string, unknown>, meta: WorkerRunnerDlqMeta): Promise<void>;
 }
 
@@ -203,30 +193,11 @@ export class WorkerRunner {
 			if (Number.isFinite(runAtMs)) {
 				const delayMs = runAtMs - Date.now();
 				if (delayMs > 0) {
-					const deliveryCount = msg.info.deliveryCount;
-					const shouldReEnqueue = delayMs > this.ackWaitMs || deliveryCount >= this.maxDeliver - 1;
-					if (shouldReEnqueue) {
-						try {
-							await this.queue.enqueue(taskType, jobPayload, {runAt: new Date(runAtMs)});
-							msg.ack();
-							Logger.debug(
-								{taskType, seq: msg.seq, runAt, deliveryCount},
-								'Re-enqueued scheduled job to free ack slot',
-							);
-						} catch (error) {
-							Logger.error(
-								{taskType, seq: msg.seq, err: error},
-								'Failed to re-enqueue scheduled job, falling back to NAK',
-							);
-							msg.nak(Math.min(delayMs, this.ackWaitMs - 5000));
-						}
-					} else {
-						Logger.debug(
-							{taskType, seq: msg.seq, runAt, delayMs},
-							'Job scheduled for future execution, redelivering with delay',
-						);
-						msg.nak(delayMs);
-					}
+					Logger.debug(
+						{taskType, seq: msg.seq, runAt, delayMs},
+						'Job scheduled for future execution, redelivering with delay',
+					);
+					msg.nak(delayMs);
 					return false;
 				}
 			}
@@ -270,6 +241,7 @@ export class WorkerRunner {
 				}
 			},
 		};
+		const ackHeartbeat = this.startAckHeartbeat(taskType, msg);
 		try {
 			await task(jobPayload, helpers);
 			if (ledgerJobId !== null) {
@@ -347,6 +319,25 @@ export class WorkerRunner {
 				msg.nak(5000);
 			}
 			return false;
+		} finally {
+			clearInterval(ackHeartbeat);
 		}
+	}
+
+	private startAckHeartbeat(taskType: string, msg: JsMsg): ReturnType<typeof setInterval> {
+		const heartbeat = setInterval(
+			() => {
+				try {
+					msg.working();
+				} catch (err) {
+					Logger.warn({workerId: this.workerId, taskType, seq: msg.seq, err}, 'Failed to extend job ack deadline');
+				}
+			},
+			Math.max(MIN_ACK_HEARTBEAT_MS, Math.floor(this.ackWaitMs / 2)),
+		);
+		if (typeof heartbeat === 'object' && heartbeat && 'unref' in heartbeat) {
+			(heartbeat as {unref(): void}).unref();
+		}
+		return heartbeat;
 	}
 }

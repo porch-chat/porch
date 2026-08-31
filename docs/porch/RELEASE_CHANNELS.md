@@ -233,6 +233,41 @@ Porch build helper now rewrites that entry to the exact staged filename and
 fails if the manifest or portable inventory is missing or ambiguous, preventing
 an atomic feed publication from introducing a broken download URL.
 
+### 2026-08-31 reviewed intake
+
+Porch reviewed and integrated Fluxer commits `53cac0b6..6a188a4c` as one
+ancestry-preserving merge. This 233-commit train is primarily a broad runtime
+performance, overload-control, security, and self-hosting hardening release. It
+adds request-scoped API service construction and authentication-session caching,
+reduces message, guild, read-state, push, worker, Cassandra, Postgres, and
+gateway hot-path work, bounds queues and request sizes, adds service memory
+ceilings and readiness checks, persists Valkey state, and tightens authentication,
+authorization, CSRF, upload, media parsing, metrics, and desktop packaging.
+
+Client changes include Unicode font fallbacks, improved message editing and
+unread anchoring, Linux spellcheck restoration, global voice shortcut controls,
+screen-share viewer volume, shared active-stream controls, input-access nagbar
+persistence, and updater flicker fixes. Unfinished expression packs, scheduled
+messages, billing administration, and voice diagnostics were removed.
+
+Twenty-six textual conflicts were confined to Porch-owned automation,
+configuration, registration, branding, desktop distribution, performance, and
+screen-share seams. Porch retained its independent CORS origins, branded email
+and download identities, member registration links, Hub enrollment, unsigned
+Stable/Canary packages, device-aware capture-card and ultrawide stream context,
+and hardware-compatible AV1 policy. Porch adopted upstream's lazy API service
+container and wired Porch Hub into it, adopted the shared active-screen-share
+menu, and retired the deleted native debug logger and injection-based
+game-capture sidecars rather than restoring removed security-sensitive code.
+
+Focused validation covers Porch branding and workflow isolation, app/API/desktop
+typechecks, generated OpenAPI documents, Porch Hub, registration, CORS, desktop
+handoff, member invites, updater policy, media-control state, ICE policy, AV1
+capability/scalability behavior, and all desktop CI-helper unit tests. Production
+intake requires rebuilt immutable images for the API/worker, app-proxy, gateway,
+admin, media-proxy, and supporting Rust services, followed by new Canary and
+Stable desktop artifacts from the accepted source revision.
+
 ## Public hostnames
 
 - `porch.chat`: landing page, downloads, status links, documentation, and

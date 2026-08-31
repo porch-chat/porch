@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import {createHash} from 'node:crypto';
 import type {IKVPipeline, IKVProvider, IKVSubscription, KVRateLimitResult} from '@pkgs/kv_client/src/IKVProvider';
 import {
 	type IKVLogger,
@@ -223,6 +224,11 @@ redis.call('SET', bucketKey, cjson.encode({tokens = tokens, lastRefill = lastRef
 return cjson.encode({urls = urls, tokens = #urls})
 `;
 const REMOVE_BULK_DELETION_SCRIPT = `
+local member = ARGV[1]
+if member ~= '' and redis.call('ZREM', KEYS[1], member) == 1 then
+	redis.call('DEL', KEYS[2])
+	return 1
+end
 local value = redis.call('GET', KEYS[2])
 if not value then
 	return 0
@@ -231,6 +237,8 @@ redis.call('ZREM', KEYS[1], value)
 redis.call('DEL', KEYS[2])
 return 1
 `;
+
+const SCRIPT_SHA_CACHE = new Map<string, string>();
 
 interface ScriptPurgeBatchResult {
 	urls: Array<string>;
@@ -605,13 +613,14 @@ export class KVClient implements IKVProvider {
 		);
 	}
 
-	async removeBulkDeletion(queueKey: string, secondaryKey: string): Promise<boolean> {
+	async removeBulkDeletion(queueKey: string, secondaryKey: string, member = ''): Promise<boolean> {
 		const result = await this.executeScript(
 			'removeBulkDeletion',
 			REMOVE_BULK_DELETION_SCRIPT,
 			2,
 			queueKey,
 			secondaryKey,
+			member,
 		);
 		return Number(result) === 1;
 	}
@@ -699,7 +708,18 @@ export class KVClient implements IKVProvider {
 		keyCount: number,
 		...args: Array<string | number>
 	): Promise<unknown> {
-		return await this.execute(command, async () => this.client.eval(script, keyCount, ...args));
+		return await this.execute(command, async () => this.evalCachedScript(script, keyCount, args));
+	}
+
+	private async evalCachedScript(script: string, keyCount: number, args: Array<string | number>): Promise<unknown> {
+		try {
+			return await this.client.evalsha(getScriptSha(script), keyCount, ...args);
+		} catch (error) {
+			if (!isNoScriptError(error)) {
+				throw error;
+			}
+			return await this.client.eval(script, keyCount, ...args);
+		}
 	}
 
 	private async executeJsonScript<T>(
@@ -793,6 +813,23 @@ function normalizeRateLimitResult(result: KVRateLimitResult): KVRateLimitResult 
 		resetAtMs: Number(result.resetAtMs),
 		retryAfterMs: Number(result.retryAfterMs),
 	};
+}
+
+function getScriptSha(script: string): string {
+	const cached = SCRIPT_SHA_CACHE.get(script);
+	if (cached !== undefined) {
+		return cached;
+	}
+	const sha = createHash('sha1').update(script).digest('hex');
+	SCRIPT_SHA_CACHE.set(script, sha);
+	return sha;
+}
+
+function isNoScriptError(error: unknown): boolean {
+	if (!(error instanceof Error)) {
+		return false;
+	}
+	return error.message.includes('NOSCRIPT');
 }
 
 function isTimeoutError(error: unknown): boolean {

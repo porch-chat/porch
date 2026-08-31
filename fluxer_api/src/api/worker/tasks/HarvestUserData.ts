@@ -604,7 +604,7 @@ async function createAndUploadArchive(params: ArchiveParams): Promise<ArchiveRes
 	let output: fs.WriteStream | null = null;
 	try {
 		output = fs.createWriteStream(zipPath);
-		const archive = archiver('zip', {zlib: {level: 9}});
+		const archive = archiver('zip', {zlib: {level: 6}});
 		archive.pipe(output);
 		archive.append(userDataJsonBuffer, {name: 'user.json'});
 		if (user.avatarHash) {
@@ -675,7 +675,9 @@ async function createAndUploadArchive(params: ArchiveParams): Promise<ArchiveRes
 			output.on('close', resolve);
 			output.on('error', reject);
 		});
-		const storageKey = `exports/${userId}/${harvestId}/user-data.zip`;
+		const storageKey = isAdminArchive
+			? `archives/users/${userId}/${harvestId}/user-data.zip`
+			: `exports/${userId}/${harvestId}/user-data.zip`;
 		const expiresAt = new Date(Date.now() + (isAdminArchive ? ms('1 year') : ZIP_EXPIRY_MS));
 		const zipStat = await fs.promises.stat(zipPath);
 		const fileSize = BigInt(zipStat.size);
