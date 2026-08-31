@@ -1,6 +1,7 @@
 {
 	"$schema": "https://unpkg.com/knip@5/schema.json",
 	"include": ["files", "exports", "types", "dependencies", "unlisted", "binaries", "catalog"],
+	"ignoreBinaries": ["install-electron"],
 	"ignoreDependencies": [
 		"@bufbuild/protoc-gen-es",
 		"@tailwindcss/cli",

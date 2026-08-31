@@ -516,6 +516,7 @@
 				"fluxer_app/src/features/ui/components/Scroller.tsx",
 				"fluxer_app/src/features/ui/hooks/useTextOverflow.ts",
 				"fluxer_app/src/features/ui/scroller/useScrollerThumb.ts",
+				"fluxer_app/src/features/ui/state/Tick.test.ts",
 				"fluxer_app/src/features/ui/utils/AnimationFrameScheduling.test.ts",
 				"fluxer_app/src/features/ui/utils/AnimationFrameScheduling.ts",
 				"fluxer_app/src/features/user/utils/SettingsModalLayoutUtils.ts",
