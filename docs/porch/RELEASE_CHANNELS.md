@@ -235,9 +235,9 @@ an atomic feed publication from introducing a broken download URL.
 
 ### 2026-08-31 reviewed intake
 
-Porch reviewed and integrated Fluxer commits `53cac0b6..0f6b1189` as two
+Porch reviewed and integrated Fluxer commits `53cac0b6..04e150e4` as three
 ancestry-preserving merges because upstream advanced during validation. This
-238-commit train is primarily a broad runtime
+239-commit train is primarily a broad runtime
 performance, overload-control, security, and self-hosting hardening release. It
 adds request-scoped API service construction and authentication-session caching,
 reduces message, guild, read-state, push, worker, Cassandra, Postgres, and
@@ -252,7 +252,8 @@ persistence, and updater flicker fixes. Unfinished expression packs, scheduled
 messages, billing administration, and voice diagnostics were removed. The final
 moving tail also makes delayed worker cron ticks catch up, drains in-flight jobs
 during worker shutdown, preserves gateway presence order, fixes a cache
-invalidation race, and accepts both shell forms of the AppImage sandbox fallback.
+invalidation race, accepts both shell forms of the AppImage sandbox fallback,
+and preserves the gateway replay buffer across a session transfer.
 
 Twenty-six textual conflicts were confined to Porch-owned automation,
 configuration, registration, branding, desktop distribution, performance, and
