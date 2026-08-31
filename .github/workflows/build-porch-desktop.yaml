@@ -369,14 +369,14 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: ~/.cache/porch-ci-helper
-          key: ${{ matrix.platform }}-${{ matrix.arch }}-porch-ci-helper-v1-rust-1.93.0-${{ hashFiles('_ci/tools/ci/Cargo.lock', '_ci/tools/ci/Cargo.toml', '_ci/tools/ci/**/*.rs') }}
+          key: ${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.os }}-porch-ci-helper-v1-rust-1.93.0-${{ hashFiles('_ci/tools/ci/Cargo.lock', '_ci/tools/ci/Cargo.toml', '_ci/tools/ci/**/*.rs') }}
 
       - name: Cache native desktop builds
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: ${{ github.workspace }}/.porch-cargo-target
-          key: ${{ matrix.platform }}-${{ matrix.arch }}-porch-native-v1-rust-1.93.0-${{ hashFiles('source/fluxer_desktop/native/**/Cargo.lock', 'source/fluxer_desktop/native/**/Cargo.toml', 'source/fluxer_desktop/native/**/*.rs') }}
-          restore-keys: ${{ matrix.platform }}-${{ matrix.arch }}-porch-native-v1-rust-1.93.0-
+          key: ${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.os }}-porch-native-v1-rust-1.93.0-${{ hashFiles('source/fluxer_desktop/native/**/Cargo.lock', 'source/fluxer_desktop/native/**/Cargo.toml', 'source/fluxer_desktop/native/**/*.rs') }}
+          restore-keys: ${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.os }}-porch-native-v1-rust-1.93.0-
 
       - name: Prepare Porch CI helper
         shell: bash
