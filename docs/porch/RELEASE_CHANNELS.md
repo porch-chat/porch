@@ -279,6 +279,13 @@ intake requires rebuilt immutable images for the API/worker, app-proxy, gateway,
 admin, media-proxy, and supporting Rust services, followed by new Canary and
 Stable desktop artifacts from the accepted source revision.
 
+Canary acceptance also aligned Porch's Linux desktop runners with upstream's
+Ubuntu 22.04 build baseline so packaged native libraries remain compatible with
+GLIBC 2.35, isolated a Windows-only DXGI readback assertion from Linux stub
+Clippy coverage, retained logging-free window-clock tests, registered the
+CI-only Electron installer with Knip, and preserved Porch's established
+portable artifact naming.
+
 ## Public hostnames
 
 - `porch.chat`: landing page, downloads, status links, documentation, and

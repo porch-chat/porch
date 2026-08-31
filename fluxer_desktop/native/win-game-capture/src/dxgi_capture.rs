@@ -1148,9 +1148,8 @@ fn composite_monochrome_pointer(
 
 #[cfg(test)]
 mod tests {
-    use super::{copy_mapped_bgra_tight, pacing_sleep_and_next_deadline};
+    use super::pacing_sleep_and_next_deadline;
     use std::time::{Duration, Instant};
-    use windows::Win32::Graphics::Direct3D11::D3D11_MAPPED_SUBRESOURCE;
 
     const TEST_FRAME_INTERVAL: Duration = Duration::from_millis(33);
 
@@ -1201,6 +1200,12 @@ mod tests {
         assert_eq!(sleep_duration, Duration::ZERO);
         assert_eq!(next_deadline, deadline + TEST_FRAME_INTERVAL);
     }
+}
+
+#[cfg(all(test, target_os = "windows"))]
+mod windows_tests {
+    use super::copy_mapped_bgra_tight;
+    use windows::Win32::Graphics::Direct3D11::D3D11_MAPPED_SUBRESOURCE;
 
     #[test]
     fn bgra_readback_strips_gpu_row_pitch_padding() {

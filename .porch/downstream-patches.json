@@ -892,7 +892,7 @@
 			"title": "Keep upstream intake validation portable across Windows and Linux",
 			"status": "active",
 			"category": "build-resilience",
-			"reason": "Upstream theme, CSS, date, and word-list handling assumed literal LF newlines, POSIX path separators, or a UTC local timezone, while the native Hunspell path parser assumed POSIX colon-separated paths. Porch validates and builds desktop artifacts on Windows as well as Linux, so these contracts must normalize checkout line endings, paths, word lists, and date assertions.",
+			"reason": "Upstream theme, CSS, date, and word-list handling assumed literal LF newlines, POSIX path separators, or a UTC local timezone, while the native Hunspell path parser assumed POSIX colon-separated paths and a Windows-only capture assertion was compiled by Linux stub coverage. Porch validates and builds desktop artifacts on Windows as well as Linux, so these contracts must normalize checkout line endings, paths, word lists, date assertions, and target-specific native tests.",
 			"paths": [
 				".porch/downstream-patches.json",
 				"docs/porch/RELEASE_CHANNELS.md",
@@ -901,6 +901,7 @@
 				"fluxer_app/src/features/code_highlighting/utils/ArboriumThemeBridge.test.ts",
 				"fluxer_app/src/features/theme/styles/TextRendering.test.ts",
 				"fluxer_app/scripts/GenerateThemeVariables.ts",
+				"fluxer_desktop/native/win-game-capture/src/dxgi_capture.rs",
 				"fluxer_desktop/native/rust/src/system_hunspell/dictionaries.rs",
 				"tools/ci/src/desktop_native.rs"
 			],
