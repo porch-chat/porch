@@ -56,6 +56,7 @@ any_hash_matches(AuthHash, Hashes) ->
 
 -spec terminate(term(), session_state()) -> ok.
 terminate(_Reason, State) ->
+    try_decrement_user_sessions(State),
     maybe_release_transferred_resources(State),
     try_cleanup_guild_monitors(State),
     try_cleanup_call_monitors(State),
@@ -66,7 +67,6 @@ terminate(_Reason, State) ->
 maybe_release_transferred_resources(#{fenced := true}) ->
     ok;
 maybe_release_transferred_resources(State) ->
-    try_decrement_user_sessions(State),
     try_voice_disconnect(State),
     try_cleanup_presence(State),
     ok.
@@ -280,13 +280,14 @@ handle_is_staff(State) ->
 handle_heartbeat_ack(Seq, #{ack_seq := AckSeq} = State) when Seq < AckSeq ->
     {reply, true, State};
 handle_heartbeat_ack(Seq, #{buffer := Buffer} = State) ->
-    NewBuffer = drop_acked_buffer(Seq, Buffer),
+    AckedSeq = min(Seq, maps:get(seq, State, Seq)),
+    NewBuffer = drop_acked_buffer(AckedSeq, Buffer),
     NewBytes =
         case is_list(NewBuffer) of
             true -> session_init:replay_buffer_bytes(NewBuffer);
             false -> limited_deque:bytes(NewBuffer)
         end,
-    NewState0 = State#{ack_seq => Seq, buffer => NewBuffer, buffer_bytes => NewBytes},
+    NewState0 = State#{ack_seq => AckedSeq, buffer => NewBuffer, buffer_bytes => NewBytes},
     NewState = session_connection_guild:repair_stalled_guild_connects(NewState0),
     {reply, true, NewState}.
 

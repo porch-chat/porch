@@ -151,6 +151,18 @@ heartbeat_ack_tolerates_backwards_ack_without_trimming_test() ->
     ?assertEqual(5, maps:get(ack_seq, State1)),
     ?assertEqual([Event], maps:get(buffer, State1)).
 
+heartbeat_ack_clamps_ack_seq_to_current_seq_test() ->
+    State0 = resume_test_state(#{
+        seq => 5,
+        ack_seq => 0,
+        buffer => [#{seq => 5, event => message_create, data => #{}}]
+    }),
+    {reply, true, State1} = session_lifecycle:handle_heartbeat_ack(1000000, State0),
+    ?assertEqual(5, maps:get(ack_seq, State1)),
+    ?assertMatch(
+        {reply, {ok, [], 5}, _}, session_lifecycle:handle_resume(5, self(), State1)
+    ).
+
 handle_resume_clamps_truncated_gap_in_replay_buffer_test() ->
     State0 = resume_test_state(#{
         seq => 5,
@@ -432,6 +444,16 @@ resume_test_state(Overrides) ->
         },
         Overrides
     ).
+
+fenced_terminate_releases_the_user_session_count_test() ->
+    ok = session_abuse_protection:ensure_tables(),
+    UserId = 900201,
+    _ = ets:delete(session_user_counts, UserId),
+    ok = session_abuse_protection:increment_user_sessions(UserId),
+    ok = session_lifecycle:terminate(normal, #{
+        fenced => true, user_id => UserId, guilds => #{}, calls => #{}
+    }),
+    ?assertEqual([], ets:lookup(session_user_counts, UserId)).
 
 terminate_cleans_up_guild_monitors_test() ->
     GuildPid1 = spawn(fun test_wait_for_stop/0),
