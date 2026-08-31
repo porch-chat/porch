@@ -1444,7 +1444,8 @@ module.exports = {
 		target: winTargets,
 	},
 	portable: {
-		artifactName: `${artifactProductName}-\${version}-portable-\${os}-\${arch}.\${ext}`,
+		// biome-ignore lint/suspicious/noTemplateCurlyInString: electron-builder expands these placeholders.
+		artifactName: '${productName}-${version}-portable-${os}-${arch}.${ext}',
 	},
 	linux: {
 		icon: `build_resources/${iconDir}/1024x1024.png`,
